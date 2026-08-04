@@ -327,3 +327,128 @@ test("the command line refuses a file that names nobody", () => {
   expect(failed.stdout).toContain("nennt keine Sprechenden");
   expect(existsSync(join(work, "transcripts"))).toBe(false);
 });
+
+/* And the same thing in the interface, which is where it actually gets used.
+   A command line is the right shape for a batch of twenty and the wrong one
+   for the first interview somebody tries. */
+
+import { rmSync } from "node:fs";
+
+const SANDBOX = join(ROOT, ".sandbox", "transcripts");
+
+const drop = async (page, name, text) => {
+  await page.locator("#import").click();
+  await expect(page.locator("#import-sheet")).toBeVisible();
+  await page.locator("#import-file").setInputFiles({
+    name,
+    mimeType: "text/plain",
+    buffer: Buffer.from(text, "utf8"),
+  });
+};
+
+test.describe("in the interface", () => {
+  test.afterEach(() => {
+    for (const folder of ["interview-9-vertrieb", "aufnahme", "interview-1-marketing"]) {
+      rmSync(join(SANDBOX, folder), { recursive: true, force: true });
+    }
+  });
+
+  test("a dropped file is read and shown before anything is written", async ({ page }) => {
+    await page.goto("/?lang=de");
+    await page.waitForSelector(".turn");
+    await drop(page, "aufnahme.vtt", TEAMS);
+
+    const sheet = page.locator("#import-sheet");
+    await expect(sheet.locator("#import-summary")).toContainText("vtt");
+    await expect(sheet.locator("#import-summary")).toContainText("2 Beiträge");
+    // The first turns as they will stand in the file: a subtitle file read the
+    // wrong way looks obviously wrong here, and costs nothing to look at.
+    await expect(sheet.locator(".import-turn")).toHaveCount(2);
+    await expect(sheet.locator(".import-turn").first()).toContainText("Anna Berger");
+
+    // Both speakers are offered, and the question is asked rather than answered.
+    const who = sheet.locator("#import-interviewer");
+    await expect(who.locator("option")).toHaveCount(3);
+    await expect(sheet).toContainText("Die Beiträge der fragenden Person sind nicht kodierbar");
+
+    // Nothing on disk yet.
+    expect(existsSync(join(SANDBOX, "aufnahme"))).toBe(false);
+  });
+
+  test("what it writes is an interview that opens and can be coded", async ({ page, request }) => {
+    await page.goto("/?lang=de");
+    await page.waitForSelector(".turn");
+    await drop(page, "aufnahme.vtt", TEAMS);
+
+    await page.locator("#import-interviewer").selectOption("Anna Berger");
+    // The heading starts as the file name; typing a department improves it,
+    // because "aufnahme" is a poor heading and a worse folder name.
+    await expect(page.locator("#import-title")).toHaveValue("aufnahme");
+    await page.locator("#import-department").fill("Vertrieb");
+    await expect(page.locator("#import-title")).toHaveValue("Interview: Vertrieb");
+    // …and a heading typed by hand is the author's and stays put.
+    await page.locator("#import-title").fill("Interview 9: Vertrieb");
+    await page.locator("#import-department").fill("Vertrieb ");
+    await expect(page.locator("#import-title")).toHaveValue("Interview 9: Vertrieb");
+    await page.locator("#import-form button[type=submit]").click();
+
+    // Straight into what was just made — the point of it was to start coding.
+    await expect(page.locator("#import-sheet")).toBeHidden();
+    await expect(page.locator("#interview-choice")).toHaveValue("interview-9-vertrieb");
+    await expect(page.locator(".turn")).toHaveCount(2);
+
+    const made = await (await request.get("/api/interviews/interview-9-vertrieb")).json();
+    expect(made.problems).toEqual([]);
+    expect(made.department).toBe("Vertrieb");
+    expect(made.turns[0].interviewer).toBe(true);
+    expect(made.turns[1].interviewer).toBe(false);
+
+    // And a coding lands on it, which is the only thing that proves it is real.
+    const coded = await request.post("/api/interviews/interview-9-vertrieb/codings", {
+      data: {
+        turn: made.turns[1].number,
+        start: 0,
+        end: 20,
+        text: made.turns[1].text.slice(0, 20),
+        category: "routine",
+        reviewed: true,
+      },
+    });
+    expect(coded.status()).toBe(201);
+  });
+
+  test("a folder that is already there is refused, not written over", async ({ page }) => {
+    await page.goto("/?lang=de");
+    await page.waitForSelector(".turn");
+    await drop(page, "interview-01.vtt", TEAMS);
+    // The fixture interview-01 exists; aiming at it must not touch it.
+    await page.locator("#import-title").fill("interview-01");
+    await page.locator("#import-interviewer").selectOption("Anna Berger");
+    const before = readFileSync(join(SANDBOX, "interview-01", "final.md"), "utf8");
+
+    await page.locator("#import-form button[type=submit]").click();
+    await expect(page.locator(".message")).toContainText("gibt es schon");
+    /* Codings hold on to the turn numbers in that file; overwriting it would
+       move every citation in the interview without a word. */
+    expect(readFileSync(join(SANDBOX, "interview-01", "final.md"), "utf8")).toBe(before);
+  });
+
+  test("a file it cannot read says what was expected instead of failing quietly", async ({
+    page,
+  }) => {
+    await page.goto("/?lang=de");
+    await page.waitForSelector(".turn");
+    await drop(page, "nichts.txt", "\n\n   \n");
+    await expect(page.locator(".message")).toContainText("WebVTT");
+    await expect(page.locator("#import-found")).toBeHidden();
+  });
+
+  test("the sheet speaks the language of the interface", async ({ page }) => {
+    await page.goto("/?lang=en");
+    await page.waitForSelector(".turn");
+    await page.locator("#import").click();
+    const sheet = page.locator("#import-sheet");
+    await expect(sheet).toContainText("Read in a transcript");
+    await expect(sheet).not.toContainText("Transkript einlesen");
+  });
+});

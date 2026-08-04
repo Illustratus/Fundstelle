@@ -10,12 +10,15 @@ where it lies.
 
 ### Added
 
-- **A converter for real transcripts.** `node tools/import-transcript.mjs
-  recording.vtt` reads WebVTT (Teams, Zoom), SRT, Whisper output and plain
-  speaker-labelled text, and writes the format the tool reads. Consecutive cues
+- **Read in the transcript your recording produced.** Drop a WebVTT (Teams,
+  Zoom), an SRT, a Whisper output or a plain speaker-labelled text on the header
+  — or on the first screen when there are no interviews yet — and the tool reads
+  it, shows how it read it and the first turns as they will stand, asks which
+  speaker was asking, then writes the transcript and opens it. Consecutive cues
   by the same speaker are joined into turns, because a subtitle cue is shorter
-  than a thought. Which speaker is the interviewer is asked rather than guessed,
-  and an existing `final.md` is never written over.
+  than a thought. The same conversion runs from the command line for a batch:
+  `node tools/import-transcript.mjs recording.vtt`. An existing `final.md` is
+  never written over — codings hold on to the turn numbers in it.
 
 ## 0.2.0 — 2026-08-04
 

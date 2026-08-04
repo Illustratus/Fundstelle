@@ -32,6 +32,7 @@
       <span class="field-label" data-t="interview">Interview</span>
       <select id="interview-choice" data-t-aria="chooseInterview" aria-label="Interview wählen"></select>
     </label>
+    <button type="button" id="import" class="button-quiet" data-t-title="importOpen" data-t-aria="importOpen" title="Transkript einlesen" aria-label="Transkript einlesen">＋</button>
     <button type="button" id="keys" class="button-quiet" data-t-title="keysOpen" data-t-aria="keysOpen" title="Tastenkürzel anzeigen" aria-label="Tastenkürzel anzeigen">?</button>
     <button type="button" id="language" class="button-quiet" title="Switch the interface to English" aria-label="Switch the interface to English">EN</button>
     <button type="button" id="theme" class="button-quiet" data-t-title="themeTitle" data-t-aria="themeAria" title="Hell oder dunkel" aria-label="Darstellung wechseln">◐</button>
@@ -123,6 +124,45 @@
   <p class="coding-bar-keys" id="coding-bar-walk" aria-hidden="true" hidden data-t="codingBarWalk">↓ ↑ nächster Satz · ⇧↓ einen Satz mehr · Esc legt ab</p>
   <button type="button" class="button-quiet coding-bar-cancel" id="coding-bar-cancel" data-t="cancel">Abbrechen</button>
 </div>
+
+<dialog class="keys-sheet import-sheet" id="import-sheet" data-t-aria="importTitle" aria-label="Transkript einlesen">
+  <div class="keys-head">
+    <h2 data-t="importTitle">Transkript einlesen</h2>
+    <button type="button" class="button-quiet" id="import-close" data-t="keysClose">Schließen</button>
+  </div>
+  <p class="keys-note" data-t="importNote">Aus einer Aufnahme kommt selten das Format, das hier gelesen wird. Lege die Datei ab — WebVTT aus Teams oder Zoom, SRT, Whisper-Ausgabe oder ein Text, dessen Zeilen mit einem Namen beginnen.</p>
+
+  <label class="drop-zone" id="import-drop">
+    <input type="file" id="import-file" accept=".vtt,.srt,.txt,.md,text/plain" hidden>
+    <span data-t="importDrop">Datei hierher ziehen oder klicken</span>
+  </label>
+
+  <div id="import-found" hidden>
+    <p class="import-summary" id="import-summary"></p>
+    <div class="import-preview" id="import-preview"></div>
+    <form id="import-form">
+      <label class="field">
+        <span class="field-label" data-t="importWho">Wer fragt</span>
+        <select id="import-interviewer"></select>
+      </label>
+      <p class="column-note" data-t="importWhyWho">Die Beiträge der fragenden Person sind nicht kodierbar. Das wird nicht geraten: ein falscher Griff nähme entweder das halbe Material heraus oder böte die Fragen als Befunde an.</p>
+      <label class="field">
+        <span class="field-label" data-t="department">Bereich</span>
+        <input type="text" id="import-department" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field-label" data-t="importHeading">Überschrift</span>
+        <input type="text" id="import-title" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field-label" data-t="importDate">Erhebung</span>
+        <input type="text" id="import-date" autocomplete="off">
+      </label>
+      <p class="column-note" data-t="importNoSections">Erzählanstöße trägt die Aufnahme nicht — sie stehen im Leitfaden. „## Erzählanstoß: Name“ als eigene Zeile ergänzt sie später; ohne sie funktioniert alles außer der Blockleiste.</p>
+      <button type="submit" class="button" data-t="importWrite">Transkript anlegen</button>
+    </form>
+  </div>
+</dialog>
 
 <dialog class="keys-sheet" id="keys-sheet" data-t-aria="keysTitle" aria-label="Tastatur">
   <div class="keys-head">

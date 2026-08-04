@@ -130,6 +130,38 @@ export const TEXTS = {
     noCategoryContains: "Keine Kategorie enthält „{filter}“.",
     cancel: "Abbrechen",
 
+    importOpen: "Transkript einlesen",
+    importTitle: "Transkript einlesen",
+    importNote:
+      "Aus einer Aufnahme kommt selten das Format, das hier gelesen wird. Lege die " +
+      "Datei ab — WebVTT aus Teams oder Zoom, SRT, Whisper-Ausgabe oder ein Text, " +
+      "dessen Zeilen mit einem Namen beginnen.",
+    importDrop: "Datei hierher ziehen oder klicken",
+    importFound: "Gelesen als {format}: {turns} Beiträge, {speakers} Sprechende.",
+    importFoundNoSpeakers:
+      "Gelesen als {format}: {turns} Beiträge — aber die Datei nennt keine " +
+      "Sprechenden. Ohne Namen lässt sich nicht trennen, wer fragt und wer " +
+      "antwortet; alles wird als Material gelesen.",
+    importWho: "Wer fragt",
+    importNobody: "niemand — alle Beiträge sind Material",
+    importWhyWho:
+      "Die Beiträge der fragenden Person sind nicht kodierbar. Das wird nicht " +
+      "geraten: ein falscher Griff nähme entweder das halbe Material heraus oder " +
+      "böte die Fragen als Befunde an.",
+    importHeading: "Überschrift",
+    importHeadingFor: "Interview: {department}",
+    importDate: "Erhebung",
+    importNoSections:
+      "Erzählanstöße trägt die Aufnahme nicht — sie stehen im Leitfaden. " +
+      "„## Erzählanstoß: Name“ als eigene Zeile ergänzt sie später; ohne sie " +
+      "funktioniert alles außer der Blockleiste.",
+    importWrite: "Transkript anlegen",
+    importDone: "{title} angelegt, {turns} Beiträge.",
+    importUnreadable:
+      "Diese Datei ließ sich nicht als Transkript lesen. Erwartet wird WebVTT, " +
+      "SRT, eine Whisper-Ausgabe oder ein Text, dessen Zeilen mit einem Namen und " +
+      "einem Doppelpunkt beginnen.",
+    importFromFile: "Transkript einlesen",
     keysTitle: "Tastatur",
     keysClose: "Schließen",
     keysOpen: "Tastenkürzel anzeigen",
@@ -523,6 +555,37 @@ export const TEXTS = {
     noCategoryContains: "No category contains “{filter}”.",
     cancel: "Cancel",
 
+    importOpen: "Read in a transcript",
+    importTitle: "Read in a transcript",
+    importNote:
+      "A recording rarely produces the format read here. Drop the file — WebVTT " +
+      "from Teams or Zoom, SRT, Whisper output, or a text whose lines begin with " +
+      "a name.",
+    importDrop: "Drop a file here, or click",
+    importFound: "Read as {format}: {turns} turns, {speakers} speakers.",
+    importFoundNoSpeakers:
+      "Read as {format}: {turns} turns — but the file names no speakers. Without " +
+      "names there is no telling who is asking from who is answering; all of it " +
+      "is read as material.",
+    importWho: "Who is asking",
+    importNobody: "nobody — every turn is material",
+    importWhyWho:
+      "The interviewer's turns cannot be coded. This is not guessed: a wrong " +
+      "guess would either take half the material out or offer the questions up " +
+      "as findings.",
+    importHeading: "Heading",
+    importHeadingFor: "Interview: {department}",
+    importDate: "Survey date",
+    importNoSections:
+      "The recording carries no guide sections — they belong to the interview " +
+      "guide. A line of the form “## Section: Name” adds them later; everything " +
+      "except the section bar works without them.",
+    importWrite: "Create the transcript",
+    importDone: "{title} created, {turns} turns.",
+    importUnreadable:
+      "This file could not be read as a transcript. What is expected is WebVTT, " +
+      "SRT, a Whisper output, or a text whose lines begin with a name and a colon.",
+    importFromFile: "Read in a transcript",
     keysTitle: "Keyboard",
     keysClose: "Close",
     keysOpen: "Show keyboard shortcuts",

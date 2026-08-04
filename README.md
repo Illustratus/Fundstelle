@@ -75,9 +75,11 @@ in one provenance chain.
   passage differently is agreement rather than a difference. The file is only
   ever read, never written, because a second coding the tool could edit would no
   longer be independent of it. Exports as Markdown for the methods chapter.
-- **Your transcript, not a reformatted one** — a converter reads what the
-  recording actually produced (WebVTT from Teams or Zoom, SRT, Whisper output, a
-  text file whose lines begin with a name) and writes the format the tool reads.
+- **Your transcript, not a reformatted one** — drop what the recording actually
+  produced (WebVTT from Teams or Zoom, SRT, Whisper output, a text file whose
+  lines begin with a name) on the header, and the tool reads it, shows you how it
+  read it, and writes the format it codes in; the same conversion runs from the
+  command line for a batch.
   Subtitle cues by the same speaker are joined into turns, because a cue is
   shorter than a thought. Which speaker is the interviewer is asked, never
   guessed: their turns cannot be coded, so a wrong guess would take half the
@@ -245,17 +247,25 @@ German transcripts written for earlier versions keep working.
 
 Nobody's transcript arrives in that shape. What comes out of a recording is a
 WebVTT from Teams or Zoom, an SRT, a Whisper output, or a text file whose lines
-begin with a name — so there is a converter:
+begin with a name — so the tool reads those.
+
+Drop the file on the `＋` in the header, or on the first screen when there are no
+interviews yet. It reads the file without writing anything, shows how it was
+read and the first turns as they will stand, and asks which of the speakers was
+asking. Then it writes the transcript and opens it.
+
+For a batch, the same conversion runs from the command line:
 
 ```sh
 node tools/import-transcript.mjs recording.vtt
 ```
 
 Run like that it reads the file, says which speakers are in it and stops without
-writing anything. That is deliberate: which of them is the interviewer cannot be
-guessed reliably, and getting it wrong is not cosmetic — the interviewer's turns
-cannot be coded at all, so a wrong guess either removes half the material or
-offers the questions up as findings. Tell it, and it writes:
+writing anything — the same discipline the dialog keeps. Which of them is the
+interviewer cannot be guessed reliably, and getting it wrong is not cosmetic:
+the interviewer's turns cannot be coded at all, so a wrong guess either removes
+half the material or offers the questions up as findings. Tell it, and it
+writes:
 
 ```sh
 node tools/import-transcript.mjs recording.vtt \

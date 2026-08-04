@@ -19,6 +19,7 @@ import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withReasons, withoutCheckMarks } from "./lib/anchoring.js";
 import { agreement, agreementMarkdown } from "./lib/agreement.js";
+import { convert, folderName, readTranscript } from "./lib/import.js";
 import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
 import {
   MOSCOW,
@@ -262,6 +263,86 @@ const server = createServer(async (request, response) => {
         if (error.code !== "EEXIST") throw error;
       }
       return send(response, 201, { interview: EXAMPLE_FOLDER });
+    }
+
+    /* Bringing a recording's transcript in, in two steps.
+       The first only reads: it says which shape the file is, how many turns it
+       became and who is speaking in it. Nothing is written until somebody has
+       said which of those speakers was asking — the interviewer's turns cannot
+       be coded, so guessing would either take half the material out or offer
+       the questions up as findings. */
+    if (path === "/api/import/read" && request.method === "POST") {
+      const { text } = await body(request);
+      // Only the field's absence is a bad request. A file of nothing but blank
+      // lines did have content — it simply could not be read as a transcript,
+      // and saying "field text missing" about a file the reader just dropped is
+      // a message about the wrong thing.
+      if (typeof text !== "string") {
+        return send(response, 400, { error: t("errorFieldMissing", { field: "text" }) });
+      }
+      const read = readTranscript(text, null);
+      if (!read.turns.length) {
+        return send(response, 422, {
+          error: t("importNothingRead", { file: "" }).trim(),
+          code: "importNothingRead",
+        });
+      }
+      return send(response, 200, {
+        format: read.format,
+        speakers: read.speakers,
+        turns: read.turns.length,
+        // A few turns to look at, so the reader can see it was read correctly
+        // before a folder is made.
+        preview: read.turns.slice(0, 4).map((turn) => ({
+          speaker: turn.speaker,
+          text: turn.text.slice(0, 220),
+        })),
+      });
+    }
+
+    if (path === "/api/import" && request.method === "POST") {
+      const wanted = await body(request);
+      if (typeof wanted.text !== "string") {
+        return send(response, 400, { error: t("errorFieldMissing", { field: "text" }) });
+      }
+      const department = (wanted.department ?? "").trim() || null;
+      const title =
+        (wanted.title ?? "").trim() ||
+        (department ? `Interview: ${department}` : t("importDefaultTitle"));
+      const result = convert(wanted.text, {
+        title,
+        department,
+        interviewer: (wanted.interviewer ?? "").trim() || null,
+        respondent: t("importRespondent"),
+        meta: (wanted.date ?? "").trim() ? { [t("metaSurvey")]: wanted.date.trim() } : {},
+      });
+      // A transcript with no turns in it is a folder nobody can code in.
+      if (!result.turns.length) {
+        return send(response, 422, {
+          error: t("importNothingRead", { file: "" }).trim(),
+          code: "importNothingRead",
+        });
+      }
+      const folder = folderName((wanted.folder ?? "").trim() || result.folder);
+      const file = join(TRANSCRIPTS, folder, "final.md");
+      await mkdir(join(TRANSCRIPTS, folder), { recursive: true });
+      try {
+        // `wx` rather than a check and a write: a transcript already there is
+        // one whose turn numbers codings hold on to, and overwriting it would
+        // move every citation in that interview.
+        const handle = await open(file, "wx");
+        await handle.writeFile(result.markdown, "utf8");
+        await handle.close();
+      } catch (error) {
+        if (error.code === "EEXIST") {
+          return send(response, 409, {
+            error: t("importExistsShort", { folder }),
+            code: "importExists",
+          });
+        }
+        throw error;
+      }
+      return send(response, 201, { interview: folder, turns: result.turns.length, title });
     }
 
     // Interviews ------------------------------------------------------------

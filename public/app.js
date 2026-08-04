@@ -95,6 +95,8 @@ const state = {
   analysis: null,
   // The comparison with a second coding, if one lies beside the first.
   agreement: null,
+  // A transcript file read but not yet written out.
+  importing: null,
   citationFilter: { ...EMPTY_SLICE },
   // Categories whose citations are shown in full rather than the first few.
   citationsShown: new Set(),
@@ -307,7 +309,8 @@ function drawOnboarding(root) {
        The one below writes it, since the tool knows the folder and is showing
        the format already. */
     `<p class="onboarding-actions">` +
-    `<button type="button" class="button" id="onboarding-example">${t("writeExample")}</button>` +
+    `<button type="button" class="button" id="onboarding-import">${t("importFromFile")}</button>` +
+    `<button type="button" class="button-quiet" id="onboarding-example">${t("writeExample")}</button>` +
     `<button type="button" class="button-quiet" id="onboarding-reload">${t("reload")}</button></p>` +
     `<p class="column-note">${t("writeExampleNote")}</p>` +
     `<p class="column-note">${t("onboardingStartSystem")}</p>` +
@@ -319,6 +322,9 @@ function drawOnboarding(root) {
     })
     .catch(() => {});
   document.getElementById("onboarding-reload")?.addEventListener("click", () => location.reload());
+  /* The likeliest thing a reader has in hand on this screen is a recording's
+     transcript, not the patience to type the format out. */
+  document.getElementById("onboarding-import")?.addEventListener("click", openImport);
   document.getElementById("onboarding-example")?.addEventListener("click", async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
@@ -1368,6 +1374,115 @@ const KEYS = [
     ],
   },
 ];
+
+/**
+ * Bringing a recording's transcript in, without a command line.
+ *
+ * The converter existed first as a script, which is the right shape for a
+ * batch of twenty and the wrong one for the first interview somebody tries:
+ * asking a researcher to open a terminal is where a tool gets put aside.
+ *
+ * Two steps, the same discipline the script keeps. The file is read first and
+ * nothing is written; what comes back is how it was read, how many turns it
+ * became and who is speaking in it — with the first few turns to look at, so a
+ * misreading is visible before a folder exists. Only then is the one question
+ * asked that cannot be guessed: which of those speakers was asking.
+ */
+function openImport() {
+  const sheet = $("#import-sheet");
+  state.importing = null;
+  $("#import-found").hidden = true;
+  $("#import-file").value = "";
+  $("#import-drop").classList.remove("over");
+  if (!sheet.open) sheet.showModal();
+}
+
+async function readImport(file) {
+  if (!file) return;
+  const text = await file.text();
+  try {
+    const found = await api("/api/import/read", { method: "POST", body: { text } });
+    state.importing = { text, ...found, name: file.name };
+    showImport(found, file.name);
+  } catch (error) {
+    notify(error.data?.code === "importNothingRead" ? t("importUnreadable") : error.message, "error");
+  }
+}
+
+function showImport(found, name) {
+  $("#import-summary").textContent = found.speakers.length
+    ? t("importFound", {
+        format: found.format,
+        turns: found.turns,
+        speakers: found.speakers.length,
+      })
+    : t("importFoundNoSpeakers", { format: found.format, turns: found.turns });
+
+  // The first few turns as they will stand in the file. A subtitle file read
+  // the wrong way looks obviously wrong here, and costs nothing to look at.
+  $("#import-preview").innerHTML = found.preview
+    .map(
+      (turn) =>
+        `<div class="import-turn"><span class="apart-where">${escapeHTML(
+          turn.speaker ?? t("importNobody"),
+        )}</span><span class="apart-text">${escapeHTML(turn.text)}</span></div>`,
+    )
+    .join("");
+
+  const who = $("#import-interviewer");
+  who.innerHTML =
+    `<option value="">${escapeHTML(t("importNobody"))}</option>` +
+    found.speakers
+      .map((speaker) => `<option value="${escapeHTML(speaker)}">${escapeHTML(speaker)}</option>`)
+      .join("");
+  // The first voice is usually the one asking, so it is offered — but it is
+  // offered, not applied, and the sentence underneath says why that matters.
+  if (found.speakers.length) who.value = found.speakers[0];
+
+  /* The file name is the only title anyone has handed over, so it is the
+     default — but „Besprechung-2026-08-04" makes a poor heading and a worse
+     folder name. Typing a department improves it, as long as the heading has
+     not been edited by hand: then it is the author's and stays put. */
+  const stem = name.replace(/\.[^.]+$/, "");
+  const heading = $("#import-title");
+  $("#import-department").value = "";
+  heading.value = stem;
+  heading.dataset.untouched = "true";
+  $("#import-date").value = "";
+  $("#import-found").hidden = false;
+}
+
+async function writeImport(event) {
+  event.preventDefault();
+  if (!state.importing) return;
+  const button = event.target.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    const made = await api("/api/import", {
+      method: "POST",
+      body: {
+        text: state.importing.text,
+        interviewer: $("#import-interviewer").value,
+        department: $("#import-department").value,
+        title: $("#import-title").value,
+        date: $("#import-date").value,
+      },
+    });
+    $("#import-sheet").close();
+    notify(t("importDone", { title: made.title, turns: made.turns }));
+    // Straight into what was just made: the point of it was to start coding.
+    await loadInterviews();
+    state.current = made.interview;
+    $("#interview-choice").value = made.interview;
+    await loadTranscript();
+    setView("code");
+    drawAll();
+  } catch (error) {
+    notify(error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+}
 
 function openKeys() {
   const sheet = $("#keys-sheet");
@@ -3562,6 +3677,35 @@ function connectEvents() {
   $$(".tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
 
   $("#keys").addEventListener("click", openKeys);
+
+  $("#import").addEventListener("click", openImport);
+  $("#import-close").addEventListener("click", () => $("#import-sheet").close());
+  $("#import-file").addEventListener("change", (event) => readImport(event.target.files[0]));
+  $("#import-form").addEventListener("submit", writeImport);
+  $("#import-title").addEventListener("input", (event) => {
+    delete event.target.dataset.untouched;
+  });
+  $("#import-department").addEventListener("input", (event) => {
+    const heading = $("#import-title");
+    if (heading.dataset.untouched !== "true") return;
+    const named = event.target.value.trim();
+    heading.value = named ? t("importHeadingFor", { department: named }) : "";
+  });
+
+  const drop = $("#import-drop");
+  for (const name of ["dragenter", "dragover"]) {
+    drop.addEventListener(name, (event) => {
+      event.preventDefault();
+      drop.classList.add("over");
+    });
+  }
+  for (const name of ["dragleave", "drop"]) {
+    drop.addEventListener(name, () => drop.classList.remove("over"));
+  }
+  drop.addEventListener("drop", (event) => {
+    event.preventDefault();
+    readImport(event.dataTransfer?.files?.[0]);
+  });
   $("#keys-close").addEventListener("click", () => $("#keys-sheet").close());
 
   $("#theme").addEventListener("click", () => {
