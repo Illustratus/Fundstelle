@@ -94,8 +94,9 @@ in one provenance chain.
 node server.js          # http://127.0.0.1:4173
 ```
 
-No login, no build step, no runtime dependencies. `@playwright/test` is only
-needed for the test suite.
+No login, no build step, no runtime dependencies. Node 18 or newer; the tool
+says so and stops rather than failing somewhere in the middle of a file read.
+`@playwright/test` is only needed for the test suite.
 
 With no transcripts yet, the first screen names the folder it reads from, shows
 the format, and offers to write an example interview into it so there is

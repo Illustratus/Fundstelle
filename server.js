@@ -31,6 +31,17 @@ import {
   notesMarkdown,
 } from "./lib/analysis.js";
 
+/* The oldest runtime this is known to work on. Nothing here reaches beyond
+   what Node 18 offers, and saying so is worth a line: on an older one the tool
+   would otherwise fail somewhere in the middle of a file read, with a message
+   about a function that does not exist rather than about the version. */
+const NEEDS_NODE = 18;
+const running = Number(process.versions.node.split(".")[0]);
+if (running < NEEDS_NODE) {
+  console.error(`Fundstelle needs Node ${NEEDS_NODE} or newer; this is Node ${process.versions.node}.`);
+  process.exit(1);
+}
+
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const PUBLIC = join(HERE, "public");
 
