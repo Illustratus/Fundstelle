@@ -39,6 +39,17 @@ where it lies.
 
 ### Fixed
 
+- **A server that is not answering says so in the tool's own words.** This is a
+  program people leave open: the laptop sleeps, the terminal running
+  `node server.js` gets closed. The next thing anybody did produced "Failed to
+  fetch" — the browser's own words, in the browser's own language, in a tool
+  that is otherwise bilingual to the last file — and it faded after six seconds.
+  It now says that nothing of that step was saved, that what stood in the files
+  before stands there unchanged, and where to look; and it stays, because a
+  server that is down is a state rather than an event. Nothing is retried
+  automatically: a request that never arrived is safe to send again and one that
+  timed out on the way back is not, and writing a coding unit twice would be a
+  worse failure than the one being recovered from.
 - **A change in the codings is one change in the diff.** The tool's reason for
   existing is that the codings live in the same folder — and the same git
   history — as the transcripts, and a history is only worth having if a change

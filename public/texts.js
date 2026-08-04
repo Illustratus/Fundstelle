@@ -133,6 +133,10 @@ export const TEXTS = {
     noCategoryContains: "Keine Kategorie enthält „{filter}“.",
     cancel: "Abbrechen",
 
+    errorNoServer:
+      "Fundstelle antwortet nicht. Nichts von diesem Schritt wurde gespeichert; " +
+      "was vorher in den Dateien stand, steht unverändert dort. Läuft das Fenster " +
+      "mit „node server.js“ noch? Danach diese Seite neu laden.",
     anchorsMissing:
       "{n} Kategorien haben noch kein Ankerbeispiel: {names}. Der Kodierleitfaden " +
       "weist die Lücke aus. Eine Fundstelle wird zum Anker, indem man sie " +
@@ -596,6 +600,10 @@ export const TEXTS = {
     noCategoryContains: "No category contains “{filter}”.",
     cancel: "Cancel",
 
+    errorNoServer:
+      "Fundstelle is not answering. Nothing of this step was saved; what stood " +
+      "in the files before stands there unchanged. Is the window running " +
+      "“node server.js” still open? Reload this page afterwards.",
     anchorsMissing:
       "{n} categories have no anchor example yet: {names}. The coding guide " +
       "shows the gap. A citation becomes an anchor by selecting it and ticking " +

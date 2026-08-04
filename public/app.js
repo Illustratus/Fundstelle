@@ -116,14 +116,24 @@ const state = {
 /* Helpers --------------------------------------------------------------- */
 
 async function api(path, options = {}) {
-  const response = await fetch(path, {
-    // The server answers in the language of the request, so an error message
-    // arrives in the language the interface is set to and not in the one the
-    // browser happens to prefer.
-    headers: { "content-type": "application/json", "accept-language": language() },
-    ...options,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  let response;
+  try {
+    response = await fetch(path, {
+      // The server answers in the language of the request, so an error message
+      // arrives in the language the interface is set to and not in the one the
+      // browser happens to prefer.
+      headers: { "content-type": "application/json", "accept-language": language() },
+      ...options,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch {
+    /* The request never reached anybody: the machine went to sleep, or the
+       terminal running the tool was closed. What the browser throws for that is
+       „Failed to fetch" — its own words, in its own language, in a tool that is
+       otherwise bilingual to the last file, and it answers neither of the two
+       questions the reader actually has. */
+    throw Object.assign(new Error(t("errorNoServer")), { data: { code: "offline" }, offline: true });
+  }
   if (response.status === 204) return null;
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw Object.assign(new Error(data.error ?? t("errorGeneric")), { data });
@@ -141,7 +151,7 @@ let offer = null;
  * a matter of time. The undo therefore sits on the message itself and not in a
  * menu, and it stands long enough to be noticed.
  */
-function notify(text, kind = "info", handle = null) {
+function notify(text, kind = "info", handle = null, { keep = false } = {}) {
   const element = $("#message");
   element.dataset.kind = kind;
   element.innerHTML =
@@ -152,6 +162,11 @@ function notify(text, kind = "info", handle = null) {
   offer = handle;
   element.hidden = false;
   clearTimeout(messageTimer);
+  /* A message that goes away by itself is right for something that happened
+     once. A server that is not answering is a state, not an event: every next
+     thing the reader tries will fail the same way, and a notice that fades
+     after six seconds leaves them wondering whether it was real. */
+  if (keep) return;
   messageTimer = setTimeout(
     () => {
       element.hidden = true;
@@ -159,6 +174,11 @@ function notify(text, kind = "info", handle = null) {
     },
     handle ? 15000 : kind === "error" ? 6000 : 3200,
   );
+}
+
+/** What to say about a failure, and whether to leave it standing. */
+function complain(error) {
+  notify(error.message, "error", null, { keep: Boolean(error.offline) });
 }
 
 function escapeHTML(text) {
@@ -334,7 +354,7 @@ function drawOnboarding(root) {
       location.reload();
     } catch (error) {
       button.disabled = false;
-      notify(error.message, "error");
+      complain(error);
     }
   });
 }
@@ -734,7 +754,7 @@ function updateCategory(id, build, message) {
     } catch (error) {
       await loadCategories();
       drawAll();
-      notify(error.message, "error");
+      complain(error);
     }
   });
   return categoryChain;
@@ -883,7 +903,7 @@ async function mergeCategories(source, target) {
       }),
     );
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
   }
 }
 
@@ -1514,7 +1534,7 @@ async function writeImport(event) {
     setView("code");
     drawAll();
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
   } finally {
     button.disabled = false;
   }
@@ -1640,7 +1660,7 @@ async function code(categoryId) {
   } catch (error) {
     // On an overlap the message only helps if it says with what.
     const conflict = error.data?.conflict;
-    if (!conflict) return notify(error.message, "error");
+    if (!conflict) return complain(error);
     const name = categoryById(conflict.category)?.name ?? conflict.category;
     notify(t("overlaps", { name }), "error", {
       label: t("view"),
@@ -1678,7 +1698,7 @@ async function removeCoding(id) {
       run: () => restore(interview, unit),
     });
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
   }
 }
 
@@ -1924,7 +1944,7 @@ async function assign(interview, citationId, change) {
     });
     await refreshAnalysis();
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
   }
 }
 
@@ -1961,7 +1981,7 @@ async function createRequirementFrom(interview, citationId) {
     await refreshAnalysis();
     notify(t("requirementCreatedRefine", { title }));
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
   }
 }
 
@@ -3199,7 +3219,7 @@ async function reanchor(selection) {
     drawAll();
     notify(t("reanchored"));
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
   }
 }
 
@@ -3214,7 +3234,7 @@ async function link(coding, requirementId, on) {
     );
     Object.assign(coding, updated);
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
   }
 }
 
@@ -3843,7 +3863,7 @@ async function confirmNow() {
     }
     jumpToUnreviewed(id);
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
   }
 }
 
@@ -3877,8 +3897,8 @@ function setView(name) {
   $("#view-code").hidden = name !== "code";
   $("#view-catalog").hidden = name !== "catalog";
   $("#view-analysis").hidden = name !== "analysis";
-  if (name === "analysis") drawAnalysis().catch((error) => notify(error.message, "error"));
-  if (name === "catalog") drawCatalog().catch((error) => notify(error.message, "error"));
+  if (name === "analysis") drawAnalysis().catch((error) => complain(error));
+  if (name === "catalog") drawCatalog().catch((error) => complain(error));
 }
 
 function setTheme(value) {
@@ -4020,7 +4040,7 @@ function connectEvents() {
       state.transcript.memo = noteField.value;
       notify(t("interviewNoteSaved"));
     } catch (error) {
-      notify(error.message, "error");
+      complain(error);
     }
   });
 
@@ -4180,7 +4200,7 @@ function connectEvents() {
       drawAll();
       notify(t("unitDeleted"));
     } catch (error) {
-      notify(error.message, "error");
+      complain(error);
     }
   });
 
@@ -4201,7 +4221,7 @@ function connectEvents() {
           drawCategories();
           notify(t("categoryRemoved"));
         })
-        .catch((error) => notify(error.message, "error"));
+        .catch((error) => complain(error));
       return;
     }
 
@@ -4328,7 +4348,7 @@ function connectEvents() {
       drawCategories();
       notify(t(startSystemOpen() ? "startSystemAdded" : "inductiveAdded", { name }));
     } catch (error) {
-      notify(error.message, "error");
+      complain(error);
     }
   });
 
@@ -4346,7 +4366,7 @@ function connectEvents() {
       await drawCatalog();
       notify(t("requirementCreated"));
     } catch (error) {
-      notify(error.message, "error");
+      complain(error);
     }
   });
 
@@ -4372,7 +4392,7 @@ function connectEvents() {
       if ("moscow" in fields) await drawCatalog();
       else await drawCatalogCharts();
     } catch (error) {
-      notify(error.message, "error");
+      complain(error);
     }
   });
 
@@ -4465,13 +4485,13 @@ function connectEvents() {
     const box = event.target.closest("[data-catalog-filter]");
     if (!box) return;
     state.catalogFilter[box.dataset.catalogFilter] = box.checked;
-    drawCatalog().catch((error) => notify(error.message, "error"));
+    drawCatalog().catch((error) => complain(error));
   });
 
   catalog.addEventListener("click", async (event) => {
     if (event.target.id === "catalog-filter-clear") {
       state.catalogFilter = { open: false, unsupported: false, unreviewed: false };
-      return drawCatalog().catch((error) => notify(error.message, "error"));
+      return drawCatalog().catch((error) => complain(error));
     }
     const merge = event.target.closest("[data-requirement-merge]");
     if (merge) {
@@ -4495,7 +4515,7 @@ function connectEvents() {
           }),
         );
       } catch (error) {
-        notify(error.message, "error");
+        complain(error);
       }
       return;
     }
@@ -4509,7 +4529,7 @@ function connectEvents() {
       await drawCatalog();
       notify(t("requirementRemoved"));
     } catch (error) {
-      notify(error.message, "error");
+      complain(error);
     }
   });
 
@@ -4534,7 +4554,7 @@ function connectEvents() {
       Object.assign(coding, updated);
       drawAll();
     } catch (error) {
-      notify(error.message, "error");
+      complain(error);
     }
   });
 
@@ -4552,7 +4572,7 @@ function connectEvents() {
       drawDetail();
       notify(t("requirementCreatedCited", { title }));
     } catch (error) {
-      notify(error.message, "error");
+      complain(error);
     }
   });
 
@@ -4591,7 +4611,7 @@ async function start() {
     watchSections();
     restoreReadingPosition();
   } catch (error) {
-    notify(error.message, "error");
+    complain(error);
     $("#transcript").innerHTML = `<p class="empty-state">${escapeHTML(error.message)}</p>`;
   }
   if ("serviceWorker" in navigator) {
