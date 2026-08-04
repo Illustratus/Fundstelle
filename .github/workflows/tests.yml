@@ -1,0 +1,86 @@
+# The tests, run where anyone can see them.
+#
+# The suite had been green on one machine for its whole life, which is a claim
+# nobody else could check. Three things are worth proving in public rather than
+# asserting in a README: that the tests pass on a machine that is not the
+# author's, that the oldest Node the tool claims to run on actually runs it, and
+# that the Docker image in the installation instructions starts.
+name: tests
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  # So a run can be started by hand after a change to the workflow itself.
+  workflow_dispatch:
+
+# A second push supersedes the first; a queue of stale runs helps nobody.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suite:
+    name: suite on Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      # One version failing should not hide the state of the other.
+      fail-fast: false
+      matrix:
+        # Playwright itself needs Node 20 or newer, so this is the runner's
+        # floor, not the tool's — what the tool's own floor does is the job
+        # below.
+        node: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      # Only Chromium: the suite pins it as its one browser, and pulling three
+      # would triple the minutes for coverage nothing asserts.
+      - run: npx playwright install --with-deps chromium
+
+      - run: npx playwright test
+
+      - name: keep what a failure left behind
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-node-${{ matrix.node }}
+          path: test-results/
+          retention-days: 7
+
+  minimum:
+    name: runs on the oldest Node it claims
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      # No `npm ci` on purpose. package.json declares ">=18" and the README
+      # promises no runtime dependencies; both are claims about a machine with
+      # nothing installed, so that is the machine they are checked on. A matrix
+      # entry running Playwright here would have tested the test runner and
+      # called that a result.
+      - run: node tests/node-minimum.mjs
+
+  docker:
+    name: image builds and starts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The smoke test builds the image itself and then puts it through the
+      # first-run mishaps worth catching: a data folder owned by root, one it
+      # may not write to at all, and a folder named by the German variables of
+      # earlier versions.
+      - run: sh tests/docker-smoke.sh

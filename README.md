@@ -1,5 +1,8 @@
 # Fundstelle — a local-first tool for qualitative content analysis
 
+[![tests](https://github.com/Illustratus/Fundstelle/actions/workflows/tests.yml/badge.svg)](https://github.com/Illustratus/Fundstelle/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Fundstelle — German for the exact place in a text where evidence is found — is
 a coding tool for qualitative interview studies. It runs entirely on your
 machine, stores everything as plain files next to your transcripts, and has
@@ -314,7 +317,17 @@ the figure walks into the paper. The synthetic transcripts under `tests/fixtures
 ```sh
 npm run test:contrast             # measures the charts in both themes
 npm run test:docker               # needs Docker, builds the image
+npm run test:minimum              # the tool on Node 18, nothing installed
 ```
+
+`test:minimum` is the one that checks the two claims made about a machine with
+nothing on it: that the tool runs on the oldest Node it declares, and that it
+needs no runtime dependencies. Playwright itself needs Node 20 or newer, so the
+suite cannot say anything about 18 — running it there would test the test runner
+and call that a result.
+
+Every push and pull request runs all three on GitHub Actions: the suite on Node
+20 and 22, the minimum check on 18, and the Docker image built and started.
 
 The contrast run is part of `npx playwright test` as well. It measures the
 charts in the running application against the WCAG thresholds — 4.5:1 for

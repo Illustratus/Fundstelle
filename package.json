@@ -30,6 +30,7 @@
     "test": "playwright test",
     "test:contrast": "playwright test tests/contrast.spec.js",
     "test:docker": "sh tests/docker-smoke.sh",
+    "test:minimum": "node tests/node-minimum.mjs",
     "fixtures": "node tests/fixtures/generator.mjs"
   },
   "devDependencies": {
