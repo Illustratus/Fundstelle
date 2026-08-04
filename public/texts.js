@@ -293,6 +293,9 @@ export const TEXTS = {
     reanchorCancelled: "Neu verankern abgebrochen.",
     markPassage: "Markiere die Stelle, an der diese Kodiereinheit jetzt steht.",
     everyUnitReviewed: "Jede Kodiereinheit ist geprüft.",
+    interviewReviewedOthersOpen:
+      "Dieses Interview ist durchgesehen. In anderen Interviews stehen noch " +
+      "{n} Kodiereinheiten offen.",
     oneUnreviewed: "1 Stelle noch ungeprüft.",
     manyUnreviewed: "{n} Stellen noch ungeprüft.",
     interviewNoteSaved: "Notiz zum Interview festgehalten.",
@@ -759,6 +762,9 @@ export const TEXTS = {
     reanchorCancelled: "Re-anchoring cancelled.",
     markPassage: "Select the passage where this coding unit now belongs.",
     everyUnitReviewed: "Every coding unit is reviewed.",
+    interviewReviewedOthersOpen:
+      "This interview has been gone through. {n} coding units are still open " +
+      "in other interviews.",
     oneUnreviewed: "1 unit still unreviewed.",
     manyUnreviewed: "{n} units still unreviewed.",
     interviewNoteSaved: "Interview note saved.",

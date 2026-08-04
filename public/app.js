@@ -219,18 +219,40 @@ async function loadRequirements() {
   state.departments = data.departments;
 }
 
+/**
+ * The list of interviews, with what each still has open.
+ *
+ * The counts come from the server when the list is loaded and then go out of
+ * date the moment anybody confirms a unit — so the picker went on offering
+ * „6 offen" for an interview whose last suggestion had just been confirmed, and
+ * anything else reading those counts was wrong in the same way. The interview
+ * on screen is counted from what is actually in hand instead.
+ */
+function drawInterviewList() {
+  const choice = $("#interview-choice");
+  const open = (interview) =>
+    interview.id === state.current && state.transcript
+      ? state.codings.filter((coding) => coding.reviewed !== true && coding.state !== "lost").length
+      : (interview.unreviewed ?? 0);
+  for (const interview of state.interviews) {
+    if (interview.id === state.current && state.transcript) interview.unreviewed = open(interview);
+  }
+  choice.innerHTML = state.interviews
+    .map(
+      (i) =>
+        `<option value="${escapeHTML(i.id)}">${escapeHTML(i.title)}` +
+        `${open(i) ? ` · ${t("openMark", { n: open(i) })}` : ""}</option>`,
+    )
+    .join("");
+  if (state.current) choice.value = state.current;
+}
+
 async function loadInterviews() {
   state.interviews = await api("/api/interviews");
   const choice = $("#interview-choice");
   // An interview that still holds suggestions says so in the list, so that the
   // next one to work through can be picked without opening each in turn.
-  choice.innerHTML = state.interviews
-    .map(
-      (i) =>
-        `<option value="${escapeHTML(i.id)}">${escapeHTML(i.title)}` +
-        `${i.unreviewed ? ` · ${t("openMark", { n: i.unreviewed })}` : ""}</option>`,
-    )
-    .join("");
+  drawInterviewList();
   if (!state.interviews.length) return;
   const remembered = localStorage.getItem(STORAGE.interview);
   state.current = state.interviews.some((i) => i.id === remembered)
@@ -3813,7 +3835,15 @@ function jumpToUnreviewed(afterId = null) {
   if (!queue.length) {
     state.selected = null;
     drawAll();
-    return notify(t("everyUnitReviewed"));
+    /* „Every coding unit is reviewed" is the sentence somebody reads just
+       before they start writing up, and it was said about the interview on
+       screen while the study still carried suggestions elsewhere. The status
+       bar has said which of the two it means for a while; the message that is
+       actually in the reader's eye at that moment did not. */
+    const elsewhere = elsewhereUnreviewed();
+    return notify(
+      elsewhere ? t("interviewReviewedOthersOpen", { n: elsewhere }) : t("everyUnitReviewed"),
+    );
   }
   // After a confirmation the next one in the queue, not back to the start.
   const previousId = afterId ?? state.selected;
@@ -3889,6 +3919,9 @@ function drawAll() {
   drawSections();
   drawCategories();
   drawDetail();
+  // The picker carries a count, and a count that is only right until the next
+  // confirmation is worse than none.
+  drawInterviewList();
 }
 
 function setView(name) {

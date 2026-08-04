@@ -39,6 +39,18 @@ where it lies.
 
 ### Fixed
 
+- **The end of a review pass says which end it is.** Confirming the last
+  suggestion in an interview announced "Every coding unit is reviewed" while the
+  study still carried suggestions in another one — the sentence somebody reads
+  just before they start writing up. The status bar had said the honest thing
+  for a while; the message did not, and a pass is walked with the keyboard, so
+  the message is what is in the reader's eye. It now names how many are open
+  elsewhere, and says the plain thing only when the study really is done.
+- **The interview picker no longer offers a count that has stopped being true.**
+  Its "n open" came from the server when the list was loaded and was never
+  touched again, so an interview whose sixth and last suggestion had just been
+  confirmed went on offering "6 open". The interview on screen is counted from
+  what is in hand.
 - **A server that is not answering says so in the tool's own words.** This is a
   program people leave open: the laptop sleeps, the terminal running
   `node server.js` gets closed. The next thing anybody did produced "Failed to
