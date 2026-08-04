@@ -39,6 +39,15 @@ where it lies.
 
 ### Fixed
 
+- **A saved chart is the picture that was on the screen.** The saving copied a
+  hand-picked six computed properties onto every element, and a hand-picked list
+  falls behind the stylesheet it was written for. It had: `stroke-linejoin` was
+  not on it, so the saturation curve was saved with mitred joins where the
+  screen drew round ones, and nothing about the file looked wrong. It now copies
+  the closed set from the SVG specification, so a rule added tomorrow is carried
+  without anyone remembering. Each saved file is opened as a document of its own
+  by the suite and every drawn element compared against the same element in the
+  page — the check that found this.
 - **Every figure in the cross-table export was typeset as code.** Pandoc parses
   the content of a grid-table cell as blocks, with the cell's own left edge as
   column zero — so four or more leading spaces are an indented code block.

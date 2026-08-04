@@ -2724,6 +2724,29 @@ function drawLegendInto(copy, entries, width, ink, font) {
   return y + 8;
 }
 
+/**
+ * What a stylesheet can change about a drawn element.
+ *
+ * The saved file used to carry a hand-picked six — fill, stroke, stroke width
+ * and three font properties — and a hand-picked list is exactly the kind of
+ * thing that falls behind the stylesheet it was written for. It had:
+ * `stroke-linejoin` was not on it, so a line drawn with round joins was saved
+ * with mitred ones, and nothing about the file looked wrong.
+ *
+ * This is the closed set from the SVG specification instead of the set this
+ * stylesheet happens to use today, so a rule added tomorrow is carried without
+ * anyone remembering to add it here.
+ */
+const PAINTED = [
+  "fill", "fill-opacity", "fill-rule",
+  "stroke", "stroke-opacity", "stroke-width", "stroke-linecap", "stroke-linejoin",
+  "stroke-dasharray", "stroke-dashoffset", "stroke-miterlimit",
+  "opacity", "color", "visibility", "display", "mix-blend-mode", "paint-order",
+  "font-family", "font-size", "font-weight", "font-style", "font-variant",
+  "letter-spacing", "word-spacing",
+  "text-anchor", "text-decoration", "text-transform", "dominant-baseline",
+];
+
 function saveChart(id, file) {
   const svg = document.querySelector(`#${id} svg`);
   if (!svg) return;
@@ -2732,8 +2755,14 @@ function saveChart(id, file) {
   const copies = copy.querySelectorAll("*");
   originals.forEach((element, index) => {
     const style = getComputedStyle(element);
-    for (const property of ["fill", "stroke", "stroke-width", "font-family", "font-size", "font-weight"]) {
-      copies[index].style.setProperty(property, style.getPropertyValue(property));
+    /* Every one of them on every element, rather than only where the value
+       looks unusual. Leaving a property out is safe only if nothing in the
+       saved file would give the element a different one, and inheritance makes
+       that a question about ancestors — a cleverness that would be one more
+       thing to get subtly wrong in a file nobody checks by eye. */
+    for (const property of PAINTED) {
+      const value = style.getPropertyValue(property);
+      if (value) copies[index].style.setProperty(property, value);
     }
   });
   /* The key goes into the file, because it is not in the picture: it is HTML

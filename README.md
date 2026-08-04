@@ -79,7 +79,9 @@ in one provenance chain.
   packed into their own cell rather than fanned across the neighbouring one, so
   a figure is never drawn nearer a gridline it does not belong to; every chart
   saves as an SVG that stands on its own — colours
-  resolved, fonts carried, its key drawn in, nothing fetched from anywhere —
+  resolved, fonts carried, its key drawn in, nothing fetched from anywhere, and
+  the suite opens each saved file as a document of its own and compares every
+  drawn element against the page it came from —
   and the cross table as a Pandoc grid table set to 80 characters — run through
   Pandoc by the test suite, to HTML and to LaTeX, because a table that parses is
   not yet a table that typesets. Twenty interviews
