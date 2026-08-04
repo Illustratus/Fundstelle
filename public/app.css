@@ -1220,6 +1220,11 @@ tbody tr:hover { background: var(--paper); }
 .figures > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .figures .table-frame { margin-top: .5rem; }
 
+.citation-list .open-mark {
+  color: var(--warning);
+  font-weight: 600;
+}
+
 .citation-list summary {
   cursor: pointer;
   font-family: var(--mono);

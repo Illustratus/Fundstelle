@@ -2732,6 +2732,9 @@ async function drawCatalog() {
           (citation) =>
             `<li><span class="head-row"><span>${escapeHTML(citation.department)}</span>` +
             `<span>${t("turn")} ${citation.turn}</span><span>${escapeHTML(citation.categoryName)}</span>` +
+            // What the export says, the screen says too: evidence nobody has
+            // confirmed is a suggestion and carries no weight.
+            (citation.reviewed ? "" : `<span class="open-mark">${t("unreviewed")}</span>`) +
             `<button type="button" class="button-quiet goto" data-passage="${citation.id}"` +
             ` data-interview="${escapeHTML(citation.interview)}">${t("viewInTranscript")}</button></span>` +
             `<blockquote>${quoted(escapeHTML(citation.text))}</blockquote></li>`,

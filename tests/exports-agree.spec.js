@@ -172,6 +172,55 @@ test("the catalog counts the same departments and citations as the tool", async 
   }
 });
 
+test("the catalog says how much of its evidence is unconfirmed", async ({ request }) => {
+  /* The catalog is what carries the prioritization into the paper, and a
+     requirement can rest entirely on suggestions nobody has confirmed. It was
+     the one export that listed its citations without saying so. */
+  const requirement = await (
+    await request.post("/api/requirements", {
+      data: { title: "Volltextsuche über alle Ablagen", moscow: "must" },
+    })
+  ).json();
+
+  const categories = (await (await request.get("/api/categories")).json()).categories;
+  const transcript = await (await request.get(`/api/interviews/${FIRST}`)).json();
+  const codable = transcript.turns
+    .filter((turn) => !turn.interviewer && turn.text.length > 60)
+    .slice(0, 3);
+
+  for (const [index, turn] of codable.entries()) {
+    const coding = await (
+      await request.post(`/api/interviews/${FIRST}/codings`, {
+        data: {
+          turn: turn.number,
+          start: 0,
+          end: 45,
+          category: categories[0].id,
+          text: turn.text.slice(0, 45),
+          reviewed: index === 0,
+        },
+      })
+    ).json();
+    await request.patch(`/api/interviews/${FIRST}/codings/${coding.id}`, {
+      data: { requirements: [requirement.id] },
+    });
+  }
+
+  const markdown = await (
+    await request.get("/api/export/requirements-catalog.md?lang=de")
+  ).text();
+  const section = markdown.slice(markdown.indexOf("## Volltextsuche"));
+
+  // Two of the three are only suggestions, and each one says so.
+  expect((section.match(/\*\*\[ungeprüft\]\*\*/g) ?? []).length).toBe(2);
+  expect(section).toContain("2 von 3 Belegen noch ungeprüft");
+
+  // A confirmed citation carries no flag.
+  const lines = section.split("\n").filter((line) => line.startsWith("- "));
+  expect(lines).toHaveLength(3);
+  expect(lines.filter((line) => !line.includes("ungeprüft"))).toHaveLength(1);
+});
+
 test("the coding guide carries every anchor example and no more", async ({ request }) => {
   await fill(request);
   const analysis = await (await request.get("/api/analysis")).json();

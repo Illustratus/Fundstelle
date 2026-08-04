@@ -22,11 +22,14 @@ in one provenance chain.
 
 ## Features
 
-- **Methodical coding, enforced in the workflow** — coding units snap to word
-  and sentence boundaries, exactly one category per unit, units never cross a
-  speaker turn, and the interviewer's own words cannot be coded at all: they are
-  the instrument, not the material. The server rejects each of these, not just
-  the UI.
+- **Methodical coding, enforced in the workflow** — dragging a selection snaps
+  it to word and sentence boundaries, so a citation never begins mid-word. The
+  rules of the method are kept by the server rather than by the interface:
+  exactly one category per place, a unit belongs to a single speaker turn, and
+  the interviewer's own words cannot be coded at all — they are the instrument,
+  not the material. Snapping is the interface being helpful; the server takes
+  the ranges it is given, so a machine pre-coding is not turned away over a
+  boundary.
 - **Deductive start system plus inductive categories** — bring your own
   category system (see below), refine definitions on the material (the wording
   you started with is preserved and reported — for categories fixed beforehand
