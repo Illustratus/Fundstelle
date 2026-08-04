@@ -20,6 +20,18 @@ where it lies.
   `node tools/import-transcript.mjs recording.vtt`. An existing `final.md` is
   never written over — codings hold on to the turn numbers in it.
 
+### Fixed
+
+- **The prioritization field no longer puts a requirement at the wrong
+  coordinate.** Both its axes count whole things, so requirements sharing a
+  point are the normal case; they were fanned sideways by a constant fifteen
+  pixels. Dots of radius ten overlapped by a third of their width, and a pile of
+  ten reached 67.5 pixels from its gridline — with eight departments the
+  gridlines stand 65 apart, so a requirement named by three departments was
+  drawn nearer the line for four. A pile is now packed into rows inside its own
+  cell, and the cell grows rather than the dots being drawn on top of each
+  other.
+
 ## 0.2.0 — 2026-08-04
 
 ### Added

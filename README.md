@@ -59,7 +59,10 @@ in one provenance chain.
   nobody has confirmed.
 - **Production-grade analytics** — stacked bar chart per category and
   department, a category × guide-section heatmap, cross tables, per-interview
-  progress; every chart saves as an SVG that stands on its own — colours
+  progress; requirements sharing a coordinate in the prioritization field are
+  packed into their own cell rather than fanned across the neighbouring one, so
+  a figure is never drawn nearer a gridline it does not belong to; every chart
+  saves as an SVG that stands on its own — colours
   resolved, fonts carried, its key drawn in, nothing fetched from anywhere —
   and the cross table as a Pandoc grid table set to 80 characters. Twenty interviews
   and a thousand codings draw in a quarter of a second; a category holding

@@ -9,6 +9,7 @@
 
 import { effectiveWord, matchesSlice, occurrences, trimStem } from "./search.js";
 import { sentenceAt, sentences } from "./sentences.js";
+import { layoutBucket } from "./scatter.js";
 import { language, plural, quoted, setLanguage, t } from "./texts.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -3123,13 +3124,11 @@ function priorityFieldHTML(rows, departmentCount) {
   const LEFT = 150;
   const TOP = 16;
   const BOTTOM = 42;
-  const CELL = 46;
-  const SPREAD = 15;
   const maxX = Math.max(1, departmentCount);
   const maxY = OPERATIONS.length;
-  const height = TOP + maxY * CELL + BOTTOM;
 
-  // Group by coordinate, so that overlapping requirements can be spread out.
+  // Group by coordinate. Both axes count whole things, so several requirements
+  // sharing one point is the normal case rather than the exception.
   const buckets = new Map();
   for (const row of rows) {
     const cx = Math.min(maxX, row.departments.length);
@@ -3141,19 +3140,35 @@ function priorityFieldHTML(rows, departmentCount) {
 
   const maxCitations = Math.max(1, ...rows.map((row) => row.citations.length));
   const radius = (count) => 5 + Math.round((count / maxCitations) * 5);
+  // One slot for the widest dot in the chart plus a gap, so the packing is the
+  // same everywhere and two piles can be compared by eye.
+  const slot = radius(maxCitations) * 2 + 3;
 
   /* The right-hand margin has to hold whatever sits on the last gridline, and
      that is the common case rather than the exception: a requirement every
-     department named lands exactly there. With a fixed margin such a dot was
-     drawn half outside the picture and over the axis label beneath it — so the
-     margin is measured from the widest dot and the widest fan of dots sharing a
-     coordinate. */
-  const widestFan = Math.max(0, ...[...buckets.values()].map((bucket) => bucket.length - 1));
-  const RIGHT = Math.ceil(10 + radius(maxCitations) + (widestFan / 2) * SPREAD);
+     department named lands exactly there. The margin and the step depend on
+     each other — a pile may be no wider than its own cell — so they are settled
+     by running the layout twice, which is enough to converge. */
+  let RIGHT = Math.ceil(10 + radius(maxCitations));
+  let stepX = (WIDTH - LEFT - RIGHT) / maxX;
+  let placed = new Map();
+  for (let pass = 0; pass < 2; pass += 1) {
+    stepX = (WIDTH - LEFT - RIGHT) / maxX;
+    placed = new Map(
+      [...buckets].map(([key, bucket]) => [key, layoutBucket(bucket.length, { slot, stepX })]),
+    );
+    const onLastLine = [...buckets.keys()].filter((key) => Number(key.split("|")[0]) === maxX);
+    const reach = Math.max(0, ...onLastLine.map((key) => placed.get(key).width / 2));
+    RIGHT = Math.ceil(10 + radius(maxCitations) + reach);
+  }
+
+  // A pile that wrapped into rows needs the room to do it in; the cell grows
+  // rather than the dots being drawn on top of each other.
+  const tallest = Math.max(0, ...[...placed.values()].map((one) => one.height));
+  const CELL = Math.max(46, Math.ceil(tallest + 8));
+  const height = TOP + maxY * CELL + BOTTOM;
 
   const track = WIDTH - LEFT - RIGHT;
-  const stepX = track / maxX;
-
   const x = (value) => LEFT + value * stepX;
   const y = (value) => TOP + (maxY - value) * CELL;
 
@@ -3171,12 +3186,12 @@ function priorityFieldHTML(rows, departmentCount) {
       `<text class="axis" x="${LEFT - 8}" y="${y(value) + 4}" text-anchor="end">${value}</text>`;
   }
 
-  const points = [...buckets.values()]
-    .flatMap((bucket) =>
+  const points = [...buckets.entries()]
+    .flatMap(([key, bucket]) =>
       bucket.map((entry, index) => {
-        const spread = (index - (bucket.length - 1) / 2) * SPREAD;
-        const cx = x(entry.cx) + spread;
-        const cy = y(entry.cy);
+        const place = placed.get(key).places[index];
+        const cx = x(entry.cx) + place.dx;
+        const cy = y(entry.cy) + place.dy;
         const tip = t("priorityTip", {
           title: entry.row.title,
           departments: entry.row.departments.length,
