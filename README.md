@@ -54,7 +54,10 @@ in one provenance chain.
   turn number and character range, are silently re-anchored when the text
   shifts, and are loudly reported when they can't be. Only what is unambiguous
   moves: a citation that now reads twice, or one that would come to rest on top
-  of a neighbour, is handed over for re-anchoring rather than guessed at.
+  of a neighbour, is handed over for re-anchoring rather than guessed at. Until
+  it has a place again it counts in no figure and appears in no export — a
+  citation nobody can point to is not evidence yet — and both the analysis and
+  the appendix say how many are waiting.
 - **Requirements catalog, graphically worked up** — bundle codings across
   interviews into requirements, prioritized MoSCoW-style; how many departments
   name a requirement is counted from the material, never typed in. A MoSCoW

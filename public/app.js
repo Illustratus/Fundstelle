@@ -2800,7 +2800,14 @@ async function drawAnalysis() {
 
   const color = colorFrom(data);
 
-  const heading = `<h2>${t("analysis")}</h2><p class="lead">${t("analysisLead")}</p>`;
+  /* The figures below leave out whatever lost its place, and a total that
+     quietly got smaller is the kind of thing nobody notices until a reviewer
+     does. So it is said, with the number, above everything it affects. */
+  const heading =
+    `<h2>${t("analysis")}</h2><p class="lead">${t("analysisLead")}</p>` +
+    (data.displaced
+      ? `<p class="drift-line" role="status">${escapeHTML(t("analysisDisplaced", { n: data.displaced }))}</p>`
+      : "");
 
   const allCitations = Object.values(data.citations).flat();
   const reviewedShare = allCitations.length

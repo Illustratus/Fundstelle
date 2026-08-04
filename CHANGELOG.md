@@ -39,6 +39,16 @@ where it lies.
 
 ### Fixed
 
+- **A coding unit that lost its place no longer counts as evidence.** When a
+  transcript is edited so a coded passage can no longer be found unambiguously,
+  the tool hands the unit over for re-anchoring rather than guessing — and then
+  went on counting it: it stood in the cross table, appeared among the citations
+  and was quoted in the coding table, which meant the appendix quoted a sentence
+  the transcript no longer contained. That is precisely the failure the whole
+  anchoring machinery exists to prevent. Such units are now left out of every
+  figure and every export, and the analysis and the appendix say how many were
+  left out; nothing disappears silently, and they can still be anchored again in
+  the coding view.
 - **The prioritization field no longer puts a requirement at the wrong
   coordinate.** Both its axes count whole things, so requirements sharing a
   point are the normal case; they were fanned sideways by a constant fifteen

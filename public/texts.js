@@ -130,6 +130,10 @@ export const TEXTS = {
     noCategoryContains: "Keine Kategorie enthält „{filter}“.",
     cancel: "Abbrechen",
 
+    analysisDisplaced:
+      "{n} Kodiereinheiten haben ihren Platz im Transkript verloren und zählen " +
+      "in keiner Zahl hier mit. In der Kodieransicht sind sie markiert und lassen " +
+      "sich neu verankern.",
     chartSaturationTitle: "Wann kam nichts Neues mehr",
     chartSaturationCaption:
       "Senkrecht die Zahl der bis dahin vergebenen Kategorien, waagerecht die " +
@@ -582,6 +586,10 @@ export const TEXTS = {
     noCategoryContains: "No category contains “{filter}”.",
     cancel: "Cancel",
 
+    analysisDisplaced:
+      "{n} coding units have lost their place in the transcript and count in " +
+      "none of the figures here. They are marked in the coding view and can be " +
+      "anchored again.",
     chartSaturationTitle: "When nothing new arrived any more",
     chartSaturationCaption:
       "Vertically the number of categories used by then, horizontally the " +
