@@ -6,6 +6,17 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **A converter for real transcripts.** `node tools/import-transcript.mjs
+  recording.vtt` reads WebVTT (Teams, Zoom), SRT, Whisper output and plain
+  speaker-labelled text, and writes the format the tool reads. Consecutive cues
+  by the same speaker are joined into turns, because a subtitle cue is shorter
+  than a thought. Which speaker is the interviewer is asked rather than guessed,
+  and an existing `final.md` is never written over.
+
 ## 0.2.0 — 2026-08-04
 
 ### Added

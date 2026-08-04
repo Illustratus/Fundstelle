@@ -27,6 +27,7 @@
   },
   "scripts": {
     "start": "node server.js",
+    "import": "node tools/import-transcript.mjs",
     "test": "playwright test",
     "test:contrast": "playwright test tests/contrast.spec.js",
     "test:docker": "sh tests/docker-smoke.sh",

@@ -75,6 +75,13 @@ in one provenance chain.
   passage differently is agreement rather than a difference. The file is only
   ever read, never written, because a second coding the tool could edit would no
   longer be independent of it. Exports as Markdown for the methods chapter.
+- **Your transcript, not a reformatted one** — a converter reads what the
+  recording actually produced (WebVTT from Teams or Zoom, SRT, Whisper output, a
+  text file whose lines begin with a name) and writes the format the tool reads.
+  Subtitle cues by the same speaker are joined into turns, because a cue is
+  shorter than a thought. Which speaker is the interviewer is asked, never
+  guessed: their turns cannot be coded, so a wrong guess would take half the
+  material out.
 - **Search that understands inflection** — `*` stands for any characters inside
   a word, never across a space. A word that finds nothing at all is tried again
   without its inflecting ending, and the search then says which term it actually
@@ -233,6 +240,41 @@ speaker name becomes the department in the analytics. Gaps in the
 numbering are allowed — the same number must mean the same place across
 revisions. `## Erzählanstoß:` is accepted as an equivalent of `## Section:`, so
 German transcripts written for earlier versions keep working.
+
+### Bringing a recording's transcript in
+
+Nobody's transcript arrives in that shape. What comes out of a recording is a
+WebVTT from Teams or Zoom, an SRT, a Whisper output, or a text file whose lines
+begin with a name — so there is a converter:
+
+```sh
+node tools/import-transcript.mjs recording.vtt
+```
+
+Run like that it reads the file, says which speakers are in it and stops without
+writing anything. That is deliberate: which of them is the interviewer cannot be
+guessed reliably, and getting it wrong is not cosmetic — the interviewer's turns
+cannot be coded at all, so a wrong guess either removes half the material or
+offers the questions up as findings. Tell it, and it writes:
+
+```sh
+node tools/import-transcript.mjs recording.vtt \
+  --interviewer "Anna Berger" --department Sales \
+  --title "Interview 3: Sales" --date "4 August 2026"
+```
+
+`--dry` shows what would be written without writing it, `--into` picks the
+transcript folder, `--folder` the folder name, `--format` overrides the shape if
+the guess is wrong. It never writes over a `final.md` that is already there:
+codings hold on to the turn numbers in that file, so an overwrite would move
+every citation in the interview.
+
+Subtitle files are cut for reading along, not for reading — Teams emits a cue
+every few seconds and a third of them end mid-sentence — so consecutive cues by
+the same speaker are joined into one turn and the timestamp kept is the one the
+speaker began at. Guide sections are not invented: they belong to the interview
+guide, not to the recording, and can be written in afterwards as `## Section:`
+lines. Everything except the section bar works without them.
 
 Files arrive in the shape the editor that wrote them left behind: Windows line
 endings and a byte order mark are read without complaint. Where the format is
