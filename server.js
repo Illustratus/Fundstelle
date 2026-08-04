@@ -18,6 +18,7 @@ import { EXAMPLE_FOLDER, exampleTranscript } from "./lib/example.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withReasons, withoutCheckMarks } from "./lib/anchoring.js";
+import { agreement, agreementMarkdown } from "./lib/agreement.js";
 import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
 import {
   MOSCOW,
@@ -177,6 +178,26 @@ async function allInterviews() {
   const loaded = [];
   for (const { id } of found) loaded.push(await loadChecked(id));
   return loaded;
+}
+
+/**
+ * The comparison with every second coding lying beside a first one.
+ *
+ * Shared by the route the analysis reads and the export the paper carries, so
+ * the figure in the appendix cannot come out different from the figure on the
+ * screen.
+ */
+async function allAgreement() {
+  const all = await allInterviews();
+  const { categories } = await store.categories(START_LANGUAGE ?? FALLBACK);
+  const problems = [];
+  const withOthers = [];
+  for (const one of all) {
+    const { found, problems: broken } = await store.otherCodings(one.transcript.id);
+    problems.push(...broken);
+    withOthers.push({ ...one, others: found });
+  }
+  return { compared: agreement(withOthers, categories), problems };
 }
 
 async function staticFile(response, path) {
@@ -437,6 +458,20 @@ const server = createServer(async (request, response) => {
     }
 
     // Analysis --------------------------------------------------------------
+    /* Intercoder reliability. Its own route rather than part of the analysis:
+       it reads a second file per interview folder, and every view of the
+       analysis would pay for that whether or not a second coding exists. */
+    if (path === "/api/agreement" && request.method === "GET") {
+      const { compared, problems } = await allAgreement();
+      return send(response, 200, {
+        ...compared,
+        problems: problems.map((problem) => ({
+          ...problem,
+          text: t("agreementFileUnreadable", problem),
+        })),
+      });
+    }
+
     if (path === "/api/analysis" && request.method === "GET") {
       const all = await allInterviews();
       const { categories, propositions } = await store.categories(seedLanguage);
@@ -466,6 +501,10 @@ const server = createServer(async (request, response) => {
         word: url.searchParams.get("word") ?? "",
       };
       return send(response, 200, citationsMarkdown(all, categories, slice, language), MARKDOWN);
+    }
+    if (path === "/api/export/agreement.md") {
+      const { compared } = await allAgreement();
+      return send(response, 200, agreementMarkdown(compared, language, t), MARKDOWN);
     }
     if (path === "/api/export/notes.md") {
       const all = await allInterviews();

@@ -62,6 +62,16 @@ in one provenance chain.
   and a thousand codings draw in a quarter of a second; a category holding
   hundreds of citations shows its first few and offers the rest, while its count
   and every export stay the whole number.
+- **Intercoder reliability, without a second workflow** — the second coder runs
+  their own copy of Fundstelle on the same transcripts and hands you their
+  `coding.json`; put it beside your own as `coding.<name>.json` and the analysis
+  compares them. Cohen's κ per category and overall, the raw agreement, the four
+  cell counts it was computed from, and the list of turns the two read
+  differently — which is what a consensus round actually works from. The unit is
+  stated wherever the figure is: per turn and category, so that cutting a
+  passage differently is agreement rather than a difference. The file is only
+  ever read, never written, because a second coding the tool could edit would no
+  longer be independent of it. Exports as Markdown for the methods chapter.
 - **Search that understands inflection** — `*` stands for any characters inside
   a word, never across a space. A word that finds nothing at all is tried again
   without its inflecting ending, and the search then says which term it actually
@@ -164,6 +174,11 @@ whatever else lives next to it. The tool only ever adds files, namely
 `coding.json` beside each `final.md` and the two JSON files at the configured
 location. Nothing that was already there is touched.
 
+A `coding.<name>.json` beside a `coding.json` is read as a second coder's work
+and appears in the intercoder-reliability panel under that name — so
+`coding.anna.json` becomes "anna". Several are allowed and are compared one by
+one. These files are only ever read.
+
 While a change is being written there is briefly a `.lock` file beside the one
 being changed, and a `.tmp` file for the moment the write takes. Both are gone
 again immediately; a lock left behind by a process that was killed is broken by
@@ -257,6 +272,11 @@ Nothing has to be migrated by hand: `kategoriensystem.json`,
 shape, and written back as `categories.json`, `requirements.json` and
 `coding.json` on the next change. Keep a copy of the folder before the first
 run, as you would with any format change.
+
+If the folder is a git repository whose `.gitignore` names the old files to keep
+them in the history — a study that versions its codings next to its transcripts
+does exactly that — add the new names alongside. Nothing fails without it: the
+codings simply stop being versioned from the first change onwards.
 
 The data directory moved from `daten/` to `data/` and the transcript folder
 from `daten/transkripte/` to `data/transcripts/`. If you used the defaults,

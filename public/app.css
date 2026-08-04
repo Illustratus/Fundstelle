@@ -362,6 +362,74 @@ button, select, input, textarea {
   margin-right: .1rem;
 }
 
+/* Agreement with a second coding ------------------------------------------ */
+
+#agreement-part { margin-top: 2.4rem; }
+
+.agreement-one {
+  margin-top: 1.4rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+.agreement-one h4 {
+  margin: 0 0 .3rem;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+.agreement-metrics { margin: .8rem 0; }
+.agreement-tables {
+  display: grid;
+  /* Start, not stretch: the shorter of the two frames would otherwise be pulled
+     to the height of the taller one and read as an empty last row. */
+  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 1rem 1.6rem;
+  margin-top: .9rem;
+}
+.agreement-cells th[scope="row"] { font-weight: 400; }
+
+.agreement-apart { margin-top: 1rem; }
+.agreement-apart > summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.apart-list {
+  list-style: none;
+  margin: .7rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: .5rem;
+}
+.apart-list li {
+  display: grid;
+  gap: .15rem;
+  border-left: 2px solid var(--line-strong);
+  padding: .35rem 0 .35rem .7rem;
+}
+.apart-where,
+.apart-what {
+  font-family: var(--mono);
+  font-size: .64rem;
+  letter-spacing: .04em;
+  color: var(--ink-faint);
+}
+.apart-what { color: var(--ink-soft); }
+.apart-text {
+  font-family: var(--serif);
+  font-size: .92rem;
+  line-height: 1.45;
+}
+.drift-line {
+  margin: .5rem 0;
+  font-size: .8rem;
+  color: var(--warning);
+}
+
 /* The keyboard, written down ---------------------------------------------- */
 
 .keys-sheet {

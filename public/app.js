@@ -93,6 +93,8 @@ const state = {
   instead: null,
   // Last computed analysis, so that the citation slices work without a refetch.
   analysis: null,
+  // The comparison with a second coding, if one lies beside the first.
+  agreement: null,
   citationFilter: { ...EMPTY_SLICE },
   // Categories whose citations are shown in full rather than the first few.
   citationsShown: new Set(),
@@ -2616,6 +2618,7 @@ async function drawAnalysis() {
     `<div class="exports-part"><h3>${t("exports")}</h3><div class="exports">` +
     `<a class="button-quiet" href="${exportHref("/api/export/coding-guide.md")}" download>${t("exportCodingGuide")}</a>` +
     `<a class="button-quiet" href="${exportHref("/api/export/notes.md")}" download>${t("exportNotes")}</a>` +
+    `<a class="button-quiet" href="${exportHref("/api/export/agreement.md")}" download>${t("exportAgreement")}</a>` +
     data.progress
       .map(
         (entry) =>
@@ -2632,12 +2635,165 @@ async function drawAnalysis() {
     heatmapHTML(data) +
     matrix +
     progress +
+    `<section id="agreement-part"></section>` +
     exports +
     `<section id="citations-part">${citationsHTML(data, color)}</section>` +
     `<section id="notes-part">${notesHTML(data)}</section>`;
 
   fitAngledHeadings(root.querySelector("#heatmap svg"));
   markScrollableTables(root);
+  drawAgreement();
+}
+
+/**
+ * How far a second coder read the material the same way.
+ *
+ * Fetched on its own and filled in afterwards, because it reads another file
+ * per interview folder and most studies have none: the analysis must not wait
+ * on a question that, for them, has no answer.
+ *
+ * The percentage of the material a study can show as independently coded is the
+ * quality criterion Mayring asks for, and the number is worthless without its
+ * unit. So the unit stands in the panel, not in a footnote, and beside kappa
+ * are the raw agreement and the four counts it was computed from — a kappa near
+ * zero on a table that is almost all „neither" says more about the measure than
+ * about the coders.
+ */
+async function drawAgreement() {
+  const root = $("#agreement-part");
+  if (!root) return;
+  let data;
+  try {
+    data = await api("/api/agreement");
+  } catch {
+    return;
+  }
+  state.agreement = data;
+  if (!data.coders.length && !data.problems.length) {
+    // Nothing to compare is the normal case, and it is where the feature has to
+    // explain itself: whoever has never done a second coding does not know that
+    // dropping one file in the folder is all it takes.
+    root.innerHTML =
+      `<h3>${t("agreementTitle")}</h3>` +
+      `<p class="lead">${t("agreementNone")}</p>`;
+    return;
+  }
+
+  root.innerHTML =
+    `<h3>${t("agreementTitle")}</h3>` +
+    `<p class="lead">${t("agreementUnit")}</p>` +
+    data.problems.map((problem) => `<p class="drift-line">${escapeHTML(problem.text)}</p>`).join("") +
+    data.comparisons.map(comparisonHTML).join("");
+  markScrollableTables(root);
+}
+
+/** A number that may not exist, said as such rather than as a nought. */
+const asShare = (value) => (value == null ? "—" : `${(value * 100).toFixed(0)} %`);
+const asKappa = (value) => (value == null ? "—" : value.toFixed(2));
+
+function comparisonHTML(one) {
+  const { cells } = one;
+  const named = t(`agreementBand${one.band ? one.band[0].toUpperCase() + one.band.slice(1) : "None"}`);
+  const covered = one.covered.map((entry) => entry.title).join(", ");
+
+  const summary =
+    `<div class="metrics agreement-metrics">` +
+    `<div class="metric"><div class="value">${asKappa(one.kappa)}</div>` +
+    `<span class="label">${t("agreementKappa")}</span></div>` +
+    `<div class="metric"><div class="value">${asShare(one.agreement)}</div>` +
+    `<span class="label">${t("agreementRaw")}</span></div>` +
+    `<div class="metric"><div class="value">${one.units}</div>` +
+    `<span class="label">${t("agreementUnits")}</span></div>` +
+    `<div class="metric"><div class="value">${one.covered.length}</div>` +
+    `<span class="label">${t("agreementInterviews")}</span></div>` +
+    `</div>`;
+
+  // The four counts, because kappa alone cannot be read: the same coefficient
+  // means different things on a balanced table and on a nearly empty one.
+  const counts =
+    `<div class="table-frame"><table class="agreement-cells"><thead><tr>` +
+    `<th>${t("agreementCell")}</th><th class="num">${t("agreementCount")}</th></tr></thead><tbody>` +
+    [
+      ["agreementBoth", cells.both],
+      ["agreementNeither", cells.neither],
+      ["agreementOnlyFirst", cells.onlyFirst],
+      ["agreementOnlySecond", cells.onlySecond],
+    ]
+      .map(
+        ([key, value]) =>
+          `<tr><th scope="row">${escapeHTML(t(key, { coder: one.coder }))}</th>` +
+          `<td class="num">${value}</td></tr>`,
+      )
+      .join("") +
+    `</tbody></table></div>`;
+
+  const byCategory =
+    `<div class="table-frame"><table><thead><tr><th>${t("category")}</th>` +
+    `<th class="num">${t("agreementApart")}</th><th class="num">${t("agreementKappa")}</th>` +
+    `</tr></thead><tbody>` +
+    one.byCategory
+      .map(
+        (row) =>
+          `<tr><th scope="row">${escapeHTML(row.name)}</th>` +
+          `<td class="num">${row.disagreed}</td>` +
+          `<td class="num">${asKappa(row.kappa)}</td></tr>`,
+      )
+      .join("") +
+    `</tbody></table></div>`;
+
+  const apart = one.disagreements.length
+    ? `<details class="agreement-apart"><summary>${escapeHTML(
+        t("agreementApartOpen", { n: one.disagreements.length }),
+      )}</summary><p class="column-note">${t("agreementApartNote")}</p><ul class="apart-list">` +
+      one.disagreements
+        .slice(0, 60)
+        .map(
+          (entry) =>
+            `<li><span class="apart-where">${escapeHTML(entry.interviewTitle)} · ` +
+            `${t("turn")} ${entry.turn}</span>` +
+            // Both readings side by side: that is the question the round settles.
+            `<span class="apart-what">${escapeHTML(
+              t("agreementSideHere", { categories: entry.first.join(", ") || t("agreementNothing") }),
+            )} · ${escapeHTML(
+              t("agreementSideThere", {
+                coder: one.coder,
+                categories: entry.second.join(", ") || t("agreementNothing"),
+              }),
+            )}</span>` +
+            `<span class="apart-text">${escapeHTML(passage(entry.text, 160))}</span></li>`,
+        )
+        .join("") +
+      `</ul>${
+        one.disagreements.length > 60
+          ? `<p class="column-note">${escapeHTML(
+              t("agreementApartMore", { n: one.disagreements.length - 60 }),
+            )}</p>`
+          : ""
+      }</details>`
+    : `<p class="column-note">${t("agreementApartNone")}</p>`;
+
+  return (
+    `<section class="agreement-one"><h4>${escapeHTML(t("agreementWith", { coder: one.coder }))}</h4>` +
+    `<p class="column-note">${escapeHTML(t("agreementReads", { band: named }))}</p>` +
+    summary +
+    `<p class="column-note">${escapeHTML(t("agreementCovered", { interviews: covered }))}</p>` +
+    (one.skipped.length
+      ? `<p class="column-note">${escapeHTML(
+          t("agreementSkipped", { interviews: one.skipped.map((e) => e.title).join(", ") }),
+        )}</p>`
+      : "") +
+    `<div class="agreement-tables">${counts}${byCategory}</div>` +
+    apart +
+    `</section>`
+  );
+}
+
+/** A quotation cut to length without cutting a word in half. */
+function passage(text, length) {
+  const clean = text.replace(/\s*\[\d+:\d{2}\]\s*/g, " ").replace(/\s+/g, " ").trim();
+  if (clean.length <= length) return clean;
+  const cut = clean.slice(0, length);
+  return `${cut.slice(0, cut.lastIndexOf(" "))} …`;
 }
 
 /**

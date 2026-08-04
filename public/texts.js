@@ -255,6 +255,54 @@ export const TEXTS = {
     inductiveCategories: "induktive Kategorien",
     categoriesByDepartment: "Kategorien nach Bereich",
     total: "Summe",
+    /* Intercoder reliability ---------------------------------------------- */
+    agreementTitle: "Übereinstimmung mit einer Zweitkodierung",
+    exportAgreement: "Intercoderreliabilität",
+    agreementNone:
+      "Für dieses Material liegt keine Zweitkodierung vor. Wer eine hat, legt deren " +
+      "coding.json als coding.NAME.json neben die eigene — also etwa " +
+      "data/transcripts/interview-01/coding.anna.json. Die Datei wird nur gelesen, " +
+      "nie verändert. Die Zweitkodierende arbeitet dafür mit einer eigenen Kopie von " +
+      "Fundstelle auf denselben Transkripten.",
+    agreementUnit:
+      "Verglichen wird je Beitrag und Kategorie: Hat die eine Person diese Kategorie " +
+      "irgendwo in diesem Beitrag vergeben, hat es die andere auch? Das überlebt " +
+      "unterschiedliche Segmentierung — wo genau geschnitten wurde, zählt nicht als " +
+      "inhaltliche Abweichung. Jede Zahl unten steht auf dieser Einheit.",
+    agreementWith: "Zweitkodierung „{coder}“",
+    agreementReads: "In der üblichen Lesart nach Landis und Koch: {band}. Das ist eine Konvention der Literatur, kein Messwert.",
+    agreementKappa: "Cohens κ",
+    agreementRaw: "Rohe Übereinstimmung",
+    agreementUnits: "Verglichene Einheiten",
+    agreementInterviews: "Interviews im Vergleich",
+    agreementCovered: "Verglichen wurde: {interviews}.",
+    agreementSkipped:
+      "Ohne Zweitkodierung und deshalb außen vor: {interviews}. Sie mitzuzählen würde " +
+      "jeden unkodierten Beitrag als Abweichung lesen.",
+    agreementCell: "Feld",
+    agreementCount: "Anzahl",
+    agreementBoth: "Beide vergeben",
+    agreementNeither: "Beide nicht vergeben",
+    agreementOnlyFirst: "Nur diese Kodierung",
+    agreementOnlySecond: "Nur „{coder}“",
+    agreementOnlyFirstShort: "nur hier",
+    agreementOnlySecondShort: "nur bei „{coder}“",
+    agreementApart: "Auseinander",
+    agreementApartOpen: "{n} Beiträge, in denen die beiden auseinandergehen",
+    agreementSideHere: "hier {categories}",
+    agreementSideThere: "bei „{coder}“ {categories}",
+    agreementNothing: "nichts",
+    agreementApartNote:
+      "Diese Liste, nicht der Koeffizient, ist die Arbeitsgrundlage der Konsensrunde.",
+    agreementApartNone: "In keinem Beitrag gehen die beiden auseinander.",
+    agreementApartMore: "Weitere {n} Beiträge stehen in der Ausgabe.",
+    agreementBandNone: "keine Übereinstimmung über den Zufall hinaus",
+    agreementBandSlight: "geringe Übereinstimmung",
+    agreementBandFair: "ausreichende Übereinstimmung",
+    agreementBandModerate: "mittlere Übereinstimmung",
+    agreementBandSubstantial: "deutliche Übereinstimmung",
+    agreementBandAlmost: "nahezu vollständige Übereinstimmung",
+
     progressPerInterview: "Stand je Interview",
     turnsTouched: "Beiträge berührt",
     materialCoded: "Material kodiert",
@@ -600,6 +648,54 @@ export const TEXTS = {
     inductiveCategories: "inductive categories",
     categoriesByDepartment: "Categories by department",
     total: "Total",
+    /* Intercoder reliability ---------------------------------------------- */
+    agreementTitle: "Agreement with a second coding",
+    exportAgreement: "Intercoder reliability",
+    agreementNone:
+      "There is no second coding for this material. If you have one, put its " +
+      "coding.json beside your own as coding.NAME.json — say " +
+      "data/transcripts/interview-01/coding.anna.json. The file is only ever read, " +
+      "never changed. The second coder works from their own copy of Fundstelle on " +
+      "the same transcripts.",
+    agreementUnit:
+      "The comparison runs per turn and category: did one of you use this category " +
+      "anywhere in this turn, and did the other? That survives different " +
+      "segmentation — where exactly a passage was cut does not count as a difference " +
+      "in reading. Every figure below rests on that unit.",
+    agreementWith: "Second coding “{coder}”",
+    agreementReads: "In the customary reading after Landis and Koch: {band}. That is a convention of the literature, not a measurement.",
+    agreementKappa: "Cohen's κ",
+    agreementRaw: "Raw agreement",
+    agreementUnits: "Units compared",
+    agreementInterviews: "Interviews compared",
+    agreementCovered: "Compared: {interviews}.",
+    agreementSkipped:
+      "Without a second coding and therefore left out: {interviews}. Counting them " +
+      "would read every uncoded turn as a difference.",
+    agreementCell: "Cell",
+    agreementCount: "Count",
+    agreementBoth: "Both used it",
+    agreementNeither: "Neither used it",
+    agreementOnlyFirst: "This coding only",
+    agreementOnlySecond: "“{coder}” only",
+    agreementOnlyFirstShort: "here only",
+    agreementOnlySecondShort: "“{coder}” only",
+    agreementApart: "Apart",
+    agreementApartOpen: "{n} turns the two read differently",
+    agreementSideHere: "here {categories}",
+    agreementSideThere: "“{coder}” {categories}",
+    agreementNothing: "nothing",
+    agreementApartNote:
+      "This list, not the coefficient, is what a consensus round works from.",
+    agreementApartNone: "There is no turn the two read differently.",
+    agreementApartMore: "A further {n} turns are in the export.",
+    agreementBandNone: "no agreement beyond chance",
+    agreementBandSlight: "slight agreement",
+    agreementBandFair: "fair agreement",
+    agreementBandModerate: "moderate agreement",
+    agreementBandSubstantial: "substantial agreement",
+    agreementBandAlmost: "almost perfect agreement",
+
     progressPerInterview: "Progress per interview",
     turnsTouched: "Turns touched",
     materialCoded: "Material coded",
