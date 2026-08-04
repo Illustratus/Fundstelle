@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -298,6 +298,38 @@ test("the bundled example file is a valid seed", async () => {
 /* The store names the case and leaves the wording to whoever caught it: it does
    not know which language the request came in. The message is the key, and the
    key is what a caller can rely on. */
+
+/* A folder the tool may not write to is the ordinary first-run mishap of a
+   container, not a bug. It has to read as a sentence, not as a stack trace. */
+
+test("a folder that cannot be written to says so", async () => {
+  // Running as root would sail straight through the permission bits and prove
+  // nothing at all.
+  test.skip(process.getuid?.() === 0, "root ignores the permission bits");
+
+  const root = mkdtempSync(join(tmpdir(), "fundstelle-locked-"));
+  const locked = join(root, "locked");
+  mkdirSync(locked);
+  chmodSync(locked, 0o500);
+  try {
+    const store = new Store({
+      toolRoot: locked,
+      transcriptRoot: locked,
+      categoriesFile: join(locked, "categories.json"),
+    });
+    const error = await store.categories().catch((thrown) => thrown);
+    expect(error.key).toBe("errorDataNotWritable");
+    expect(error.params.path).toBe(locked);
+    // Both languages can phrase it, and both name the folder to go and look at.
+    for (const language of ["de", "en"]) {
+      expect(translator(language)(error.key, error.params)).toContain(locked);
+    }
+    expect(translator("en")(error.key, error.params)).toContain("cannot be written to");
+    expect(translator("de")(error.key, error.params)).toContain("lässt sich nicht schreiben");
+  } finally {
+    chmodSync(locked, 0o700);
+  }
+});
 
 test("a missing start system file aborts loudly", async () => {
   await expect(freshStore("/does/not/exist.json").categories()).rejects.toThrow(

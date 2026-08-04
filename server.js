@@ -8,8 +8,9 @@
  */
 
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
-import { extname, join, normalize, resolve } from "node:path";
+import { access, mkdir, readFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findInterviews, loadTranscript } from "./lib/transcript.js";
@@ -433,7 +434,10 @@ const server = createServer(async (request, response) => {
     send(response, 404, { error: t("errorUnknownEndpoint") });
   } catch (error) {
     const status = error.status ?? 500;
-    if (status === 500) console.error(error);
+    // A named case has already been thought through and reads as a sentence;
+    // dumping its stack on top only buries the sentence.
+    if (status === 500 && !error.key) console.error(error);
+    else if (error.key) console.error(`${error.key}: ${t(error.key, error.params)}`);
     // The storage layer throws a key; the request knows the language. Anything
     // without a key is an unforeseen error and keeps its own wording.
     send(response, status, {
@@ -444,7 +448,27 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
+/**
+ * Says at startup what would otherwise only show at the first click.
+ *
+ * A container pointed at a folder it may not write to comes up looking healthy
+ * and fails on the first coding. Finding that out while starting costs one
+ * check and saves reading a stack trace.
+ */
+async function checkDataFolder() {
+  const folder = dirname(store.categoriesFile);
+  try {
+    await mkdir(folder, { recursive: true });
+    await access(folder, constants.W_OK);
+  } catch {
+    console.warn(`! ${folder} is not writable — codings cannot be saved.`);
+    console.warn("! The folder belongs to another user or is mounted read-only.");
+    console.warn("! See the Docker section of the README for the usual causes.");
+  }
+}
+
+server.listen(PORT, HOST, async () => {
   console.log(`Fundstelle on http://${HOST}:${PORT}`);
   console.log(`Transcripts from ${TRANSCRIPTS}`);
+  await checkDataFolder();
 });
