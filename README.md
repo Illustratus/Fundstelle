@@ -70,8 +70,14 @@ in one provenance chain.
   note search, and the citation export runs the slice the screen ran. Which
   endings inflect follows the language you work in — a short list for German and
   one for English, not a stemmer pretending to be complete.
-- **Keyboard-first** — number keys assign categories, typing filters, `j`/`k`
-  walk the transcript, `/` jumps to search, `Enter` drives the review pass.
+- **Keyboard-first, including the act of coding** — `s` takes up a sentence and
+  the arrows walk on from there, across the turn boundary and past the
+  interviewer; `⇧↓` takes one sentence more when the unit is longer than one.
+  Number keys assign categories, typing filters, `j`/`k` walk the transcript,
+  `/` jumps to search, `Enter` drives the review pass. After assigning, the
+  cursor already stands on the next sentence, so a pass through an interview
+  never needs the mouse. Press `?` for the whole list, in the language of the
+  interface.
 - **Bilingual to the last file** — every export and every error message is
   written in the language you work in. The interface sends its choice along, so
   a coding guide exported from the English interface reads as English prose with
@@ -80,7 +86,9 @@ in one provenance chain.
 - **Considered design** — an editorial, manuscript-like reading surface with
   light and dark themes, visible focus states, and reduced-motion support. The
   chart palettes are held to the WCAG contrast thresholds in both themes by a
-  test that measures them, not by eye. Printing gives a document rather than a
+  test that measures them, not by eye — and so is every word of the interface:
+  a test walks each view and measures each label against the surface it really
+  sits on. Printing gives a document rather than a
   screenshot: the controls drop away, what is folded shut is printed open, and a
   page printed from the dark theme comes out on white paper with its heatmap
   reading the right way round.

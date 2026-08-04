@@ -8,6 +8,7 @@
 */
 
 import { effectiveWord, matchesSlice, occurrences, trimStem } from "./search.js";
+import { sentenceAt, sentences } from "./sentences.js";
 import { language, plural, quoted, setLanguage, t } from "./texts.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -71,6 +72,9 @@ const state = {
   categories: [],
   propositions: {},
   selection: null,
+  // Where the keyboard stands in the material: turn, sentence, and how many
+  // sentences the run holds. Null whenever the choice came from the mouse.
+  sentence: null,
   selected: null,
   expanded: new Set(),
   // A coding rule begun but not yet submitted, per category. It sits in no
@@ -1215,33 +1219,99 @@ function selectSentence(event) {
   if (!selection || selection.rangeCount === 0) return;
   const range = selection.getRangeAt(0);
   const middle = textPosition(field, range.startContainer, range.startOffset);
+  showSentences(number, sentenceAt(turn.text, middle), 1, false);
+}
 
-  const text = turn.text;
-  let from = 0;
-  let to = text.length;
-  for (let i = middle - 1; i > 0; i--) {
-    if (/[.!?]/.test(text[i]) && /\s/.test(text[i + 1] ?? " ")) {
-      from = i + 1;
-      break;
-    }
-  }
-  for (let i = middle; i < text.length; i++) {
-    if (/[.!?]/.test(text[i])) {
-      to = i + 1;
-      break;
-    }
-  }
-  const { start, end } = sharpenEdges(text, from, to);
-  if (end - start < 2) return;
+/**
+ * Put the choice on a run of sentences, from wherever it came.
+ *
+ * The double click points at one with the mouse, the keyboard walks from one to
+ * the next; both end here, so both save the same passage. `span` is how many
+ * sentences the run holds — a coding unit is often two or three, and picking
+ * them up one at a time is the difference between a keyboard that can code and
+ * one that can only pretend to.
+ */
+function showSentences(number, index, span, byKey) {
+  const turn = state.transcript?.turns.find((other) => other.number === number);
+  const field = document.getElementById(`turn-${number}`)?.querySelector(".text");
+  if (!turn || !field) return false;
+  const all = sentences(turn.text);
+  const first = Math.max(0, Math.min(index, all.length - 1));
+  const last = Math.max(first, Math.min(first + span - 1, all.length - 1));
+
+  const { start, end } = sharpenEdges(turn.text, all[first][0], all[last][1]);
+  if (end - start < 2) return false;
   const shown = showSelection(field, start, end);
+  if (!shown) return false;
   select({
     turn: number,
     start,
     end,
-    text: text.slice(start, end),
-    rect: (shown ?? range).getBoundingClientRect(),
+    text: turn.text.slice(start, end),
+    rect: shown.getBoundingClientRect(),
     interviewer: turn.interviewer,
   });
+  // The interviewer's turn is refused inside `select`, and then there is no
+  // cursor to leave behind either.
+  if (!state.selection) return false;
+  state.sentence = { turn: number, index: first, span: last - first + 1, byKey };
+  // The arrows only mean something while a sentence is held, so the bar says so
+  // only then.
+  $("#coding-bar-walk").hidden = !byKey;
+  return true;
+}
+
+/** The turns that may be coded at all, in reading order. */
+function codableTurns() {
+  return (state.transcript?.turns ?? []).filter((turn) => !turn.interviewer);
+}
+
+/**
+ * Walk the material sentence by sentence, across the turn boundary.
+ *
+ * Stopping at the end of a turn would make the keyboard a half measure: the
+ * next passage is usually in the next turn, and the interviewer's turns in
+ * between are not codable anyway, so they are stepped over rather than offered
+ * and then refused.
+ */
+function walkSentence(direction) {
+  const codable = codableTurns();
+  if (!codable.length) return;
+  const here = state.sentence;
+  if (!here) {
+    const start = codable.find((turn) => turn.number >= (state.inFocus ?? turnInWindow() ?? 0));
+    const turn = start ?? codable[0];
+    return holdSentence(turn.number, direction < 0 ? sentences(turn.text).length - 1 : 0);
+  }
+  const at = codable.findIndex((turn) => turn.number === here.turn);
+  const text = codable[at]?.text ?? "";
+  // Extending downwards and then stepping on continues after the whole run.
+  const from = direction > 0 ? here.index + here.span - 1 : here.index;
+  const next = from + direction;
+  if (next >= 0 && next < sentences(text).length) return holdSentence(here.turn, next);
+
+  const neighbour = codable[at + direction];
+  if (!neighbour) return;
+  holdSentence(neighbour.number, direction > 0 ? 0 : sentences(neighbour.text).length - 1);
+}
+
+/** Take up a sentence, follow it with the focus and bring it into view. */
+function holdSentence(number, index) {
+  if (!showSentences(number, index, 1, true)) return;
+  state.inFocus = number;
+  showFocus();
+  const field = document.getElementById(`turn-${number}`);
+  const box = field?.getBoundingClientRect();
+  if (box && (box.top < 96 || box.bottom > window.innerHeight - 160)) {
+    field.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+/** Take one sentence more or one less into the run. */
+function stretchSentence(by) {
+  const here = state.sentence;
+  if (!here) return;
+  showSentences(here.turn, here.index, Math.max(1, here.span + by), true);
 }
 
 /**
@@ -1252,6 +1322,71 @@ function selectSentence(event) {
  * the one that is new and unfamiliar. Instead of binding further keys, typed
  * letters filter the list; the digit always means the n-th *shown* category.
  */
+/**
+ * What the keys do, written down where the keys are.
+ *
+ * The tool has been keyboard-first from the start and said so only in its
+ * README — which is the one place a person sitting in front of it is not
+ * looking. Every shortcut that exists is listed here, in the language of the
+ * interface, one keystroke away from every screen.
+ */
+const KEYS = [
+  {
+    title: "keysMove",
+    rows: [
+      [["j"], "keyTurnNext"],
+      [["k"], "keyTurnBack"],
+      [["/"], "keySearch"],
+      [["Enter"], "keySearchNext"],
+    ],
+  },
+  {
+    title: "keysChoose",
+    rows: [
+      [["s"], "keySentence"],
+      [["↓", "↑"], "keyWalk"],
+      [["⇧↓", "⇧↑"], "keyStretch"],
+      [["2×"], "keyDouble"],
+    ],
+  },
+  {
+    title: "keysAssign",
+    rows: [
+      [["1", "…", "9"], "keyDigit"],
+      [["a", "…", "z"], "keyLetters"],
+      [["Enter"], "keyEnterOne"],
+    ],
+  },
+  {
+    title: "keysGeneral",
+    rows: [
+      [["Enter"], "keyReview"],
+      [["Esc"], "keyEscape"],
+      [["?"], "keyHelp"],
+    ],
+  },
+];
+
+function openKeys() {
+  const sheet = $("#keys-sheet");
+  $("#keys-groups").innerHTML = KEYS.map(
+    (group) =>
+      `<section><h3>${escapeHTML(t(group.title))}</h3><dl>` +
+      group.rows
+        .map(
+          ([keys, what]) =>
+            `<dt>${keys
+              .map((key) =>
+                key === "…" ? `<span class="key-to">…</span>` : `<kbd>${escapeHTML(key)}</kbd>`,
+              )
+              .join("")}</dt>` + `<dd>${escapeHTML(t(what))}</dd>`,
+        )
+        .join("") +
+      `</dl></section>`,
+  ).join("");
+  if (!sheet.open) sheet.showModal();
+}
+
 function barCategories() {
   const wanted = state.filter.toLowerCase();
   if (!wanted) return state.categories;
@@ -1280,6 +1415,10 @@ function drawBarChoices() {
 function select(selection) {
   state.selection = selection;
   state.filter = "";
+  // Whoever selects afresh — with the mouse, say — puts down the sentence
+  // cursor; the arrow keys must not go on walking from somewhere else.
+  state.sentence = null;
+  $("#coding-bar-walk").hidden = true;
   const bar = $("#coding-bar");
   $("#coding-bar-quote").textContent = quoted(withoutTimestamps(selection.text));
   drawBarChoices();
@@ -1311,7 +1450,9 @@ function select(selection) {
 
 function releaseSelection() {
   state.selection = null;
+  state.sentence = null;
   state.filter = "";
+  $("#coding-bar-walk").hidden = true;
   $("#coding-bar").hidden = true;
   document.getSelection()?.removeAllRanges();
 }
@@ -1319,6 +1460,10 @@ function releaseSelection() {
 async function code(categoryId) {
   if (!state.selection) return;
   const { turn, start, end, text } = state.selection;
+  // Coding from the keyboard is coding in a row: the cursor goes on to the
+  // sentence after the run, so the next unit is one keystroke away instead of
+  // sending the hand back to the mouse. A double click keeps its passage.
+  const walkOn = state.sentence?.byKey ? { ...state.sentence } : null;
   try {
     const created = await api(`/api/interviews/${encodeURIComponent(state.current)}/codings`, {
       method: "POST",
@@ -1332,6 +1477,13 @@ async function code(categoryId) {
     const element = document.querySelector(`.segment[data-id="${created.id}"]`);
     if (element) element.dataset.new = "true";
     notify(t("codedAs", { name: categoryById(categoryId)?.name }));
+    if (walkOn) {
+      state.sentence = walkOn;
+      walkSentence(1);
+      // At the end of the material there is nothing to go on to, and a cursor
+      // without a selection would only mislead the next keystroke.
+      if (!state.selection) state.sentence = null;
+    }
   } catch (error) {
     // On an overlap the message only helps if it says with what.
     const conflict = error.data?.conflict;
@@ -3253,6 +3405,9 @@ function connectEvents() {
 
   $$(".tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
 
+  $("#keys").addEventListener("click", openKeys);
+  $("#keys-close").addEventListener("click", () => $("#keys-sheet").close());
+
   $("#theme").addEventListener("click", () => {
     const now = document.documentElement.dataset.theme;
     setTheme(now === "dark" ? "light" : now === "light" ? "auto" : "dark");
@@ -3358,6 +3513,13 @@ function connectEvents() {
   $("#search-previous").addEventListener("click", () => jumpMatch(-1));
 
   document.addEventListener("keydown", (event) => {
+    // While the sheet is open the keys are the dialog's: Escape closes it, and
+    // nothing behind it may quietly act on a keystroke meant for the list.
+    if ($("#keys-sheet").open) return;
+    if (event.key === "?" && !event.target.matches("input, textarea, select")) {
+      event.preventDefault();
+      return openKeys();
+    }
     if (event.key === "Escape") {
       if (document.activeElement === searchField) {
         clearSearch();
@@ -3397,6 +3559,13 @@ function connectEvents() {
         event.preventDefault();
         return jumpTurn(event.key === "j" ? 1 : -1);
       }
+      // The one act the tool exists for used to need a mouse: a passage can
+      // only be chosen by dragging over it. „s" takes up the first sentence of
+      // the turn in focus, and from there the arrows do the walking.
+      if (event.key === "s" && state.view === "code") {
+        event.preventDefault();
+        return walkSentence(1);
+      }
       // Review: Enter confirms the chosen passage and moves on; without a
       // chosen one it starts at the first unreviewed.
       if (event.key === "Enter" && state.view === "code") {
@@ -3404,6 +3573,14 @@ function connectEvents() {
         return state.selected ? confirmAndContinue() : jumpToUnreviewed();
       }
       return;
+    }
+
+    // Walking and stretching belong to the sentence cursor. A selection dragged
+    // with the mouse has no cursor, and the arrows then stay the browser's.
+    if (state.sentence && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      event.preventDefault();
+      const forward = event.key === "ArrowDown";
+      return event.shiftKey ? stretchSentence(forward ? 1 : -1) : walkSentence(forward ? 1 : -1);
     }
 
     if (/^[1-9]$/.test(event.key)) {

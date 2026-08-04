@@ -1250,7 +1250,17 @@ test("the slice shows the unreviewed passages", async ({ page, request }) => {
 test("a requirement emerges from a citation without switching the view", async ({ page }) => {
   await code(page, 4, 0, 40, "routine");
   await page.locator("#detail-memo").fill("Die Ablage benachrichtigt nicht von selbst.");
-  await page.locator("#detail-memo").blur();
+  /* The memo saves on blur and the answer redraws the transcript. Reading on
+     without waiting for it meant the next selection occasionally reached for a
+     turn that had just been replaced — the same flake as above. */
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        /\/api\/interviews\/[^/]+\/codings\/[^/]+$/.test(new URL(response.url()).pathname) &&
+        response.request().method() === "PATCH",
+    ),
+    page.locator("#detail-memo").blur(),
+  ]);
   await code(page, 6, 0, 40, "routine");
 
   await page.locator('.tab[data-view="analysis"]').click();

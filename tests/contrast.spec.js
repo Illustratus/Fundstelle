@@ -141,3 +141,116 @@ for (const theme of ["light", "dark"]) {
     expect(SHAPE).toBe(3);
   });
 }
+
+/**
+ * And the same standard for the interface itself.
+ *
+ * The charts were measured from the start; the interface around them was
+ * eyeballed. That is how a quiet grey came to be used in three dozen places at
+ * 2.9:1 — every field label, every count, every hint in the whole tool, below
+ * the threshold and nobody the wiser, because each one on its own looks like a
+ * deliberately unobtrusive label rather than an unreadable one.
+ *
+ * This walks what is actually on the screen: every element that carries text of
+ * its own, measured against the surface it really sits on, ancestors blended in
+ * where a background is translucent.
+ */
+
+const readText = () => {
+  const parse = (value) => {
+    const found = value.match(/-?\d*\.?\d+/g);
+    if (!found) return null;
+    const [r, g, b, a = 1] = found.map(Number);
+    return [r, g, b, a];
+  };
+  const luminance = ([r, g, b]) =>
+    [r, g, b]
+      .map((c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4))
+      .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+  const ratio = (a, b) => {
+    const [bright, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (bright + 0.05) / (dark + 0.05);
+  };
+  const over = (front, back) =>
+    front.slice(0, 3).map((channel, index) => front[3] * channel + (1 - front[3]) * back[index]);
+
+  /** The colour actually behind an element, translucent layers blended in. */
+  const surfaceOf = (element) => {
+    const layers = [];
+    for (let node = element; node; node = node.parentElement) {
+      const colour = parse(getComputedStyle(node).backgroundColor);
+      if (!colour || colour[3] === 0) continue;
+      layers.push(colour);
+      if (colour[3] === 1) break;
+    }
+    let base = [255, 255, 255];
+    for (const layer of layers.reverse()) base = over(layer, base);
+    return base;
+  };
+
+  const found = [];
+  for (const element of document.querySelectorAll("body *")) {
+    if (element.closest("svg, .visually-hidden, [hidden]")) continue;
+    // Only elements with words of their own; a wrapper inherits its child's.
+    const own = [...element.childNodes]
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.nodeValue.trim())
+      .join("");
+    if (own.length < 2) continue;
+    const box = element.getBoundingClientRect();
+    if (!box.width || !box.height) continue;
+    const style = getComputedStyle(element);
+    if (style.visibility === "hidden" || Number(style.opacity) === 0) continue;
+
+    const colour = parse(style.color);
+    if (!colour) continue;
+    const size = parseFloat(style.fontSize);
+    const weight = Number(style.fontWeight) || 400;
+    // WCAG's large-text allowance: 18.66px bold, or 24px at any weight.
+    const large = size >= 24 || (size >= 18.66 && weight >= 700);
+    found.push({
+      what: `${element.tagName.toLowerCase()}.${element.className || "—"}`.slice(0, 60),
+      words: own.slice(0, 40),
+      ratio: ratio(over([...colour.slice(0, 3), colour[3]], surfaceOf(element)), surfaceOf(element)),
+      need: large ? 3 : 4.5,
+    });
+  }
+  return found;
+};
+
+for (const theme of ["light", "dark"]) {
+  test(`every word of the interface is readable in the ${theme} theme`, async ({ page }) => {
+    await page.goto("/?lang=de");
+    await page.waitForSelector(".turn");
+    await page.evaluate((wanted) => {
+      document.documentElement.dataset.theme = wanted;
+    }, theme);
+
+    const measured = [];
+    // Every view, and the two panels that are folded away by default: a hint
+    // nobody can read is no better for being one click deep.
+    for (const view of ["code", "catalog", "analysis"]) {
+      await page.locator(`.tab[data-view="${view}"]`).click();
+      if (view === "code") {
+        await page.locator("#note-shell summary").click();
+        await page.locator("#inductive-shell summary").click();
+        await page.locator(".category").first().click();
+      }
+      await page.waitForTimeout(120);
+      measured.push(...(await page.evaluate(readText)));
+    }
+
+    expect(measured.length).toBeGreaterThan(80);
+    const failures = [
+      ...new Set(
+        measured
+          .filter((entry) => entry.ratio < entry.need)
+          .map(
+            (entry) =>
+              `${entry.what} — "${entry.words}": ${entry.ratio.toFixed(2)} < ${entry.need}`,
+          ),
+      ),
+    ];
+    expect(failures, `text below the threshold in the ${theme} theme`).toEqual([]);
+  });
+}
