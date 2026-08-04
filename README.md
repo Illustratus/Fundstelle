@@ -177,6 +177,14 @@ numbering are allowed — the same number must mean the same place across
 revisions. `## Erzählanstoß:` is accepted as an equivalent of `## Section:`, so
 German transcripts written for earlier versions keep working.
 
+Files arrive in the shape the editor that wrote them left behind: Windows line
+endings and a byte order mark are read without complaint. Where the format is
+not kept, the tool says so rather than showing a short interview — a line that
+looks like a turn but was not read as one is named with its line number and the
+form expected, and a turn number used twice is reported, because a coding holds
+its place by that number and a number used twice makes every citation on it
+ambiguous. The file itself is never corrected; it is yours.
+
 ## Your own category system
 
 On first start (no `categories.json` yet) the tool seeds a deductive start

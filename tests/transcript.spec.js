@@ -1,0 +1,106 @@
+import { expect, test } from "@playwright/test";
+
+import { parseTranscript, withProblemText } from "../lib/transcript.js";
+import { translator } from "../lib/texts.js";
+
+/**
+ * What the reader gets handed a transcript that does not keep the format.
+ *
+ * A tool that is given away is given files it did not make: exported from Word
+ * with the timestamps stripped, a turn number pasted twice, a heading written
+ * by hand. The strict form is what keeps a citation citable, so none of it is
+ * guessed at — but it used to pass in silence, and an interview that comes out
+ * short with nothing said about why is worse than one that refuses.
+ */
+
+const WELL_FORMED =
+  "# Interview 1: Sales\n\n## Section: 1 · Filing\n\n" +
+  "**1 · Interviewer [0:05]**\n\nHow do you record knowledge?\n\n" +
+  "**2 · Sales [0:15]**\n\nMostly in notes I never find again.\n";
+
+test("a transcript that keeps the format reports nothing", () => {
+  const parsed = parseTranscript(WELL_FORMED, "x");
+  expect(parsed.problems).toEqual([]);
+  expect(parsed.turns).toHaveLength(2);
+});
+
+test("the shapes a file arrives in are read rather than refused", () => {
+  // Windows line endings, and a byte order mark from an editor that adds one.
+  for (const [label, text] of [
+    ["CRLF", WELL_FORMED.replace(/\n/g, "\r\n")],
+    ["BOM", "﻿" + WELL_FORMED],
+  ]) {
+    const parsed = parseTranscript(text, "x");
+    expect(parsed.turns, label).toHaveLength(2);
+    expect(parsed.turns[1].text, label).toBe("Mostly in notes I never find again.");
+  }
+});
+
+test("a turn number used twice is called out", () => {
+  const twice =
+    "# Interview 1: Sales\n\n**5 · Sales [0:05]**\n\nFirst.\n\n**5 · Sales [0:15]**\n\nSecond.\n";
+  const { problems, turns } = parseTranscript(twice, "x");
+
+  // Both turns are kept — the file is the author's, not the tool's to correct.
+  expect(turns).toHaveLength(2);
+  expect(problems).toHaveLength(1);
+  expect(problems[0].key).toBe("transcriptDuplicateTurn");
+  expect(problems[0].params.turn).toBe(5);
+  expect(problems[0].params.line).toBe(7);
+});
+
+test("a line shaped like a turn that was not read is named with its line", () => {
+  const missing = "# Interview 1: Sales\n\n**1 · Sales**\n\nThis text goes missing.\n";
+  const { problems, turns } = parseTranscript(missing, "x");
+
+  expect(turns).toHaveLength(0);
+  const unread = problems.find((one) => one.key === "transcriptUnreadTurn");
+  expect(unread).toBeTruthy();
+  expect(unread.params.line).toBe(3);
+  expect(unread.params.text).toBe("**1 · Sales**");
+  // And the file as a whole is reported as yielding nothing.
+  expect(problems.some((one) => one.key === "transcriptNoTurns")).toBe(true);
+});
+
+test("a file with nothing in it says so instead of showing an empty screen", () => {
+  const { problems, turns } = parseTranscript("", "x");
+  expect(turns).toHaveLength(0);
+  expect(problems.map((one) => one.key)).toEqual(["transcriptNoTurns"]);
+});
+
+test("the problems are worded in the language that asked", () => {
+  const twice =
+    "# Interview 1: Sales\n\n**5 · Sales [0:05]**\n\nFirst.\n\n**5 · Sales [0:15]**\n\nSecond.\n";
+  const { problems } = parseTranscript(twice, "x");
+
+  const german = withProblemText(problems, translator("de"))[0].text;
+  const english = withProblemText(problems, translator("en"))[0].text;
+  expect(german).toContain("Beitrag 5 kommt mehrfach vor");
+  expect(english).toContain("Turn 5 occurs more than once");
+  // Both name the line, because that is what makes it fixable.
+  expect(german).toContain("7");
+  expect(english).toContain("7");
+});
+
+test("what could not be read is put in front of the reader", async ({ page }) => {
+  // The interview the suite works on keeps the format, so nothing is shown.
+  await page.goto("/?lang=de");
+  await page.waitForSelector(".turn");
+  await expect(page.locator("#transcript-problems")).toBeHidden();
+
+  // With a file that does not, the panel names each place.
+  await page.route("**/api/interviews/interview-01", async (route) => {
+    const answer = await route.fetch();
+    const data = await answer.json();
+    data.problems = [
+      { key: "transcriptDuplicateTurn", text: "Beitrag 5 kommt mehrfach vor (Zeile 7)." },
+      { key: "transcriptUnreadTurn", text: "Zeile 17 sieht aus wie ein Beitrag." },
+    ];
+    await route.fulfill({ json: data });
+  });
+  await page.reload();
+  await expect(page.locator("#transcript-problems")).toBeVisible();
+  await expect(page.locator("#transcript-problems h2")).toContainText("2 Stellen");
+  await expect(page.locator("#transcript-problems li")).toHaveCount(2);
+  await expect(page.locator("#transcript-problems")).toContainText("Beitrag 5 kommt mehrfach vor");
+});

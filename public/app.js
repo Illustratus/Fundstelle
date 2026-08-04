@@ -527,6 +527,31 @@ function jumpTurn(direction) {
     ?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+/**
+ * What could not be read out of the transcript file.
+ *
+ * A turn without a timestamp used to fall through in silence and take its text
+ * with it; two turns carrying the same number made every citation on it
+ * ambiguous without a word. The file is the contract, and where it is not kept
+ * the tool says which line and what was expected instead of showing a short
+ * interview and leaving the reader to wonder.
+ */
+function drawTranscriptProblems() {
+  const field = $("#transcript-problems");
+  const problems = state.transcript?.problems ?? [];
+  if (!problems.length) {
+    field.hidden = true;
+    field.innerHTML = "";
+    return;
+  }
+  field.hidden = false;
+  field.innerHTML =
+    `<h2>${problems.length === 1 ? t("fileProblemOne") : t("fileProblemMany", { n: problems.length })}</h2>` +
+    `<p>${t("fileProblemNote")}</p><ul>` +
+    problems.map((problem) => `<li><span class="reason">${escapeHTML(problem.text)}</span></li>`).join("") +
+    `</ul>`;
+}
+
 function drawDrift() {
   const field = $("#drift");
   const open = lostCodings();
@@ -3002,6 +3027,7 @@ function nextUntouchedTurn() {
 
 function drawAll() {
   drawTranscript();
+  drawTranscriptProblems();
   drawDrift();
   drawSections();
   drawCategories();

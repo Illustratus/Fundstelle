@@ -13,7 +13,7 @@ import { constants } from "node:fs";
 import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { findInterviews, loadTranscript } from "./lib/transcript.js";
+import { findInterviews, loadTranscript, withProblemText } from "./lib/transcript.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withReasons, withoutCheckMarks } from "./lib/anchoring.js";
@@ -261,8 +261,10 @@ const server = createServer(async (request, response) => {
       return send(response, 200, {
         ...transcript,
         // The reason a unit lost its place is named by the checker and worded
-        // here, where the language of the request is known.
+        // here, where the language of the request is known. The same goes for
+        // whatever could not be read out of the file in the first place.
         codings: withReasons(codings, t),
+        problems: withProblemText(transcript.problems ?? [], t),
         memo,
         moved: codings.filter((coding) => coding.state === "moved").length,
         lost: codings.filter((coding) => coding.state === "lost").length,
