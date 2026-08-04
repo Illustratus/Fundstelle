@@ -80,7 +80,9 @@ in one provenance chain.
   a figure is never drawn nearer a gridline it does not belong to; every chart
   saves as an SVG that stands on its own — colours
   resolved, fonts carried, its key drawn in, nothing fetched from anywhere —
-  and the cross table as a Pandoc grid table set to 80 characters. Twenty interviews
+  and the cross table as a Pandoc grid table set to 80 characters — run through
+  Pandoc by the test suite, to HTML and to LaTeX, because a table that parses is
+  not yet a table that typesets. Twenty interviews
   and a thousand codings draw in a quarter of a second; a category holding
   hundreds of citations shows its first few and offers the rest, while its count
   and every export stay the whole number.

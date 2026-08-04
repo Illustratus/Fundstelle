@@ -39,6 +39,17 @@ where it lies.
 
 ### Fixed
 
+- **Every figure in the cross-table export was typeset as code.** Pandoc parses
+  the content of a grid-table cell as blocks, with the cell's own left edge as
+  column zero — so four or more leading spaces are an indented code block.
+  Right-aligning the numbers in the source did exactly that to every one of
+  them: the appendix came out with each figure in monospace inside a verbatim
+  environment, 24 of them in one table, and Pandoc reported nothing because
+  there was nothing to report. The alignment belongs to the colon in the header
+  rule, which is what typesets it; the source only has to keep the borders
+  straight. Every export is now run through Pandoc as part of the suite — to
+  HTML and to LaTeX, with warnings counted as failures — and Pandoc is
+  installed in CI so the check never silently skips.
 - **A missing anchor example is written into the coding guide, not left out of
   it.** Mayring asks every category for a definition, an anchor example and,
   where a boundary is unclear, a coding rule. A missing definition had always

@@ -46,6 +46,12 @@ jobs:
       # would triple the minutes for coverage nothing asserts.
       - run: npx playwright install --with-deps chromium
 
+      # The export checks run the documents through the program they are
+      # written for. They skip themselves where it is missing, and a check that
+      # silently skips in the one place anybody looks is no check at all.
+      - name: Pandoc, for the export checks
+        run: pandoc --version >/dev/null 2>&1 || (sudo apt-get update -qq && sudo apt-get install -y -qq pandoc)
+
       - run: npx playwright test
 
       - name: keep what a failure left behind
