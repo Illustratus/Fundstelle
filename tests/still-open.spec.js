@@ -102,7 +102,9 @@ test("nothing to say means nothing said", async ({ page, request }) => {
 
   await analysis(page);
   await expect(page.locator(".exports-part .still-open")).toHaveCount(0);
-  await expect(page.locator(".exports")).toBeVisible();
+  // The documents are still offered — grouped by where each of them goes.
+  await expect(page.locator(".exports").first()).toBeVisible();
+  await expect(page.locator(".exports-where").first()).toContainText("Methodenkapitel");
 });
 
 test("the list is the language of the interface", async ({ page, request }) => {

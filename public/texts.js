@@ -368,6 +368,12 @@ export const TEXTS = {
     agreementTitle: "Übereinstimmung mit einer Zweitkodierung",
     exportAgreement: "Intercoderreliabilität",
     exportSample: "Stichprobe",
+    exportAnalysis: "Auswertung",
+    exportsForMethod:
+      "Fürs Methodenkapitel: wie die Studie angelegt ist und was dabei " +
+      "herauskam.",
+    exportsForAppendix:
+      "Für den Anhang: das Material selbst, Fundstelle für Fundstelle.",
     agreementNone:
       "Für dieses Material liegt keine Zweitkodierung vor. Wer eine hat, legt deren " +
       "coding.json als coding.NAME.json neben die eigene — also etwa " +
@@ -869,6 +875,11 @@ export const TEXTS = {
     agreementTitle: "Agreement with a second coding",
     exportAgreement: "Intercoder reliability",
     exportSample: "Sample",
+    exportAnalysis: "Analysis",
+    exportsForMethod:
+      "For the methods chapter: how the study is set up and what came of it.",
+    exportsForAppendix:
+      "For the appendix: the material itself, citation by citation.",
     agreementNone:
       "There is no second coding for this material. If you have one, put its " +
       "coding.json beside your own as coding.NAME.json — say " +

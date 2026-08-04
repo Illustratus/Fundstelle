@@ -441,6 +441,9 @@ button, select, input, textarea {
 }
 .about .field-label { margin: 0; }
 
+.exports-where { margin: 1rem 0 .4rem; }
+.exports-where:first-of-type { margin-top: .4rem; }
+
 .still-open {
   list-style: none;
   margin: .6rem 0 1rem;

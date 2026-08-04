@@ -41,6 +41,17 @@ where it lies.
 
 ### Added
 
+- **The analysis leaves the tool as a document.** The cross table has had its
+  own export from the beginning; the saturation curve and the pairs of
+  categories that keep meeting were readable only on screen, and both are things
+  a methods chapter argues from. A figure that cannot be quoted is a figure that
+  gets retyped, and a retyped figure is one that can be wrong. The counts come
+  from the same computation the screen draws, so there is no second arithmetic
+  to drift.
+- **The exports are sorted by where each of them goes.** Eight buttons in a row
+  said nothing about which belong in the methods chapter and which in the
+  appendix — and the two that describe how the study was done are exactly the
+  ones a first-time author would not know to look for.
 - **Which categories keep turning up in the same breath.** A category system is
   meant to separate things, and two categories almost never used apart are a
   question about that system — either the material does not make the

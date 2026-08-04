@@ -160,8 +160,12 @@ quietly dropping the other's work.
   two that were never told apart.
 - **Figures that survive leaving the tool** — every chart saves as an SVG that
   stands on its own: colours resolved, fonts carried, its key drawn in, nothing
-  fetched from anywhere. Cross tables come out as Pandoc grid tables set to 80
-  characters, and every export is written to be typeset rather than looked at.
+  fetched from anywhere. Every figure on the analysis screen can be quoted as
+  Markdown, because a figure that cannot be is a figure that gets retyped. Cross
+  tables come out as Pandoc grid tables set to 80 characters, and every export
+  is written to be typeset rather than looked at — sorted by where it goes: what
+  describes the study for the methods chapter, what quotes the material for the
+  appendix.
 - **Intercoder reliability, without a second workflow** — the second coder runs
   their own copy on the same transcripts and hands you their `coding.json`; put
   it beside your own as `coding.<name>.json` and the analysis compares them.

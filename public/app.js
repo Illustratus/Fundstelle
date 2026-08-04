@@ -3078,22 +3078,38 @@ async function drawAnalysis() {
     ? `<ul class="still-open">${open.map((line) => `<li>${escapeHTML(line)}</li>`).join("")}</ul>`
     : "";
 
+  /* Grouped by where each document goes.
+     Eight buttons in a row said nothing about which of them belong in the
+     methods chapter and which in the appendix, so the reader had to open each
+     one to find out — and the two that describe how the study was done are
+     exactly the ones a first-time author does not know to look for. */
+  const link = (file, label) =>
+    `<a class="button-quiet" href="${exportHref(`/api/export/${file}`)}" download>${label}</a>`;
+
+  const forMethod =
+    link("sample.md", t("exportSample")) +
+    link("coding-guide.md", t("exportCodingGuide")) +
+    link("analysis.md", t("exportAnalysis")) +
+    link("agreement.md", t("exportAgreement"));
+
+  const forAppendix =
+    data.progress
+      .map((entry) =>
+        link(
+          `coding-table/${encodeURIComponent(entry.interview)}.md`,
+          `${t("exportCodingTable")} ${escapeHTML(entry.department)}`,
+        ),
+      )
+      .join("") + link("notes.md", t("exportNotes"));
+
   const exports =
     // Marked as one block so that printing can drop the heading with the links;
     // a heading whose only content is buttons is not a section on paper.
-    `<div class="exports-part"><h3>${t("exports")}</h3>${missing}<div class="exports">` +
-    `<a class="button-quiet" href="${exportHref("/api/export/coding-guide.md")}" download>${t("exportCodingGuide")}</a>` +
-    `<a class="button-quiet" href="${exportHref("/api/export/sample.md")}" download>${t("exportSample")}</a>` +
-    `<a class="button-quiet" href="${exportHref("/api/export/notes.md")}" download>${t("exportNotes")}</a>` +
-    `<a class="button-quiet" href="${exportHref("/api/export/agreement.md")}" download>${t("exportAgreement")}</a>` +
-    data.progress
-      .map(
-        (entry) =>
-          `<a class="button-quiet" href="${exportHref(`/api/export/coding-table/${encodeURIComponent(entry.interview)}.md`)}" download>` +
-          `${t("exportCodingTable")} ${escapeHTML(entry.department)}</a>`,
-      )
-      .join("") +
-    `</div></div>`;
+    `<div class="exports-part"><h3>${t("exports")}</h3>${missing}` +
+    `<p class="column-note exports-where">${t("exportsForMethod")}</p>` +
+    `<div class="exports">${forMethod}</div>` +
+    `<p class="column-note exports-where">${t("exportsForAppendix")}</p>` +
+    `<div class="exports">${forAppendix}</div></div>`;
 
   root.innerHTML =
     heading +

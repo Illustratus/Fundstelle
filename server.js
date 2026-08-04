@@ -24,6 +24,7 @@ import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js
 import {
   MOSCOW,
   analysis,
+  analysisMarkdown,
   catalog,
   catalogMarkdown,
   citationsMarkdown,
@@ -614,6 +615,16 @@ const server = createServer(async (request, response) => {
     if (path === "/api/export/agreement.md") {
       const { compared } = await allAgreement();
       return send(response, 200, agreementMarkdown(compared, language, t), MARKDOWN);
+    }
+    if (path === "/api/export/analysis.md") {
+      const all = await allInterviews();
+      const { categories } = await store.categories(seedLanguage);
+      return send(
+        response,
+        200,
+        analysisMarkdown(analysis(all, categories), categories, language),
+        MARKDOWN,
+      );
     }
     if (path === "/api/export/sample.md") {
       return send(response, 200, sampleMarkdown(await allInterviews(), language), MARKDOWN);
