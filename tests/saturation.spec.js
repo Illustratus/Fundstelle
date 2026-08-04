@@ -195,3 +195,50 @@ test.describe("in the analysis", () => {
     for (const y of room.dots) expect(y).toBeGreaterThan(room.top + 4);
   });
 });
+
+/**
+ * And the other figure that carries a percent sign.
+ *
+ * The bar beside the transcript shows a number per guide section, and the note
+ * above it said the codings were "distributed across the guide sections" — so
+ * "42 %" read as "42 % of my codings are in this block". It is nothing of the
+ * kind: it is how much of what was said in that block is held in coding units,
+ * a share within the block. The five numbers on a real screen added up to 245,
+ * which is the giveaway nobody should have to notice.
+ *
+ * The word was doubly loaded, too: the code called it saturation, which in this
+ * method means that no new categories are arriving — the thing the curve above
+ * actually shows.
+ */
+test("the section bar says what its percentages are", async ({ page, request }) => {
+  const data = await (await request.get("/api/interviews/interview-01")).json();
+  for (const coding of data.codings) {
+    await request.delete(`/api/interviews/interview-01/codings/${coding.id}`);
+  }
+  const codable = data.turns.filter((turn) => !turn.interviewer && turn.text.length > 80);
+  for (const turn of codable.slice(0, 8)) {
+    await request.post("/api/interviews/interview-01/codings", {
+      data: { turn: turn.number, start: 0, end: 60, category: "routine", text: turn.text.slice(0, 60), reviewed: true },
+    });
+  }
+
+  await page.goto("/?lang=de");
+  await page.waitForSelector(".turn");
+
+  const shares = await page
+    .locator("#sections .share")
+    .evaluateAll((all) => all.map((one) => Number(one.textContent.replace(/[^\d]/g, ""))).filter(Boolean));
+  expect(shares.length).toBeGreaterThan(2);
+  /* The numbers really do not add up to a hundred, which is exactly why the
+     note must not call them a distribution. */
+  expect(shares.reduce((sum, one) => sum + one, 0)).toBeGreaterThan(100);
+
+  const note = await page.locator('[data-t="sectionsNote"]').innerText();
+  expect(note).toContain("keine Aufteilung");
+  expect(note).not.toContain("verteilen");
+  // And the tooltip says which block the share is within.
+  await expect(page.locator("#sections .coverage").first()).toHaveAttribute(
+    "title",
+    /in diesem Block/,
+  );
+});

@@ -1069,19 +1069,22 @@ test("the / key puts the caret into the search", async ({ page }) => {
   await expect(page.locator("#search")).toHaveValue("1");
 });
 
-test("the saturation of the sections grows with the coding", async ({ page }) => {
+test("the coverage of a section grows with the coding", async ({ page }) => {
   const entry = page.locator("#sections .section-entry").nth(1);
   const share = async () => {
     const text = (await entry.locator(".share").innerText()).trim();
     return text === "—" ? 0 : parseFloat(text);
   };
   expect(await share()).toBe(0);
-  await expect(entry.locator(".saturation")).toHaveCount(0);
+  await expect(entry.locator(".coverage")).toHaveCount(0);
 
   await code(page, 4, 0, 120, "routine");
 
   await expect.poll(share).toBeGreaterThan(0);
-  await expect(entry.locator(".saturation")).toHaveCount(1);
+  await expect(entry.locator(".coverage")).toHaveCount(1);
+  /* A share within the block, not a slice of the codings: the one coding above
+     covers a fraction of what was said there, never all of the study. */
+  expect(await share()).toBeLessThanOrEqual(100);
 });
 
 test("the analysis counts departments and offers the exports", async ({ page }) => {

@@ -276,14 +276,14 @@ button, select, input, textarea {
   font-variant-numeric: tabular-nums;
   align-self: center;
 }
-.section-entry .saturation {
+.section-entry .coverage {
   grid-column: 2 / -1;
   height: 2px;
   background: color-mix(in srgb, var(--line) 55%, transparent);
   overflow: hidden;
   margin-top: .3rem;
 }
-.section-entry .saturation i {
+.section-entry .coverage i {
   display: block;
   height: 100%;
   background: var(--accent);

@@ -39,6 +39,15 @@ where it lies.
 
 ### Fixed
 
+- **The section bar said "distribution" and showed a coverage.** The percentages
+  beside the transcript are how much of what was said in each guide section is
+  held in coding units — a share within the block. The note above them said the
+  codings were distributed across the sections, so "42 %" read as "42 % of my
+  codings are here". On a real screen the five numbers added up to 245, which is
+  the giveaway nobody should have to notice. The note now says what they are and
+  that they do not add up to a hundred. The word saturation went with it: in
+  this method it means that no new categories are arriving, which is what the
+  curve above shows, so the bar calls its figure coverage.
 - **The intercoder comparison drops a unit with no place, on both sides.** The
   same hole as below, one layer over: the comparison rests on "did this coder
   use this category in this turn", and a unit whose passage was edited away

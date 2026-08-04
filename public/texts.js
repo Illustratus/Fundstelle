@@ -65,8 +65,11 @@ export const TEXTS = {
     languageAria: "Switch the interface to English",
 
     sections: "Blöcke",
-    sectionsNote: "Die Leiste zeigt, wie sich die Kodierungen über die Erzählanstöße verteilen.",
-    saturationTitle: "{n} Prozent des Materials kodiert",
+    sectionsNote:
+      "Je Erzählanstoß: wie viel von dem, was dort gesagt wurde, in " +
+      "Kodiereinheiten steckt. Die Zahlen sind Anteile je Block, keine " +
+      "Aufteilung der Kodierungen — sie ergeben zusammen keine 100 Prozent.",
+    sectionCoverageTitle: "{n} Prozent des Materials in diesem Block kodiert",
     noteSummary: "Notiz zum Interview",
     noteNote: "Was beim Kodieren auffällt und keine Fundstelle hat: Auffälligkeiten des Gesprächs, Zweifel, Nächstes.",
     notePlaceholder: "Frei zu schreiben. Läuft in die Ausgabe „Notizen“ mit ein.",
@@ -524,8 +527,11 @@ export const TEXTS = {
     languageAria: "Oberfläche auf Deutsch umstellen",
 
     sections: "Sections",
-    sectionsNote: "The bar shows how the codings spread across the guide sections.",
-    saturationTitle: "{n} percent of the material coded",
+    sectionsNote:
+      "Per guide section: how much of what was said there is held in coding " +
+      "units. These are shares within each block, not a split of the codings — " +
+      "they do not add up to 100 percent.",
+    sectionCoverageTitle: "{n} percent of the material in this section coded",
     noteSummary: "Interview note",
     noteNote: "What you notice while coding that has no citable place: oddities of the conversation, doubts, next steps.",
     notePlaceholder: "Free-form. Flows into the “Notes” export.",

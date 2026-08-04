@@ -653,7 +653,7 @@ function drawSections() {
         `<span class="name">${escapeHTML(section.short)}</span>` +
         `<span class="share">${share >= 1 ? Math.round(share) + " %" : "—"}</span>` +
         (share >= 1
-          ? `<span class="saturation" title="${t("saturationTitle", { n: share.toFixed(0) })}">` +
+          ? `<span class="coverage" title="${t("sectionCoverageTitle", { n: share.toFixed(0) })}">` +
             `<i style="width:${share.toFixed(1)}%"></i></span>`
           : "") +
         `</button></li>`
