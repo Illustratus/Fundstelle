@@ -534,6 +534,10 @@ test("change category, write a memo, set an anchor example, delete", async ({ pa
 });
 
 test("inductive categories emerge on the material and can be assigned", async ({ page }) => {
+  /* On the material: a category formed before a single unit has been coded is
+     not an inductive one, and the panel builds the start system instead. So
+     something is coded first, which is also the order the method has. */
+  await code(page, 22, 0, 30, "agreement");
   await page.locator("#inductive-shell summary").click();
   await page.locator("#inductive-name").fill("Zugriffsbeschränkung");
   await page
@@ -591,9 +595,44 @@ test("the category system stays two-level and deductive stays put", async ({ req
   expect((await under("ind.medienbruch", "ind.medienbruch")).status()).toBe(400);
 });
 
-test("deductive categories cannot be removed", async ({ page }) => {
+test("a deductive category stands once the material has been worked", async ({ page, request }) => {
+  /* "Fixed before the survey" is a statement about a moment, and the tool can
+     tell which side of it the study is on. Before the first coding the start
+     system is still being written — which is the only way a fresh installation
+     gets rid of the three categories of the bundled example. */
+  await page.locator('.category[data-category="routine"]').click();
+  await expect(page.locator('[data-detail="routine"] [data-category-remove]')).toHaveCount(1);
+
+  await code(page, 22, 0, 30, "agreement");
   await page.locator('.category[data-category="routine"]').click();
   await expect(page.locator('[data-detail="routine"] [data-category-remove]')).toHaveCount(0);
+
+  // And the server keeps the rule where it cannot be walked past.
+  const refused = await request.delete("/api/categories/routine");
+  expect(refused.status()).toBe(409);
+});
+
+test("the start system can be written before the first coding", async ({ page, request }) => {
+  await page.locator("#inductive-shell summary").click();
+  // The panel says which act it is: the same form, a different thing.
+  await expect(page.locator("#inductive-summary")).toContainText("Startsystem");
+  await page.locator("#inductive-name").fill("Zugriff auf Unterlagen");
+  await page.locator("#inductive-definition").fill("Aussagen über den Zugang zu Dokumenten.");
+  await page.locator("#inductive button[type=submit]").click();
+
+  /* Deductive, and with an id that says so: the coding guide reports the origin
+     of every category, and one built as the start system was not formed on the
+     material. */
+  const made = page.locator('.category[data-category="zugriff-auf-unterlagen"]');
+  await expect(made).toBeVisible();
+  await expect(made).toHaveAttribute("data-inductive", "false");
+
+  const { categories } = await (await request.get("/api/categories")).json();
+  expect(categories.find((one) => one.id === "zugriff-auf-unterlagen").origin).toBe("deductive");
+
+  // Once anything is coded the panel is recording what the material demanded.
+  await code(page, 22, 0, 30, "agreement");
+  await expect(page.locator("#inductive-summary")).toContainText("Induktive");
 });
 
 test("coding rules are recorded at the doubtful case", async ({ page }) => {
@@ -685,6 +724,7 @@ test("a sharpened inductive definition names the wording it was created with", a
   page,
   request,
 }) => {
+  await code(page, 22, 0, 30, "agreement");
   await page.locator("#inductive-shell summary").click();
   await page.locator("#inductive-name").fill("Medienbruch");
   await page.locator("#inductive-definition").fill("Aussagen über den Wechsel des Mediums.");
@@ -738,6 +778,7 @@ test("a category without a definition is rejected", async ({ page, request }) =>
 });
 
 test("an inductive category can be renamed, a deductive one cannot", async ({ page }) => {
+  await code(page, 22, 0, 30, "agreement");
   await page.locator("#inductive-shell summary").click();
   await page.locator("#inductive-name").fill("Medienbruch");
   await page.locator("#inductive-definition").fill("Aussagen über den Wechsel des Mediums.");
@@ -809,7 +850,11 @@ test("merging keeps the coding rules and notes of both sides", async ({ request 
   expect(categories.some((category) => category.id === "ind.systemwechsel")).toBe(false);
 });
 
-test("a deductive category cannot be dissolved", async ({ page, request }) => {
+test("a deductive category cannot be dissolved once the material has been worked", async ({
+  page,
+  request,
+}) => {
+  await code(page, 22, 0, 30, "agreement");
   await page.locator('.category[data-category="routine"]').click();
   await expect(page.locator('[data-merge="routine"]')).toHaveCount(0);
 

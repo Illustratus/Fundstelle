@@ -130,6 +130,15 @@ export const TEXTS = {
     noCategoryContains: "Keine Kategorie enthält „{filter}“.",
     cancel: "Abbrechen",
 
+    startSystemSummary: "Kategorie für das Startsystem anlegen",
+    startSystemNote:
+      "Noch ist nichts kodiert, also steht das deduktive Startsystem noch nicht " +
+      "fest — was jetzt entsteht, gilt als vor der Erhebung festgelegt und wird " +
+      "im Kodierleitfaden so ausgewiesen. Die mitgelieferten Beispielkategorien " +
+      "lassen sich hier ebenso entfernen. Ab der ersten Kodiereinheit steht das " +
+      "System; alles Weitere ist dann induktiv.",
+    startSystemAdd: "Zum Startsystem",
+    startSystemAdded: "„{name}“ ins Startsystem aufgenommen.",
     importOpen: "Transkript einlesen",
     importTitle: "Transkript einlesen",
     importNote:
@@ -555,6 +564,15 @@ export const TEXTS = {
     noCategoryContains: "No category contains “{filter}”.",
     cancel: "Cancel",
 
+    startSystemSummary: "Add a category to the start system",
+    startSystemNote:
+      "Nothing is coded yet, so the deductive start system is not settled — what " +
+      "you add now counts as fixed before the survey and is reported that way in " +
+      "the coding guide. The bundled example categories can be removed here just " +
+      "as well. From the first coding unit onwards the system stands, and " +
+      "everything after it is inductive.",
+    startSystemAdd: "To the start system",
+    startSystemAdded: "“{name}” taken into the start system.",
     importOpen: "Read in a transcript",
     importTitle: "Read in a transcript",
     importNote:

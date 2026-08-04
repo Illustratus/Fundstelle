@@ -174,6 +174,23 @@ async function checkCodableTurn(interview, number) {
   }
 }
 
+/**
+ * Does the study hold any coding at all?
+ *
+ * The one question that decides whether the deductive start system is still
+ * being written. "Fixed before the material is worked" is a statement about a
+ * moment, and this is the moment: while nothing has been coded, a deductive
+ * category may be added, removed or merged; from the first coding onwards the
+ * system that was coded against stands, and everything new is inductive.
+ */
+async function nothingCoded() {
+  for (const { id } of await findInterviews(TRANSCRIPTS)) {
+    const { codings } = await store.codings(id);
+    if (codings.length) return false;
+  }
+  return true;
+}
+
 async function allInterviews() {
   const found = await findInterviews(TRANSCRIPTS);
   const loaded = [];
@@ -421,7 +438,7 @@ const server = createServer(async (request, response) => {
       if (!data.name?.trim()) {
         return send(response, 400, { error: t("errorCategoryName") });
       }
-      return send(response, 201, await store.addCategory(data));
+      return send(response, 201, await store.addCategory(data, { beforeCoding: await nothingCoded() }));
     }
     const categoryMerge = path.match(/^\/api\/categories\/([^/]+)\/merge$/);
     if (categoryMerge && request.method === "POST") {
@@ -429,12 +446,13 @@ const server = createServer(async (request, response) => {
       const { target } = await body(request);
       // Check first, then re-hang the locations, then dissolve the category —
       // in that order no coding ever points at a category that is already gone.
-      await store.checkMerge(source, target);
+      const early = { beforeCoding: await nothingCoded() };
+      await store.checkMerge(source, target, early);
       let moved = 0;
       for (const { id } of await findInterviews(TRANSCRIPTS)) {
         moved += await store.replaceCategory(id, source, target);
       }
-      const { target: merged } = await store.mergeCategories(source, target);
+      const { target: merged } = await store.mergeCategories(source, target, early);
       return send(response, 200, { target: merged, moved });
     }
 
@@ -453,7 +471,7 @@ const server = createServer(async (request, response) => {
         (n, interview) => n + interview.codings.filter((c) => c.category === id).length,
         0,
       );
-      await store.removeCategory(id, used);
+      await store.removeCategory(id, used, { beforeCoding: !used && (await nothingCoded()) });
       return send(response, 204, "");
     }
 

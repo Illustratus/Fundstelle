@@ -20,6 +20,13 @@ where it lies.
   `node tools/import-transcript.mjs recording.vtt`. An existing `final.md` is
   never written over — codings hold on to the turn numbers in it.
 
+- **The start system can be written in the interface.** Until the first coding
+  unit exists, a category can be added to it, renamed, dissolved or removed —
+  including the three categories of the bundled example, which a fresh
+  installation was otherwise stuck with, since a deductive category cannot be
+  removed. From the first coding onwards the system stands and everything new is
+  inductive. The panel says which of the two acts it is doing.
+
 ### Fixed
 
 - **The prioritization field no longer puts a requirement at the wrong

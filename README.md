@@ -33,11 +33,17 @@ in one provenance chain.
   not the material. Snapping is the interface being helpful; the server takes
   the ranges it is given, so a machine pre-coding is not turned away over a
   boundary.
-- **Deductive start system plus inductive categories** — bring your own
-  category system (see below), refine definitions on the material (the wording
-  you started with is preserved and reported — for categories fixed beforehand
-  as well as for ones formed on the material), add coding rules and anchor
-  examples as they emerge, merge categories that turn out to be one.
+- **Deductive start system plus inductive categories** — build the start system
+  in the interface while nothing is coded yet, or bring your own as a file (see
+  below). "Fixed before the survey" is a statement about a moment and the tool
+  can tell which side of it you are on: until the first coding unit exists a
+  category can be added, renamed, dissolved or removed as part of the start
+  system — including the bundled example, which you would otherwise be stuck
+  with — and from that unit onwards the system stands and everything new is
+  inductive. Refine definitions on the material (the wording you started with is
+  preserved and reported — for categories fixed beforehand as well as for ones
+  formed on the material), add coding rules and anchor examples as they emerge,
+  merge categories that turn out to be one.
 - **Review workflow** — units created programmatically (e.g. from a machine
   pre-coding) are marked unreviewed and rendered as suggestions until you
   confirm each one; every export flags unconfirmed codings. `Enter` walks the
@@ -300,7 +306,8 @@ ambiguous. The file itself is never corrected; it is yours.
 ## Your own category system
 
 On first start (no `categories.json` yet) the tool seeds a deductive start
-system. Point `START_SYSTEM` at a JSON file to seed your own — see
+system, which can be edited away in the interface as long as nothing is coded.
+Point `START_SYSTEM` at a JSON file to seed your own instead — see
 [example-start-system.json](example-start-system.json) for the format:
 propositions are optional color groups, missing abbreviations are derived from
 the name. A configured but unreadable file fails loudly instead of silently

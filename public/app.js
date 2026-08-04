@@ -750,13 +750,38 @@ function updateCategory(id, build, message) {
  * definition may change, but not unnoticed — hence the record of the wording it
  * started from, for inductive categories just as much as for deductive ones.
  */
+/**
+ * Is the deductive start system still being written?
+ *
+ * "Fixed before the material is worked" is a statement about a moment. While
+ * the study holds no coding at all, that moment has not passed: the start
+ * system can still be built, and the three categories of the bundled example
+ * can be put aside. From the first coding onwards it stands.
+ *
+ * The server settles this for itself on every request; this only decides what
+ * the interface offers, so a stale count costs a refused request with a clear
+ * message rather than a wrong file.
+ */
+function startSystemOpen() {
+  if (state.codings.length) return false;
+  return state.interviews.every((one) => (one.id === state.current ? 0 : one.codings) === 0);
+}
+
 function categoryDetail(category) {
   const id = category.id;
+  /* Two different questions, and conflating them was a real mistake: where a
+     category came from decides how its definition history is labelled — „before
+     the survey" for one fixed beforehand, „on creation" for one formed on the
+     material — while whether it can still be renamed away or dissolved depends
+     only on whether anything has been coded yet. Sharing one flag labelled a
+     deductive category's original wording as the wording it was created with,
+     which is false about the study. */
   const inductive = category.origin === "inductive";
+  const stillOpen = inductive || startSystemOpen();
   const rules = (category.codingRules ?? []).map(ruleText);
   return (
     `<li class="category-detail" data-detail="${id}">` +
-    (inductive
+    (stillOpen
       ? `<label class="field"><span class="field-label">${t("fieldName")}</span>` +
         `<input type="text" data-category-name="${id}" value="${escapeHTML(category.name ?? "")}"></label>` +
         // The same as dragging in the list, only without a mouse.
@@ -803,8 +828,8 @@ function categoryDetail(category) {
     `<label class="field note-field"><span class="field-label">${t("note")}</span>` +
     `<textarea rows="2" data-category-memo="${id}" aria-label="${escapeHTML(t("categoryNoteAria", { name: category.name ?? "" }))}"` +
     ` placeholder="${escapeHTML(t("categoryNotePlaceholder"))}">${escapeHTML(category.memo ?? "")}</textarea></label>` +
-    (inductive ? mergeHTML(category) : "") +
-    (inductive
+    (stillOpen ? mergeHTML(category) : "") +
+    (stillOpen
       ? `<button type="button" class="button-quiet remove" data-category-remove="${id}">${t("removeCategory")}</button>`
       : "") +
     `</li>`
@@ -1003,6 +1028,16 @@ function drawCategories() {
       );
     })
     .join("");
+
+  /* Before the first coding the panel is building the start system, after it
+     the panel is recording what the material demanded. Same form, different
+     act — and the difference is exactly what the coding guide reports, so it
+     is said rather than left to be inferred from a heading. */
+  const open = startSystemOpen();
+  $("#inductive-shell").dataset.deductive = String(open);
+  $("#inductive-summary").textContent = t(open ? "startSystemSummary" : "inductiveSummary");
+  $("#inductive-note").textContent = t(open ? "startSystemNote" : "inductiveNote");
+  $("#inductive-submit").textContent = t(open ? "startSystemAdd" : "add");
 
   const parent = $("#inductive-parent");
   const remembered = parent.value;
@@ -4112,13 +4147,16 @@ function connectEvents() {
           name,
           definition: $("#inductive-definition").value.trim(),
           parent: $("#inductive-parent").value || null,
+          // Asked for, not assumed: the server decides whether it may be
+          // granted, because only it knows whether anything has been coded.
+          origin: startSystemOpen() ? "deductive" : "inductive",
         },
       });
       $("#inductive-name").value = "";
       $("#inductive-definition").value = "";
       await loadCategories();
       drawCategories();
-      notify(t("inductiveAdded", { name }));
+      notify(t(startSystemOpen() ? "startSystemAdded" : "inductiveAdded", { name }));
     } catch (error) {
       notify(error.message, "error");
     }

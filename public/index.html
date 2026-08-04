@@ -83,9 +83,9 @@
     <ul class="categories" id="categories"></ul>
 
     <details class="inductive" id="inductive-shell">
-      <summary data-t="inductiveSummary">Induktive Kategorie anlegen</summary>
+      <summary id="inductive-summary" data-t="inductiveSummary">Induktive Kategorie anlegen</summary>
       <div>
-        <p class="column-note" data-t="inductiveNote">Nur anlegen, wenn das Material eine Unterscheidung verlangt, die das Startsystem nicht trägt.</p>
+        <p class="column-note" id="inductive-note" data-t="inductiveNote">Nur anlegen, wenn das Material eine Unterscheidung verlangt, die das Startsystem nicht trägt.</p>
         <form id="inductive">
           <label class="field">
             <span class="field-label" data-t="fieldName">Name</span>
@@ -100,7 +100,7 @@
             <select id="inductive-parent"><option value="" data-t="standalone">eigenständig</option></select>
           </label>
           <p class="column-note" data-t="dragNote">Induktive Kategorien lassen sich auf eine Startkategorie ziehen.</p>
-          <button type="submit" class="button" data-t="add">Anlegen</button>
+          <button type="submit" class="button" id="inductive-submit" data-t="add">Anlegen</button>
         </form>
       </div>
     </details>
