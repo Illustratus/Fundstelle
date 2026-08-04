@@ -1,0 +1,13 @@
+# Default setup: all data (transcripts, codings, category system) lives in
+# ./data on the host and survives the container. To use a folder you already
+# have instead, see docker-compose.example.yml.
+services:
+  fundstelle:
+    image: illustratus/fundstelle:latest
+    # Swap the line above for `build: .` to run your own working copy.
+    # Only reachable from this machine; remove the 127.0.0.1 prefix
+    # deliberately if you want to expose the tool on your network.
+    ports:
+      - "127.0.0.1:4173:4173"
+    volumes:
+      - ./data:/data

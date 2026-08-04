@@ -1,0 +1,28 @@
+{
+  "$comment": "Template for your own deductive start system, see README (START_SYSTEM). Propositions are optional color groups; `children` carries subcategories. Abbreviations are optional (otherwise the first three letters of the name).",
+  "propositions": {
+    "practice": { "name": "Proposition 1: Tools shape the working day", "color": "#6C8EBF" },
+    "coordination": { "name": "Proposition 2: Agreements stay informal", "color": "#D79B00" }
+  },
+  "categories": [
+    {
+      "id": "routine",
+      "name": "Arbeitsalltag",
+      "proposition": "practice",
+      "definition": "Aussagen über wiederkehrende Abläufe im Arbeitstag, die zeigen, welche Tätigkeit mit welchem Werkzeug in welcher Reihenfolge erledigt wird.",
+      "children": [
+        {
+          "id": "routine.disruption",
+          "name": "Störungen",
+          "definition": "Aussagen über Unterbrechungen des Arbeitsflusses, ihre Auslöser und ihre Folgen."
+        }
+      ]
+    },
+    {
+      "id": "agreement",
+      "name": "Absprachen",
+      "proposition": "coordination",
+      "definition": "Aussagen über getroffene oder gescheiterte Absprachen, die zeigen, worüber, mit wem und auf welchem Weg abgestimmt wird."
+    }
+  ]
+}

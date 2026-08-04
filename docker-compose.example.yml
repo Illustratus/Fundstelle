@@ -1,0 +1,35 @@
+# Pointing Fundstelle at a folder you already have.
+#
+# Nothing about the layout is baked in. Mount the directory that holds your
+# interviews and name the paths the tool needs:
+#
+#   TRANSCRIPTS   the root that holds one folder per interview. Every immediate
+#                 subfolder containing a `final.md` counts as an interview; the
+#                 coding is written next to it as `coding.json`.
+#   CATEGORIES    the category system file. `requirements.json` is kept as its
+#                 sibling, so both land in the same directory.
+#   START_SYSTEM  optional: a JSON file that seeds your own deductive category
+#                 system on first start (defaults to the bundled example).
+#
+# The layout below assumes a project that keeps its interviews in a
+# subdirectory and wants the two JSON files one level above them:
+#
+#   my-study/
+#     categories.json           <- written here
+#     requirements.json         <- written here
+#     interviews/
+#       interview-01/final.md   <- yours; coding.json is written beside it
+#       interview-02/final.md
+#
+# Run it with:  docker compose -f docker-compose.example.yml up
+services:
+  fundstelle:
+    image: illustratus/fundstelle:latest
+    ports:
+      - "127.0.0.1:4173:4173"
+    volumes:
+      - /path/to/my-study:/data
+    environment:
+      TRANSCRIPTS: /data/interviews
+      CATEGORIES: /data/categories.json
+      # START_SYSTEM: /data/my-start-system.json

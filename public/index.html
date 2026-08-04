@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="de" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fundstelle — qualitative Inhaltsanalyse</title>
+<meta name="description" content="Kodierwerkzeug für die qualitative Inhaltsanalyse von Interviews">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#16191a">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="header-title">
+    <span class="emblem" aria-hidden="true"></span>
+    <div>
+      <h1>Fundstelle</h1>
+      <p class="header-subtitle" id="header-subtitle" data-t="headerSubtitle">Qualitative Inhaltsanalyse</p>
+    </div>
+  </div>
+
+  <nav class="views" data-t-aria="ariaView" aria-label="Ansicht">
+    <button type="button" class="tab" data-view="code" aria-current="true" data-t="tabCode">Kodieren</button>
+    <button type="button" class="tab" data-view="catalog" data-t="tabCatalog">Katalog</button>
+    <button type="button" class="tab" data-view="analysis" data-t="tabAnalysis">Auswertung</button>
+  </nav>
+
+  <div class="header-right">
+    <label class="field">
+      <span class="field-label" data-t="interview">Interview</span>
+      <select id="interview-choice" data-t-aria="chooseInterview" aria-label="Interview wählen"></select>
+    </label>
+    <button type="button" id="language" class="button-quiet" title="Switch the interface to English" aria-label="Switch the interface to English">EN</button>
+    <button type="button" id="theme" class="button-quiet" data-t-title="themeTitle" data-t-aria="themeAria" title="Hell oder dunkel" aria-label="Darstellung wechseln">◐</button>
+  </div>
+</header>
+
+<main class="view" id="view-code">
+  <aside class="column column-left" data-t-aria="ariaSections" aria-label="Leitfadenblöcke">
+    <h2 class="column-title" data-t="sections">Blöcke</h2>
+    <p class="column-note" data-t="sectionsNote">Die Leiste zeigt, wie sich die Kodierungen über die Erzählanstöße verteilen.</p>
+    <ol class="sections" id="sections"></ol>
+    <div class="status" id="status"></div>
+
+    <details class="note-shell" id="note-shell">
+      <summary data-t="noteSummary">Notiz zum Interview</summary>
+      <p class="column-note" data-t="noteNote">Was beim Kodieren auffällt und keine Fundstelle hat: Auffälligkeiten des Gesprächs, Zweifel, Nächstes.</p>
+      <textarea id="note" rows="6" data-t-aria="noteAria" aria-label="Notiz zum Interview"
+                data-t-placeholder="notePlaceholder" placeholder="Frei zu schreiben. Läuft in die Ausgabe „Notizen“ mit ein."></textarea>
+    </details>
+  </aside>
+
+  <section class="edition" data-t-aria="ariaTranscript" aria-label="Transkript">
+    <div class="drift" id="drift" hidden role="alert"></div>
+    <div class="search-bar">
+    <div class="search" role="search">
+      <input type="search" id="search" autocomplete="off" spellcheck="false"
+             data-t-placeholder="searchPlaceholder" placeholder="Im Transkript suchen — ab*leg* geht auch"
+             data-t-title="searchTitle" title="* steht für beliebige Zeichen im Wort. Findet ein Wort nichts, wird die Endung gekürzt."
+             data-t-aria="searchAria" aria-label="Im Transkript suchen, * steht für beliebige Zeichen im Wort">
+      <span class="search-status" id="search-status" aria-live="polite"></span>
+      <button type="button" class="button-quiet" id="search-previous"
+              data-t-title="searchPreviousTitle" title="Voriger Treffer (Umschalt+Enter)" data-t-aria="searchPrevious" aria-label="Voriger Treffer">↑</button>
+      <button type="button" class="button-quiet" id="search-next"
+              data-t-title="searchNextTitle" title="Nächster Treffer (Enter)" data-t-aria="searchNext" aria-label="Nächster Treffer">↓</button>
+      <span class="keys" aria-hidden="true" data-t-html="keyHints"><kbd>/</kbd> suchen · <kbd>j</kbd><kbd>k</kbd> Beitrag</span>
+    </div>
+    <div class="search-elsewhere" id="search-elsewhere" hidden></div>
+    </div>
+    <div class="edition-sheet" id="transcript" tabindex="-1"></div>
+  </section>
+
+  <aside class="column column-right" data-t-aria="ariaCategories" aria-label="Kategorien">
+    <div id="detail" class="detail" hidden></div>
+
+    <h2 class="column-title" data-t="categorySystem">Kategoriensystem</h2>
+    <p class="column-note" data-t="categorySystemNote">Farbe zeigt die verankernde Proposition, nicht die Kategorie.</p>
+    <ul class="categories" id="categories"></ul>
+
+    <details class="inductive" id="inductive-shell">
+      <summary data-t="inductiveSummary">Induktive Kategorie anlegen</summary>
+      <div>
+        <p class="column-note" data-t="inductiveNote">Nur anlegen, wenn das Material eine Unterscheidung verlangt, die das Startsystem nicht trägt.</p>
+        <form id="inductive">
+          <label class="field">
+            <span class="field-label" data-t="fieldName">Name</span>
+            <input type="text" id="inductive-name" required autocomplete="off">
+          </label>
+          <label class="field">
+            <span class="field-label" data-t="fieldDefinition">Definition</span>
+            <textarea id="inductive-definition" rows="3"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label" data-t="fieldParent">Untergeordnet</span>
+            <select id="inductive-parent"><option value="" data-t="standalone">eigenständig</option></select>
+          </label>
+          <p class="column-note" data-t="dragNote">Induktive Kategorien lassen sich auf eine Startkategorie ziehen.</p>
+          <button type="submit" class="button" data-t="add">Anlegen</button>
+        </form>
+      </div>
+    </details>
+  </aside>
+</main>
+
+<main class="view" id="view-catalog" hidden>
+  <div class="analysis" id="catalog"></div>
+</main>
+
+<main class="view" id="view-analysis" hidden>
+  <div class="analysis" id="analysis"></div>
+</main>
+
+<div class="coding-bar" id="coding-bar" hidden role="dialog" data-t-aria="codingBarAria" aria-label="Kodiereinheit zuordnen">
+  <p class="coding-bar-quote" id="coding-bar-quote"></p>
+  <p class="coding-bar-rule" data-t="codingBarRule">Genau eine Kategorie. Bei mehreren Handlungen entscheidet das Hauptprädikat.</p>
+  <p class="coding-bar-filter" id="coding-bar-filter" hidden></p>
+  <div class="coding-bar-choices" id="coding-bar-choices"></div>
+  <p class="coding-bar-keys" aria-hidden="true" data-t="codingBarKeys">Ziffer wählt · Buchstaben tippen filtert · Enter nimmt den einzigen Treffer</p>
+  <button type="button" class="button-quiet coding-bar-cancel" id="coding-bar-cancel" data-t="cancel">Abbrechen</button>
+</div>
+
+<p class="message" id="message" hidden role="status" aria-live="polite"></p>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

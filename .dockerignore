@@ -1,0 +1,16 @@
+node_modules
+.sandbox
+data
+test-results
+tests
+playwright.config.js
+categories.json
+requirements.json
+package.json
+package-lock.json
+Dockerfile
+docker-compose.yml
+docker-compose.example.yml
+.dockerignore
+README.md
+LICENSE
