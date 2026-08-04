@@ -73,6 +73,32 @@ export function occurrences(text, word) {
 }
 
 /**
+ * The term a set of texts is actually searched with, and what to say about it.
+ *
+ * Trimming the ending is decided once for the whole set, never per text: if one
+ * citation matched the word and the next only its stem, the slice would be two
+ * searches at once and the count would mean nothing. So the word is tried
+ * across everything first, and only if it finds nothing anywhere is the stem
+ * tried in its place.
+ *
+ * `instead` is what was searched for when it is not what was typed. Saying so
+ * is the whole condition for doing it — reinterpreting the input in silence
+ * would be worse than no hit at all.
+ */
+export function effectiveWord(texts, word) {
+  const wanted = (word ?? "").trim();
+  if (!wanted) return { word: "", instead: null };
+  if (texts.some((text) => occurrences(text, wanted).length)) {
+    return { word: wanted, instead: null };
+  }
+  const stem = trimStem(wanted);
+  if (stem && texts.some((text) => occurrences(text, stem).length)) {
+    return { word: stem, instead: stem };
+  }
+  return { word: wanted, instead: null };
+}
+
+/**
  * The same term without its inflecting ending, or null.
  *
  * Only for terms without a wildcard: whoever sets one has already decided and

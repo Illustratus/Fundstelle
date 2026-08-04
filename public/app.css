@@ -444,6 +444,14 @@ button, select, input, textarea {
 
 /* Notes in one place ------------------------------------------------------- */
 
+/* What a search actually ran with, when it is not what was typed. */
+.field .instead {
+  font-size: .68rem;
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  margin-top: .2rem;
+}
+
 .note-search {
   display: flex;
   align-items: flex-end;

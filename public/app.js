@@ -7,7 +7,7 @@
   them: highlight, apparatus, citation and export.
 */
 
-import { matchesSlice, occurrences, trimStem } from "./search.js";
+import { effectiveWord, matchesSlice, occurrences, trimStem } from "./search.js";
 import { language, plural, quoted, setLanguage, t } from "./texts.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -1438,7 +1438,17 @@ function notesHTML(data) {
   const wanted = state.noteFilter.trim();
   const kind = state.noteKind;
   const onlyCategory = state.noteCategory;
-  const fits = (text) => !wanted || occurrences(text, wanted).length > 0;
+  // Every note the search could reach, so the ending is trimmed once for all of
+  // them rather than note by note — the same rule the transcript search follows.
+  const searchable = [
+    ...data.progress.map((entry) => entry.memo ?? ""),
+    ...(data.categories ?? []).map((category) => category.memo ?? ""),
+    ...Object.values(data.citations ?? {})
+      .flat()
+      .map((citation) => citation.memo ?? ""),
+  ].filter((text) => text.trim());
+  const wording = effectiveWord(searchable, wanted);
+  const fits = (text) => !wording.word || occurrences(text, wording.word).length > 0;
   const severalDepartments = data.departments.length > 1;
 
   const groups = [];
@@ -1502,7 +1512,9 @@ function notesHTML(data) {
     `<div class="note-search">` +
     `<label class="field"><span class="field-label">${t("searchAllNotes")}</span>` +
     `<input type="search" id="note-filter" value="${escapeHTML(state.noteFilter)}" ` +
-    `placeholder="${escapeHTML(t("filterPlaceholder"))}"></label>` +
+    `placeholder="${escapeHTML(t("filterPlaceholder"))}">` +
+    (wording.instead ? `<span class="instead">${t("searchedInstead", { word: escapeHTML(wording.instead) })}</span>` : "") +
+    `</label>` +
     `<label class="field"><span class="field-label">${t("attachedTo")}</span>` +
     `<select id="note-kind">` +
     [
@@ -1677,10 +1689,17 @@ function citationsHTML(data, color) {
   const filter = state.citationFilter;
   // The same condition as the export — it lives in search.js so that view and
   // export cannot drift apart.
-  const fits = (citation) => matchesSlice(citation, filter);
+  const fits = (citation) => matchesSlice(citation, { ...filter, word: wording.word });
 
   const all = data.rows.flatMap((row) => data.citations[row.category] ?? []);
   const sections = [...new Set(all.map((citation) => citation.sectionName).filter(Boolean))];
+  // The wording is settled once across the whole set, exactly as the transcript
+  // search settles it: if it finds nothing anywhere, its ending is trimmed and
+  // the slice says which term it actually ran with.
+  const wording = effectiveWord(
+    all.map((citation) => `${citation.text} ${citation.memo ?? ""}`),
+    filter.word,
+  );
   const shown = all.filter(fits).length;
   const active = Boolean(
     filter.department ||
@@ -1713,7 +1732,10 @@ function citationsHTML(data, color) {
       .join("") +
     `</select></label>` +
     `<label class="field"><span class="field-label">${t("inCitationOrNote")}</span>` +
-    `<input type="search" data-filter="word" value="${escapeHTML(filter.word)}" placeholder="${escapeHTML(t("filterPlaceholder"))}"></label>` +
+    `<input type="search" data-filter="word" value="${escapeHTML(filter.word)}" placeholder="${escapeHTML(t("filterPlaceholder"))}">` +
+    // Trimming the ending is only allowed if it is said out loud.
+    (wording.instead ? `<span class="instead">${t("searchedInstead", { word: escapeHTML(wording.instead) })}</span>` : "") +
+    `</label>` +
     `<label class="box"><input type="checkbox" data-filter="anchor"${filter.anchor ? " checked" : ""}> ${t("anchorsOnly")}</label>` +
     `<label class="box"><input type="checkbox" data-filter="memo"${filter.memo ? " checked" : ""}> ${t("withNoteOnly")}</label>` +
     `<label class="box"><input type="checkbox" data-filter="withoutRequirement"` +

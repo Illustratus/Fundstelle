@@ -81,6 +81,7 @@ export const TEXTS = {
     searchNextTitle: "Nächster Treffer (Enter)",
     searchPosition: "{i} von {n}",
     searchNoMatch: "kein Treffer",
+    searchedInstead: "stattdessen nach „{word}“ gesucht",
     searchElsewhere: "Auch in anderen Interviews",
     keyHints: "<kbd>/</kbd> suchen · <kbd>j</kbd><kbd>k</kbd> Beitrag",
 
@@ -400,6 +401,7 @@ export const TEXTS = {
     searchNextTitle: "Next match (Enter)",
     searchPosition: "{i} of {n}",
     searchNoMatch: "no match",
+    searchedInstead: "searched for “{word}” instead",
     searchElsewhere: "Also in other interviews",
     keyHints: "<kbd>/</kbd> search · <kbd>j</kbd><kbd>k</kbd> turn",
 
