@@ -65,7 +65,11 @@ in one provenance chain.
   nobody has confirmed.
 - **Production-grade analytics** — stacked bar chart per category and
   department, a category × guide-section heatmap, cross tables, per-interview
-  progress; requirements sharing a coordinate in the prioritization field are
+  progress, and a saturation curve that answers the question every qualitative
+  study is asked: how many categories turned up for the first time in each
+  interview, and how many were in play by then. It shows and stops — whether the
+  curve has flattened far enough is a judgement about the material, not one any
+  arithmetic makes; requirements sharing a coordinate in the prioritization field are
   packed into their own cell rather than fanned across the neighbouring one, so
   a figure is never drawn nearer a gridline it does not belong to; every chart
   saves as an SVG that stands on its own — colours

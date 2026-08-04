@@ -20,6 +20,16 @@ where it lies.
   `node tools/import-transcript.mjs recording.vtt`. An existing `final.md` is
   never written over — codings hold on to the turn numbers in it.
 
+- **A saturation curve.** Every qualitative study is asked how it knows it had
+  enough interviews, and the answer expected is that the material stopped
+  producing anything new — a claim about the coding, which sits right there. The
+  analysis now draws how many categories turn up for the first time in each
+  interview and how many are in play by then. It shows and stops: where a curve
+  has flattened far enough is a judgement about the material, and a tool that
+  printed "saturated" would be putting words in a supervisor's mouth. It states
+  its own caveat too — the order plotted is the order of the folder names, not
+  necessarily the order the interviews were conducted in — and it draws nothing
+  at all on two interviews, where a flattening curve cannot be shown.
 - **The start system can be written in the interface.** Until the first coding
   unit exists, a category can be added to it, renamed, dissolved or removed —
   including the three categories of the bundled example, which a fresh

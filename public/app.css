@@ -1701,6 +1701,15 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   stroke-width: 1.5;
 }
 .chart .point:hover { stroke: var(--ink); }
+
+/* One line, not a comparison between several, so it takes the accent rather
+   than a place in the series palette. */
+.chart .saturation-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.chart .saturation-point { fill: var(--accent); }
 .chart .point-label { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); pointer-events: none; }
 
 .chart-legend.moscow i { background: var(--moscow); border-radius: 50%; }

@@ -2250,6 +2250,123 @@ const chartLegend = (series) =>
  * both answer the same question — how much of this comes from where — and a
  * second visual idiom for the same question would only cost the reader.
  */
+/**
+ * Where the material stopped producing anything new.
+ *
+ * Every qualitative study is asked how it knows it had enough interviews, and
+ * the answer expected is that the categories stopped arriving. That is a claim
+ * about the coding, and the coding is right here — so it is drawn rather than
+ * asserted: how many categories turn up for the first time in each interview,
+ * and how many are in play by then.
+ *
+ * It stops at showing. Where a curve has flattened far enough is a judgement
+ * about the material, and no arithmetic makes it — a tool that printed
+ * "saturated" would be putting words in a supervisor's mouth.
+ */
+function saturationChartHTML(data) {
+  const points = data.saturation ?? [];
+  /* Two interviews cannot show a curve flattening, and a chart that suggests
+     one on two points invites a claim the material does not carry. */
+  if (points.length < 3 || !points.some((one) => one.total)) return "";
+
+  const WIDTH = 720;
+  const LEFT = 42;
+  const RIGHT = 16;
+  const TOP = 12;
+  const PLOT = 150;
+  const LABELS = 30;
+  const height = TOP + PLOT + LABELS;
+
+  const end = Math.max(1, Math.ceil(Math.max(...points.map((one) => one.total))));
+  const step = axisStep(end);
+  // One step of headroom, always: the last point carries a "+2" above it, and a
+  // curve drawn against the ceiling reads as clipped even when it is not.
+  const top = Math.ceil(end / step) * step + (Math.ceil(end / step) * step === end ? step : 0);
+  const track = WIDTH - LEFT - RIGHT;
+  const gap = points.length > 1 ? track / (points.length - 1) : 0;
+  const x = (index) => LEFT + index * gap;
+  const y = (value) => TOP + PLOT - (value / top) * PLOT;
+
+  let grid = "";
+  for (let tick = 0; tick <= top; tick += step) {
+    grid +=
+      `<line class="grid" x1="${LEFT}" y1="${y(tick)}" x2="${WIDTH - RIGHT}" y2="${y(tick)}"></line>` +
+      `<text class="axis" x="${LEFT - 8}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>`;
+  }
+
+  /* A step rather than a straight line between the points: the count changes at
+     an interview, not gradually across the space between two of them. */
+  let path = `M ${x(0)} ${y(points[0].total)}`;
+  points.forEach((one, index) => {
+    if (!index) return;
+    path += ` L ${x(index)} ${y(points[index - 1].total)} L ${x(index)} ${y(one.total)}`;
+  });
+
+  const dots = points
+    .map((one, index) => {
+      const tip = t("saturationTip", {
+        title: one.title,
+        fresh: one.fresh,
+        total: one.total,
+        names: one.names.join(", ") || t("summaryNone"),
+      });
+      return (
+        `<circle class="point saturation-point" cx="${x(index)}" cy="${y(one.total)}" r="${one.fresh ? 5 : 3.5}"` +
+        ` data-tip="${escapeHTML(tip)}"></circle>` +
+        (one.fresh
+          ? `<text class="value" x="${x(index)}" y="${y(one.total) - 10}" text-anchor="middle">+${one.fresh}</text>`
+          : "")
+      );
+    })
+    .join("");
+
+  /* Numbered, not named. Two interviews in the same department are ordinary,
+     and a department name on the axis twice says nothing about which of them
+     stopped adding categories. The position is unambiguous, always fits, and
+     the title travels with the dot and stands in the figures below. */
+  const marks = points
+    .map(
+      (one, index) =>
+        `<text class="axis" x="${x(index)}" y="${TOP + PLOT + 18}" text-anchor="middle">${index + 1}</text>`,
+    )
+    .join("");
+
+  const last = points[points.length - 1];
+  const quiet = [...points].reverse().findIndex((one) => one.fresh);
+  const summary = t("summarySaturation", {
+    interviews: points.length,
+    total: last.total,
+    since: quiet > 0 ? quiet : 0,
+  });
+
+  return (
+    `<div class="chart-head"><h3 id="saturation-title">${t("chartSaturationTitle")}</h3>` +
+    `<button type="button" class="button-quiet" data-svg="saturation" data-file="saturation.svg">${t("saveAsSvg")}</button></div>` +
+    chartSummaryHTML("saturation", summary) +
+    `<figure class="chart" id="saturation">` +
+    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="saturation-title"` +
+    ` aria-describedby="saturation-summary" preserveAspectRatio="xMinYMin meet">` +
+    grid +
+    `<path class="saturation-line" d="${path}" fill="none"></path>` +
+    dots +
+    marks +
+    `</svg>` +
+    `<div class="chart-tip" hidden></div>` +
+    `<figcaption class="column-note">${t("chartSaturationCaption")}</figcaption>` +
+    `</figure>` +
+    chartFiguresHTML("saturation", {
+      caption: t("saturationFiguresCaption"),
+      columns: [
+        t("interview"),
+        t("saturationFresh"),
+        t("saturationTotal"),
+        t("saturationWhich"),
+      ],
+      rows: points.map((one) => [one.title, one.fresh, one.total, one.names.join(", ") || "·"]),
+    })
+  );
+}
+
 function stackedBarsHTML({
   id,
   title,
@@ -2786,6 +2903,7 @@ async function drawAnalysis() {
     heatmapHTML(data) +
     matrix +
     progress +
+    saturationChartHTML(data) +
     `<section id="agreement-part"></section>` +
     exports +
     `<section id="citations-part">${citationsHTML(data, color)}</section>` +

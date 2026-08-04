@@ -130,6 +130,24 @@ export const TEXTS = {
     noCategoryContains: "Keine Kategorie enthält „{filter}“.",
     cancel: "Abbrechen",
 
+    chartSaturationTitle: "Wann kam nichts Neues mehr",
+    chartSaturationCaption:
+      "Senkrecht die Zahl der bis dahin vergebenen Kategorien, waagerecht die " +
+      "Interviews in der Reihenfolge, in der sie hier gelistet sind — das ist die " +
+      "Reihenfolge der Ordnernamen, nicht zwingend die der Erhebung. Welches " +
+      "Interview welche Nummer trägt, steht in der Tabelle darunter. „+2“ heißt: " +
+      "zwei Kategorien kamen in diesem Interview zum ersten Mal vor. Ob die Kurve " +
+      "flach genug ist, entscheidet niemand außer dir.",
+    summarySaturation:
+      "Über {interviews} Interviews sind {total} Kategorien im Spiel. Seit " +
+      "{since} Interviews kam keine neue mehr dazu.",
+    saturationTip: "{title}: +{fresh} neu, {total} insgesamt. {names}",
+    saturationFresh: "Zum ersten Mal",
+    saturationTotal: "Insgesamt",
+    saturationWhich: "Welche zum ersten Mal",
+    saturationFiguresCaption:
+      "Je Interview, wie viele Kategorien zum ersten Mal vorkamen und wie viele " +
+      "insgesamt im Spiel waren.",
     startSystemSummary: "Kategorie für das Startsystem anlegen",
     startSystemNote:
       "Noch ist nichts kodiert, also steht das deduktive Startsystem noch nicht " +
@@ -564,6 +582,24 @@ export const TEXTS = {
     noCategoryContains: "No category contains “{filter}”.",
     cancel: "Cancel",
 
+    chartSaturationTitle: "When nothing new arrived any more",
+    chartSaturationCaption:
+      "Vertically the number of categories used by then, horizontally the " +
+      "interviews in the order they are listed here — the order of their folder " +
+      "names, not necessarily the order they were conducted in; which interview " +
+      "carries which number is in the table below. “+2” means two " +
+      "categories occurred for the first time in that interview. Whether the " +
+      "curve is flat enough is nobody's judgement but yours.",
+    summarySaturation:
+      "Across {interviews} interviews {total} categories are in play. No new one " +
+      "has arrived for {since} interviews.",
+    saturationTip: "{title}: +{fresh} new, {total} in all. {names}",
+    saturationFresh: "For the first time",
+    saturationTotal: "In all",
+    saturationWhich: "Which for the first time",
+    saturationFiguresCaption:
+      "Per interview, how many categories occurred for the first time and how " +
+      "many were in play in all.",
     startSystemSummary: "Add a category to the start system",
     startSystemNote:
       "Nothing is coded yet, so the deductive start system is not settled — what " +
