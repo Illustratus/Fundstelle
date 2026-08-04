@@ -351,6 +351,7 @@ export const TEXTS = {
     /* Intercoder reliability ---------------------------------------------- */
     agreementTitle: "Übereinstimmung mit einer Zweitkodierung",
     exportAgreement: "Intercoderreliabilität",
+    exportSample: "Stichprobe",
     agreementNone:
       "Für dieses Material liegt keine Zweitkodierung vor. Wer eine hat, legt deren " +
       "coding.json als coding.NAME.json neben die eigene — also etwa " +
@@ -836,6 +837,7 @@ export const TEXTS = {
     /* Intercoder reliability ---------------------------------------------- */
     agreementTitle: "Agreement with a second coding",
     exportAgreement: "Intercoder reliability",
+    exportSample: "Sample",
     agreementNone:
       "There is no second coding for this material. If you have one, put its " +
       "coding.json beside your own as coding.NAME.json — say " +

@@ -233,6 +233,12 @@ How do you record knowledge?
 Mostly in notes I never find again.
 ```
 
+Lines of the form `- Key: Value` under the heading are read as what the study
+records about that interview — a role, a tenure, a site, the date. They are
+shown beside the transcript and become the columns of the sample table the tool
+writes for the methods chapter, so a field one interview carries and another
+does not is left blank rather than filled in.
+
 `## Section:` opens a guide section, `**2 · Speaker [0:15]**` a turn whose text
 follows below it. A turn runs until something else begins — the next turn, a
 heading, or a rule across the page — so an answer written in several paragraphs

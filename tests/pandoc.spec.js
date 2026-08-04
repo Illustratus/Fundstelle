@@ -73,6 +73,7 @@ const EXPORTS = [
   ["the coding guide", "/api/export/coding-guide.md?lang=de"],
   ["the cross table", "/api/export/matrix.md?lang=de"],
   ["the citations", "/api/export/citations.md?lang=de"],
+  ["the sample table", "/api/export/sample.md?lang=de"],
   ["the notes", "/api/export/notes.md?lang=de"],
   ["the requirements catalog", "/api/export/requirements-catalog.md?lang=de"],
   ["the reliability report", "/api/export/agreement.md?lang=de"],

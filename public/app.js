@@ -737,6 +737,22 @@ function drawSections() {
   const conducted = state.transcript.meta.Erhebung ?? state.transcript.meta.Conducted ?? "";
   $("#header-subtitle").textContent = `${state.transcript.department} · ${conducted}`.trim();
 
+  /* Everything else the transcript's header records. The format has parsed
+     these lines from the beginning and exactly one of them was ever shown, so a
+     role or a tenure written into a file was read and dropped — and then typed
+     out again by hand for the sample table of the thesis. */
+  const about = Object.entries(state.transcript.meta ?? {});
+  $("#interview-meta").innerHTML = about.length
+    ? about
+        .map(
+          ([key, value]) =>
+            `<div><span class="field-label">${escapeHTML(key)}</span>` +
+            `<span>${escapeHTML(value)}</span></div>`,
+        )
+        .join("")
+    : "";
+  $("#interview-meta").hidden = !about.length;
+
   // Do not overwrite while it is being written in.
   const note = $("#note");
   if (document.activeElement !== note) note.value = state.transcript.memo ?? "";
@@ -3009,6 +3025,7 @@ async function drawAnalysis() {
     // a heading whose only content is buttons is not a section on paper.
     `<div class="exports-part"><h3>${t("exports")}</h3>${missing}<div class="exports">` +
     `<a class="button-quiet" href="${exportHref("/api/export/coding-guide.md")}" download>${t("exportCodingGuide")}</a>` +
+    `<a class="button-quiet" href="${exportHref("/api/export/sample.md")}" download>${t("exportSample")}</a>` +
     `<a class="button-quiet" href="${exportHref("/api/export/notes.md")}" download>${t("exportNotes")}</a>` +
     `<a class="button-quiet" href="${exportHref("/api/export/agreement.md")}" download>${t("exportAgreement")}</a>` +
     data.progress

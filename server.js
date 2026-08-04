@@ -31,6 +31,7 @@ import {
   codingTableMarkdown,
   matrixGridMarkdown,
   notesMarkdown,
+  sampleMarkdown,
 } from "./lib/analysis.js";
 
 /* The oldest runtime this is known to work on. Nothing here reaches beyond
@@ -613,6 +614,9 @@ const server = createServer(async (request, response) => {
     if (path === "/api/export/agreement.md") {
       const { compared } = await allAgreement();
       return send(response, 200, agreementMarkdown(compared, language, t), MARKDOWN);
+    }
+    if (path === "/api/export/sample.md") {
+      return send(response, 200, sampleMarkdown(await allInterviews(), language), MARKDOWN);
     }
     if (path === "/api/export/notes.md") {
       const all = await allInterviews();

@@ -41,6 +41,14 @@ where it lies.
 
 ### Added
 
+- **The sample table a thesis has to contain, written from the transcripts.**
+  A transcript may carry `- Key: Value` lines under its heading and the format
+  has parsed them from the beginning — a role, a tenure, a site. Exactly one of
+  them was ever used, for the subtitle; the rest was read and dropped, while the
+  same description was being typed out by hand for the methods chapter. The
+  columns are now whatever the transcripts record, with codable turns and coding
+  units counted on the end, and the header is shown beside the transcript rather
+  than only parsed.
 - **What is still open, said where somebody thinks they are finished.** The
   export block now carries a short list: how many suggestions are still
   unreviewed, which categories have no anchor example, and which interviews have
