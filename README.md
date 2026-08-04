@@ -63,6 +63,9 @@ in one provenance chain.
   just a title, so what it shows arrives without seeing it; the cross table
   names the category and the department of each figure, and a cell that stands
   empty still says nought.
+- **Nothing that needs a mouse** — every chart folds open into the figures it
+  draws, so the numbers behind a hover are one keystroke away; a table wider
+  than its frame can be scrolled from the keyboard.
 
 ## Quick start
 

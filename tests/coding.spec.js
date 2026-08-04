@@ -919,7 +919,9 @@ test("the analysis counts departments and offers the exports", async ({ page }) 
   await expect(page.locator("#view-analysis")).toBeVisible();
 
   await expect(page.locator(".metric .value").first()).toHaveText("2");
-  const row = page.locator("tbody tr", { hasText: "Arbeitsalltag" }).first();
+  // Scoped to the cross table: the charts carry figure tables of their own now,
+  // and an unscoped row would just as happily match one of those.
+  const row = page.locator("#matrix-table tbody tr", { hasText: "Arbeitsalltag" }).first();
   await expect(row.locator("td.num").last()).toHaveText("1");
 
   await expect(page.locator(".exports a", { hasText: "Kodierleitfaden" })).toBeVisible();
@@ -1564,7 +1566,7 @@ test("the cross table carries one column per department", async ({ page }) => {
   await code(page, 2, 0, 40, "routine");
 
   await page.locator('.tab[data-view="analysis"]').click();
-  await expect(page.locator("thead th")).toContainText([
+  await expect(page.locator("#matrix-table thead th")).toContainText([
     "Kategorie",
     "Marketing",
     "Vertrieb",
@@ -1572,7 +1574,7 @@ test("the cross table carries one column per department", async ({ page }) => {
     "Bereiche",
   ]);
 
-  const row = page.locator("tbody tr", { hasText: "Arbeitsalltag" }).first();
+  const row = page.locator("#matrix-table tbody tr", { hasText: "Arbeitsalltag" }).first();
   await expect(row.locator("td.num").last()).toHaveText("2");
 });
 

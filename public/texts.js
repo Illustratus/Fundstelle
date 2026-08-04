@@ -313,6 +313,17 @@ export const TEXTS = {
       "senkrecht die blockierten Operationen. Oben rechts, also von allen genannt und mehrfach " +
       "blockierend: {urgent} — {names}.",
     summaryNone: "keine",
+    showFigures: "Zahlen als Tabelle",
+    table: "Tabelle",
+    columnLevel: "Stufe",
+    columnRequirement: "Anforderung",
+    columnRequirements: "Anforderungen",
+    metricCitations: "Belege",
+    heatmapFiguresCaption: "Kodiereinheiten je Kategorie und Erzählanstoß.",
+    coverageFiguresCaption: "Belege je Anforderung und Bereich.",
+    moscowFiguresCaption: "Anzahl der Anforderungen je MoSCoW-Stufe.",
+    priorityFiguresCaption:
+      "Je Anforderung: nennende Bereiche, blockierte Operationen, Belege und Stufe.",
     chartPriorityTitle: "Priorisierung: Bereiche und blockierte Operationen",
     chartPriorityCaption:
       "Waagerecht die Zahl der nennenden Bereiche, aus den Belegen gezählt; senkrecht die Zahl der blockierten Operationen, von dir eingetragen. Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. Rechts oben liegt, was die Stufe „Must have“ trägt.",
@@ -600,6 +611,17 @@ export const TEXTS = {
       "vertically the blocked operations. Upper right, named by all and blocking more than one: " +
       "{urgent} — {names}.",
     summaryNone: "none",
+    showFigures: "Figures as a table",
+    table: "Table",
+    columnLevel: "Level",
+    columnRequirement: "Requirement",
+    columnRequirements: "Requirements",
+    metricCitations: "Citations",
+    heatmapFiguresCaption: "Coding units per category and guide section.",
+    coverageFiguresCaption: "Citations per requirement and department.",
+    moscowFiguresCaption: "Number of requirements per MoSCoW level.",
+    priorityFiguresCaption:
+      "Per requirement: naming departments, blocked operations, citations and level.",
     chartPriorityTitle: "Prioritization: departments and blocked operations",
     chartPriorityCaption:
       "Horizontally the number of naming departments, counted from the citations; vertically the number of blocked operations, entered by you. Dot size = citations, dot color = MoSCoW level. Whatever carries “Must have” sits in the upper right.",

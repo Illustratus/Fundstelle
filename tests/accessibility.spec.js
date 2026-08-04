@@ -120,6 +120,84 @@ test("a cell that stands empty still says nought", async ({ page }) => {
   expect(await empty.locator(".visually-hidden").textContent()).toBe("0");
 });
 
+test("every chart can be read as figures without a mouse", async ({ page }) => {
+  await fill(page);
+
+  for (const view of ["analysis", "catalog"]) {
+    await page.locator(`.tab[data-view="${view}"]`).click();
+    await expect(page.locator(`#view-${view} figure.chart`).first()).toBeVisible();
+
+    // A tooltip that answers only a hovering mouse answers nobody else, so
+    // every chart needs its numbers in a table — its own, or one right beside
+    // it, as the category chart has in the cross table.
+    const uncovered = await page.evaluate((current) => {
+      const root = document.querySelector(`#view-${current}`);
+      return [...root.querySelectorAll("figure.chart")]
+        .filter((figure) => {
+          // Either its own figures, or the table it names — nothing vaguer:
+          // "some table nearby" would let one chart cover for another.
+          const own = document.getElementById(`${figure.id}-figures`);
+          const named = figure.dataset.figures
+            ? document.getElementById(figure.dataset.figures)
+            : null;
+          return !own && !named;
+        })
+        .map((figure) => figure.id);
+    }, view);
+    expect(uncovered, `charts without figures in ${view}`).toEqual([]);
+  }
+});
+
+test("the figures open from the keyboard and match the chart", async ({ page }) => {
+  await fill(page);
+  await page.locator('.tab[data-view="analysis"]').click();
+
+  const disclosure = page.locator("#heatmap-figures");
+  await expect(disclosure).toBeVisible();
+  // Closed to begin with: the picture is the point, the figures are the recourse.
+  expect(await disclosure.evaluate((element) => element.open)).toBe(false);
+
+  await disclosure.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  expect(await disclosure.evaluate((element) => element.open)).toBe(true);
+
+  // The same numbers the picture draws: every cell of the heatmap appears.
+  const agree = await page.evaluate(() => {
+    const cells = [...document.querySelectorAll("#heatmap svg rect.cell")];
+    const drawn = cells
+      .map((cell) => Number(cell.getAttribute("data-value")))
+      .sort((a, b) => a - b);
+    const listed = [...document.querySelectorAll("#heatmap-figures tbody td")]
+      .map((cell) => Number(cell.textContent))
+      .filter((value) => value > 0)
+      .sort((a, b) => a - b);
+    return { drawn, listed };
+  });
+  expect(agree.drawn.length).toBeGreaterThan(0);
+  expect(agree.listed).toEqual(agree.drawn);
+});
+
+test("a table wider than its frame can be scrolled from the keyboard", async ({ page }) => {
+  await fill(page);
+  await page.locator('.tab[data-view="analysis"]').click();
+  await page.locator("#heatmap-figures summary").click();
+
+  const frames = await page.evaluate(() =>
+    [...document.querySelectorAll("#view-analysis .table-frame")].map((frame) => ({
+      overflows: frame.scrollWidth > frame.clientWidth + 1,
+      focusable: frame.tabIndex === 0,
+      named: Boolean(frame.getAttribute("aria-label")),
+    })),
+  );
+  expect(frames.length).toBeGreaterThan(0);
+  for (const frame of frames) {
+    // Focusable exactly when there is something out of sight to scroll to; a
+    // tab stop that leads nowhere is its own nuisance.
+    expect(frame.focusable).toBe(frame.overflows);
+    if (frame.overflows) expect(frame.named).toBe(true);
+  }
+});
+
 test("every control carries a name", async ({ page }) => {
   await fill(page);
 

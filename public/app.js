@@ -1767,6 +1767,47 @@ function chartSummaryHTML(id, sentence) {
   return `<p id="${id}-summary" class="visually-hidden">${escapeHTML(sentence)}</p>`;
 }
 
+/**
+ * The figures behind a chart, as a table one can read, copy or tab through.
+ *
+ * A tooltip that only answers to a hovering mouse answers nobody else, and only
+ * the bar chart had a table underneath it carrying the same numbers — the
+ * heatmap and the whole catalog had none at all. A disclosure is the cheap
+ * answer: closed it costs a line, opened it gives the figures exactly, and
+ * `details` is operable from the keyboard without a line of script.
+ *
+ * `rows` are arrays whose first entry is the row heading; numbers are set as
+ * numbers, anything else as text.
+ */
+function chartFiguresHTML(id, { caption, columns, rows }) {
+  if (!rows.length) return "";
+  const head = columns
+    .map(
+      (column, index) =>
+        `<th scope="col"${index ? ' class="num"' : ""}>${escapeHTML(String(column))}</th>`,
+    )
+    .join("");
+  const body = rows
+    .map(
+      ([heading, ...cells]) =>
+        `<tr><th scope="row">${escapeHTML(String(heading))}</th>` +
+        cells
+          .map(
+            (cell) =>
+              `<td class="${typeof cell === "number" ? "num" : ""}">${escapeHTML(String(cell))}</td>`,
+          )
+          .join("") +
+        `</tr>`,
+    )
+    .join("");
+  return (
+    `<details class="figures" id="${id}-figures"><summary>${t("showFigures")}</summary>` +
+    `<div class="table-frame"><table>` +
+    `<caption class="visually-hidden">${escapeHTML(caption)}</caption>` +
+    `<thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></details>`
+  );
+}
+
 /** The largest row, named — the one thing a reader takes from a bar chart. */
 function largestRow(rows) {
   return rows.reduce((best, row) => (row.sum > (best?.sum ?? -1) ? row : best), null);
@@ -1788,7 +1829,17 @@ const chartLegend = (series) =>
  * both answer the same question — how much of this comes from where — and a
  * second visual idiom for the same question would only cost the reader.
  */
-function stackedBarsHTML({ id, title, caption, file, rows, departments, summaryKey }) {
+function stackedBarsHTML({
+  id,
+  title,
+  caption,
+  file,
+  rows,
+  departments,
+  summaryKey,
+  figuresCaption,
+  figuresRef,
+}) {
   if (!rows.length || !departments.length) return "";
   const series = seriesFrom(departments);
 
@@ -1866,7 +1917,9 @@ function stackedBarsHTML({ id, title, caption, file, rows, departments, summaryK
     `<button type="button" class="button-quiet" data-svg="${id}" data-file="${file}">${t("saveAsSvg")}</button></div>` +
     chartLegend(series) +
     chartSummaryHTML(id, summary) +
-    `<figure class="chart" id="${id}">` +
+    // A chart either carries its own figures or names the table that already
+    // holds them; the category chart is followed by the cross table anyway.
+    `<figure class="chart" id="${id}"${figuresRef ? ` data-figures="${figuresRef}"` : ""}>` +
     `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="${id}-title"` +
     ` aria-describedby="${id}-summary" preserveAspectRatio="xMinYMin meet">` +
     `<line class="baseline" x1="${LABEL}" y1="${TOP}" x2="${LABEL}" y2="${height - 20}"></line>` +
@@ -1875,13 +1928,23 @@ function stackedBarsHTML({ id, title, caption, file, rows, departments, summaryK
     `</svg>` +
     `<div class="chart-tip" hidden></div>` +
     `<figcaption class="column-note">${escapeHTML(caption)}</figcaption>` +
-    `</figure>`
+    `</figure>` +
+    // The category chart is followed by the cross table anyway; only the charts
+    // that stand on their own need the figures spelled out again.
+    (figuresCaption
+      ? chartFiguresHTML(id, {
+          caption: figuresCaption,
+          columns: [title, ...departments, t("total")],
+          rows: rows.map((row) => [row.name, ...row.values, row.sum]),
+        })
+      : "")
   );
 }
 
 function categoryChartHTML(data) {
   return stackedBarsHTML({
     id: "chart",
+    figuresRef: "matrix-table",
     title: t("chartTitle"),
     caption: t("chartCaption"),
     file: "coding-units-per-category.svg",
@@ -2025,7 +2088,15 @@ function heatmapHTML(data) {
     `</svg>` +
     `<div class="chart-tip" hidden></div>` +
     `<figcaption class="column-note">${t("heatmapCaption")}</figcaption>` +
-    `</figure>`
+    `</figure>` +
+    chartFiguresHTML("heatmap", {
+      caption: t("heatmapFiguresCaption"),
+      columns: [t("category"), ...sections.map((section) => section.short)],
+      rows: data.rows.map((row) => [
+        (row.parent ? "… " : "") + row.name,
+        ...sections.map((section) => counts.get(`${row.category}|${section.name}`) ?? 0),
+      ]),
+    })
   );
 }
 
@@ -2120,7 +2191,7 @@ async function drawAnalysis() {
        can say which category and which department a number belongs to instead
        of reading a wall of figures. The caption is not drawn, because the
        heading above already says it on screen. */
-    `<div class="table-frame"><table>` +
+    `<div class="table-frame"><table id="matrix-table">` +
     `<caption class="visually-hidden">${t("matrixCaption")}</caption><thead><tr>` +
     `<th scope="col">${t("category")}</th>` +
     data.departments
@@ -2196,6 +2267,40 @@ async function drawAnalysis() {
     `<section id="notes-part">${notesHTML(data)}</section>`;
 
   fitAngledHeadings(root.querySelector("#heatmap svg"));
+  markScrollableTables(root);
+}
+
+/**
+ * Lets the keyboard reach a table that is wider than its frame.
+ *
+ * With nine guide sections the figures run past the edge and the frame scrolls.
+ * A mouse can scroll it; a keyboard cannot reach a scrolling box that nothing
+ * inside it can hold focus, and the columns beyond the edge are simply lost. So
+ * a frame that actually overflows becomes focusable — and only then, because a
+ * tab stop that leads nowhere is its own nuisance.
+ */
+function markScrollableTables(root) {
+  const mark = (frame) => {
+    // A frame inside a closed disclosure has no width yet and would measure as
+    // fitting, so the figures are measured again when they are opened.
+    if (frame.scrollWidth > frame.clientWidth + 1) {
+      frame.tabIndex = 0;
+      frame.setAttribute("role", "region");
+      frame.setAttribute("aria-label", frame.querySelector("caption")?.textContent ?? t("table"));
+    } else {
+      frame.removeAttribute("tabindex");
+      frame.removeAttribute("role");
+      frame.removeAttribute("aria-label");
+    }
+  };
+
+  for (const frame of root.querySelectorAll(".table-frame")) mark(frame);
+  for (const disclosure of root.querySelectorAll("details.figures")) {
+    // The markup is rebuilt on every draw, so these do not pile up.
+    disclosure.addEventListener("toggle", () => {
+      for (const frame of disclosure.querySelectorAll(".table-frame")) mark(frame);
+    });
+  }
 }
 
 /**
@@ -2348,7 +2453,12 @@ function moscowBandHTML(rows) {
     `</svg>` +
     `<div class="chart-tip" hidden></div>` +
     `<figcaption class="column-note">${t("chartMoscowCaption")}</figcaption>` +
-    `</figure>`
+    `</figure>` +
+    chartFiguresHTML("moscow", {
+      caption: t("moscowFiguresCaption"),
+      columns: [t("columnLevel"), t("columnRequirements")],
+      rows: levels.map((level) => [level.name, level.count]),
+    })
   );
 }
 
@@ -2480,7 +2590,24 @@ function priorityFieldHTML(rows, departmentCount) {
     `</svg>` +
     `<div class="chart-tip" hidden></div>` +
     `<figcaption class="column-note">${t("chartPriorityCaption")}</figcaption>` +
-    `</figure>`
+    `</figure>` +
+    chartFiguresHTML("priority", {
+      caption: t("priorityFiguresCaption"),
+      columns: [
+        t("columnRequirement"),
+        t("axisDepartmentsNaming"),
+        t("axisBlockedOperations"),
+        t("metricCitations"),
+        t("columnLevel"),
+      ],
+      rows: rows.map((row) => [
+        row.title,
+        row.departments.length,
+        (row.blockedOperations ?? []).length,
+        row.citations.length,
+        MOSCOW_ORDER.includes(row.moscow) ? moscowName(row.moscow) : t("open"),
+      ]),
+    })
   );
 }
 
@@ -2490,6 +2617,7 @@ function coverageChartHTML(rows, departments) {
   return stackedBarsHTML({
     id: "coverage",
     summaryKey: "summaryCoverage",
+    figuresCaption: t("coverageFiguresCaption"),
     title: t("chartCoverageTitle"),
     caption: t("chartCoverageCaption"),
     file: "citations-per-requirement.svg",
@@ -2627,6 +2755,8 @@ async function drawCatalog() {
     `<div class="catalog-list">${cards}</div>` +
     `<div class="exports"><a class="button-quiet" href="${exportHref("/api/export/requirements-catalog.md")}" download>` +
     `${t("catalogTitle")}</a></div>`;
+
+  markScrollableTables(root);
 }
 
 /* Reading position -------------------------------------------------------- */
