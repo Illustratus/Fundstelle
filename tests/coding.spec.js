@@ -876,13 +876,31 @@ test("notes on the interview and on the category flow into one export", async ({
   await page.locator("#note").blur();
   await expect(page.locator(".message")).toContainText("Notiz zum Interview");
 
+  /* Leaving a note field saves it, and the save is on its way while the test
+     reads on. The interview note is waited for by its message; these two had
+     nothing to wait for, so the export was occasionally fetched before they
+     landed — the one flaky test in the suite. */
   await page.locator('.category[data-category="agreement"]').click();
   await page.locator('[data-category-memo="agreement"]').fill("Abgrenzung zum Alltag noch unklar.");
-  await page.locator('[data-category-memo="agreement"]').blur();
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/categories/agreement") &&
+        response.request().method() === "PATCH",
+    ),
+    page.locator('[data-category-memo="agreement"]').blur(),
+  ]);
 
   await code(page, 22, 0, 40, "agreement");
   await page.locator("#detail-memo").fill("Steht stellvertretend für die Rückfrage im Team.");
-  await page.locator("#detail-memo").blur();
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        /\/api\/interviews\/[^/]+\/codings\/[^/]+$/.test(new URL(response.url()).pathname) &&
+        response.request().method() === "PATCH",
+    ),
+    page.locator("#detail-memo").blur(),
+  ]);
 
   const text = await (await request.get("/api/export/notes.md?lang=de")).text();
   expect(text).toContain("## Zu den Interviews");
