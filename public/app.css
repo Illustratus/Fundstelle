@@ -847,12 +847,26 @@ mark.match.current {
   padding-top: .5rem;
 }
 /* The list grows with every inductive category. Past a certain length it
-   scrolls instead of pushing the bar off the screen. */
+   scrolls instead of pushing the bar off the screen — but a list that scrolls
+   without saying so is a list that ends where the reader thinks it ends. With
+   eighteen categories a third of them sat below the fold unannounced.
+
+   The shadow comes from two pairs of gradients: the covering ones scroll with
+   the content (`local`), the shading ones stay put. Where the content has been
+   scrolled to the edge, the cover hides the shade — so a shadow appears exactly
+   when there is something in that direction, and no script has to measure. */
 .coding-bar-choices {
   display: grid;
   gap: .2rem;
   max-height: min(24rem, 45vh);
   overflow-y: auto;
+  background:
+    linear-gradient(var(--sheet) 30%, rgb(0 0 0 / 0)) top / 100% 1.4rem no-repeat local,
+    linear-gradient(rgb(0 0 0 / 0), var(--sheet) 70%) bottom / 100% 1.4rem no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / .16), rgb(0 0 0 / 0)) top / 100% .45rem
+      no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / .16), rgb(0 0 0 / 0)) bottom / 100%
+      .45rem no-repeat scroll;
 }
 .coding-bar-filter {
   margin: 0 0 .35rem;

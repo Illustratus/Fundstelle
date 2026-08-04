@@ -17,7 +17,7 @@ import { findInterviews, loadTranscript } from "./lib/transcript.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withoutCheckMarks } from "./lib/anchoring.js";
-import { FALLBACK, LANGUAGES, negotiate, translator } from "./lib/texts.js";
+import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
 import {
   MOSCOW,
   analysis,
@@ -138,6 +138,26 @@ async function loadChecked(id) {
   const { codings: checked, changed } = checkAnchors(transcript, codings);
   if (changed) await store.setCodings(id, withoutCheckMarks(checked));
   return { transcript, codings: checked, memo: memo ?? "" };
+}
+
+/**
+ * Coding units belong to the respondents.
+ *
+ * The interviewer's own words are the instrument, not the material: coded, they
+ * would be quoted back as evidence and attributed to the department that was
+ * being asked. The interface says so when a selection lands there — but said it
+ * and then went ahead anyway, so the rule is checked where it cannot be walked
+ * past. The turn also has to exist at all, which nothing checked before.
+ */
+async function checkCodableTurn(interview, number) {
+  const transcript = await loadTranscript(TRANSCRIPTS, interview);
+  const turn = transcript.turns.find((one) => one.number === number);
+  if (!turn) {
+    throw Object.assign(fail("errorUnknownTurn", { turn: number }), { status: 404 });
+  }
+  if (turn.interviewer) {
+    throw Object.assign(fail("errorInterviewerTurn", { turn: number }), { status: 409 });
+  }
 }
 
 async function allInterviews() {
@@ -307,19 +327,20 @@ const server = createServer(async (request, response) => {
       if (data.end <= data.start) {
         return send(response, 400, { error: t("errorEmptySelection") });
       }
+      await checkCodableTurn(id, data.turn);
       return send(response, 201, await store.addCoding(id, data));
     }
 
     const oneCoding = path.match(/^\/api\/interviews\/([^/]+)\/codings\/([^/]+)$/);
     if (oneCoding && request.method === "PATCH") {
+      const id = decodeURIComponent(oneCoding[1]);
+      const fields = await body(request);
+      // Re-anchoring moves a unit to another turn and obeys the same rule.
+      if (fields.turn !== undefined) await checkCodableTurn(id, fields.turn);
       return send(
         response,
         200,
-        await store.updateCoding(
-          decodeURIComponent(oneCoding[1]),
-          decodeURIComponent(oneCoding[2]),
-          await body(request),
-        ),
+        await store.updateCoding(id, decodeURIComponent(oneCoding[2]), fields),
       );
     }
     if (oneCoding && request.method === "DELETE") {

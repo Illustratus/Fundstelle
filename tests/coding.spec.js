@@ -206,6 +206,116 @@ test("a coding unit carries exactly one category", async ({ page }) => {
   await expect(page.locator("#turn-8 .segment")).toHaveCount(1);
 });
 
+/* The interviewer's words are the instrument, not the material. Coded, they
+   would come back as evidence attributed to the department that was asked. */
+
+test("a turn of the interviewer cannot be coded", async ({ page }) => {
+  // `mark` waits for the bar, which is exactly what must not appear here.
+  await selectText(page, 1, 0, 30);
+
+  // The bar does not even open: saying "this is the interviewer" and then
+  // offering the categories anyway was an invitation, not a rule.
+  await expect(page.locator("#message")).toContainText("Beitrag des Interviewers");
+  await expect(page.locator("#coding-bar")).toBeHidden();
+  await expect(page.locator("#turn-1 .segment")).toHaveCount(0);
+});
+
+test("the server refuses an interviewer turn, whatever asks", async ({ request }) => {
+  const refused = await request.post(`/api/interviews/${FIRST}/codings`, {
+    headers: { "accept-language": "de" },
+    data: { turn: 1, start: 0, end: 25, category: "routine", text: "Vielen Dank" },
+  });
+  expect(refused.status()).toBe(409);
+  expect((await refused.json()).code).toBe("errorInterviewerTurn");
+
+  // A turn that is not in the transcript at all was never checked either.
+  const missing = await request.post(`/api/interviews/${FIRST}/codings`, {
+    data: { turn: 9999, start: 0, end: 25, category: "routine", text: "nowhere" },
+  });
+  expect(missing.status()).toBe(404);
+  expect((await missing.json()).code).toBe("errorUnknownTurn");
+
+  // Re-anchoring moves a unit to another turn and obeys the same rule.
+  const made = await request.post(`/api/interviews/${FIRST}/codings`, {
+    data: { turn: 4, start: 0, end: 25, category: "routine", text: "Klar, ich bin seit" },
+  });
+  expect(made.status()).toBe(201);
+  const moved = await request.patch(
+    `/api/interviews/${FIRST}/codings/${(await made.json()).id}`,
+    { data: { turn: 1, start: 0, end: 20, text: "Vielen Dank" } },
+  );
+  expect(moved.status()).toBe(409);
+});
+
+test("a long category list stays reachable from the keyboard", async ({ page, request }) => {
+  // A category system that has grown on the material: past nine there are no
+  // more digits, and past a dozen the list scrolls.
+  for (const name of ["Medienbruch", "Zugriffsrechte", "Wiederfinden", "Benennungschaos",
+    "Doppelablage", "Übergabe", "Suchpfade", "Schattensysteme", "Rückfrageschleifen"]) {
+    await addCategory(request, name);
+  }
+  await page.reload();
+  await mark(page, 4, 0, 40);
+
+  const choices = page.locator("#coding-bar-choices .choice");
+  await expect(choices).toHaveCount(12);
+  // Only the first nine carry a digit; the rest are reached by typing or by tab.
+  const numbered = await page.locator("#coding-bar-choices .key").evaluateAll(
+    (keys) => keys.filter((key) => key.textContent.trim()).length,
+  );
+  expect(numbered).toBe(9);
+
+  // The list scrolls rather than pushing the bar off the screen — and what is
+  // below the fold can still be reached and used.
+  const last = choices.last();
+  await last.focus();
+  await expect(last).toBeFocused();
+  await expect(last).toBeInViewport();
+
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#turn-4 .segment")).toHaveCount(1);
+  await expect(page.locator("#turn-4 .mark .what")).toContainText("Rückfrageschleifen");
+});
+
+test("typing brings a category out of reach back into reach", async ({ page, request }) => {
+  for (const name of ["Medienbruch", "Zugriffsrechte", "Wiederfinden", "Benennungschaos",
+    "Doppelablage", "Übergabe", "Suchpfade", "Schattensysteme", "Rückfrageschleifen"]) {
+    await addCategory(request, name);
+  }
+  await page.reload();
+  await mark(page, 4, 0, 40);
+
+  // "Rückfrageschleifen" sits twelfth and has no digit; typing narrows the list
+  // until it is the only one left, and then Enter takes it.
+  await page.keyboard.type("schleif");
+  await expect(page.locator("#coding-bar-choices .choice")).toHaveCount(1);
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#turn-4 .mark .what")).toContainText("Rückfrageschleifen");
+});
+
+test("the filter takes umlauts, as a German keyboard sends them", async ({ page, request }) => {
+  await addCategory(request, "Rückfrageschleifen");
+  await addCategory(request, "Medienbruch");
+  await page.reload();
+  await mark(page, 4, 0, 40);
+
+  /* Not `keyboard.type`: Playwright delivers characters outside the layout
+     through `insertText`, which fires no keydown at all, so the umlaut would
+     silently never reach the filter and the test would be measuring itself.
+     A real German keyboard sends a keydown with `key` set to the letter. */
+  for (const key of ["r", "ü", "c", "k"]) {
+    await page.evaluate(
+      // On the body, not on the document: a real keydown always targets an
+      // element, and the handler asks its target what it is.
+      (letter) =>
+        document.body.dispatchEvent(new KeyboardEvent("keydown", { key: letter, bubbles: true })),
+      key,
+    );
+  }
+  await expect(page.locator("#coding-bar-filter")).toContainText("rück");
+  await expect(page.locator("#coding-bar-choices .choice")).toHaveCount(1);
+});
+
 test("the selection ends at the speaker turn", async ({ page }) => {
   await page.evaluate(() => {
     const fields = document.querySelectorAll(".text");

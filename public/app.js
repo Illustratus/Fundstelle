@@ -1229,7 +1229,13 @@ function select(selection) {
   bar.style.top = `${top}px`;
   bar.style.left = `${left}px`;
 
-  if (selection.interviewer) notify(t("interviewerNote"));
+  // Saying "this is the interviewer" and then offering the categories anyway
+  // was an invitation, not a rule: the bar closes instead. The server refuses
+  // it too, so nothing gets in by another door.
+  if (selection.interviewer) {
+    releaseSelection();
+    notify(t("interviewerNote"));
+  }
 }
 
 function releaseSelection() {

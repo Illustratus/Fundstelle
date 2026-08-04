@@ -24,7 +24,9 @@ in one provenance chain.
 
 - **Methodical coding, enforced in the workflow** — coding units snap to word
   and sentence boundaries, exactly one category per unit, units never cross a
-  speaker turn; the server rejects overlaps, not just the UI.
+  speaker turn, and the interviewer's own words cannot be coded at all: they are
+  the instrument, not the material. The server rejects each of these, not just
+  the UI.
 - **Deductive start system plus inductive categories** — bring your own
   category system (see below), refine definitions on the material (the wording
   you started with is preserved and reported — for categories fixed beforehand
