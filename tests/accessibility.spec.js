@@ -267,3 +267,67 @@ test("a citation that is only a suggestion says so where it is read", async ({ p
   const marked = page.locator(".citation").filter({ has: page.locator(".open-mark") }).first();
   await expect(marked.locator(".head-row .open-mark")).toHaveText("ungeprüft");
 });
+
+test("a saved chart carries its own key and stands on its own", async ({ page }) => {
+  /* The legend is HTML beside the picture, so the saved file had colours and
+     nothing saying what they mean — and a stacked bar chart without a key is
+     not a figure anybody can put in a paper. */
+  await fill(page);
+  await page.locator('.tab[data-view="analysis"]').click();
+  await expect(page.locator("#chart svg")).toBeVisible();
+
+  const download = page.waitForEvent("download");
+  await page.locator('[data-svg="chart"]').click();
+  const saved = await (await download).path();
+  const { readFileSync } = await import("node:fs");
+  const svg = readFileSync(saved, "utf8");
+
+  // Self-contained: no stylesheet, no variable, nothing fetched from anywhere.
+  expect(svg.trimStart().startsWith("<svg")).toBe(true);
+  expect(svg).toContain('xmlns="http://www.w3.org/2000/svg"');
+  expect(svg).not.toContain("var(--");
+  expect(svg).not.toMatch(/(https?:)?\/\/(?!www\.w3\.org)/);
+
+  // And it says what its colours mean: every department named on screen.
+  // The chart's own legend, not every legend on the page: the heatmap's ramp
+  // is one too, and its label is not a department.
+  const departments = await page
+    .locator(".chart-legend")
+    .first()
+    .locator("span")
+    .allTextContents();
+  expect(departments.length).toBeGreaterThan(1);
+  for (const department of departments) {
+    expect(svg, `the key names ${department}`).toContain(department.trim());
+  }
+
+  // Rendered on its own, with none of the application around it, it is whole.
+  const bare = await page.context().newPage();
+  await bare.setContent(svg);
+  await expect(bare.locator("svg text").first()).toBeVisible();
+  const shape = await bare.locator("svg").evaluate((element) => ({
+    texts: element.querySelectorAll("text").length,
+    // The key was drawn above what was already there, so the picture grew.
+    height: Number(element.getAttribute("viewBox").split(/\s+/)[3]),
+  }));
+  expect(shape.texts).toBeGreaterThan(departments.length);
+  expect(shape.height).toBeGreaterThan(0);
+  await bare.close();
+});
+
+test("the heatmap saves its ramp as well", async ({ page }) => {
+  // The ramp is built differently from a series legend — swatches without
+  // labels between two numbers — so it is worth its own look.
+  await fill(page);
+  await page.locator('.tab[data-view="analysis"]').click();
+  await expect(page.locator("#heatmap svg")).toBeVisible();
+
+  const download = page.waitForEvent("download");
+  await page.locator('[data-svg="heatmap"]').click();
+  const { readFileSync } = await import("node:fs");
+  const svg = readFileSync(await (await download).path(), "utf8");
+
+  const label = (await page.locator(".chart-legend.ramp .ramp-label").textContent()).trim();
+  expect(svg).toContain(label);
+  expect(svg).not.toContain("var(--");
+});

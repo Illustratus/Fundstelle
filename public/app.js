@@ -2217,6 +2217,91 @@ function heatmapHTML(data) {
 }
 
 /** The chart with its colors resolved, saved as a standalone SVG file. */
+/**
+ * The key of a chart, read off the legend beside it.
+ *
+ * The legend is HTML above the picture, so the saved file had three colours and
+ * nothing saying which department each one is — a stacked bar chart without a
+ * key is not a figure anybody can put in a paper. It is drawn into the copy
+ * instead, in the order it stands on screen: an `i` is a swatch, a `span` is
+ * what it means, and the ramp of the heatmap is both in turn.
+ */
+function legendEntriesFor(figure) {
+  // Not the immediate sibling: the summary for a screen reader sits between the
+  // legend and the picture, and looking only one step back found nothing.
+  let legend = figure?.previousElementSibling ?? null;
+  while (legend && !legend.classList.contains("chart-legend")) {
+    legend = legend.classList.contains("chart-head") ? null : legend.previousElementSibling;
+  }
+  if (!legend) return [];
+  const entries = [];
+  for (const child of legend.children) {
+    if (child.tagName === "I") {
+      entries.push({ colour: getComputedStyle(child).backgroundColor, label: "", width: 14 });
+      continue;
+    }
+    const swatch = child.querySelector("i");
+    entries.push({
+      colour: swatch ? getComputedStyle(swatch).backgroundColor : null,
+      label: child.textContent.trim(),
+      width: Math.ceil(child.getBoundingClientRect().width),
+    });
+  }
+  return entries.filter((entry) => entry.colour || entry.label);
+}
+
+/**
+ * The key drawn into the copy, and how much room it took.
+ *
+ * Built as elements rather than as a string of markup: a font stack carries
+ * quotation marks of its own, and putting one inside a `style="…"` attribute
+ * tears the attribute in half — which is exactly what happened, and showed up
+ * as a legend set in the wrong face at the wrong size.
+ *
+ * The widths come from the legend on screen, which has already been laid out by
+ * the browser, rather than from a guess at how wide a character is.
+ */
+function drawLegendInto(copy, entries, width, ink, font) {
+  if (!entries.length) return 0;
+  const SVG = "http://www.w3.org/2000/svg";
+  const SIZE = 9;
+  const GAP = 14;
+  const LINE = 18;
+  let x = 0;
+  let y = 12;
+
+  for (const entry of entries) {
+    if (x && x + entry.width > width) {
+      x = 0;
+      y += LINE;
+    }
+    if (entry.colour) {
+      const swatch = document.createElementNS(SVG, "rect");
+      swatch.setAttribute("x", x);
+      swatch.setAttribute("y", y - SIZE + 1);
+      swatch.setAttribute("width", SIZE);
+      swatch.setAttribute("height", SIZE);
+      swatch.setAttribute("rx", 2);
+      swatch.style.setProperty("fill", entry.colour);
+      copy.append(swatch);
+      x += SIZE + 5;
+    }
+    if (entry.label) {
+      const text = document.createElementNS(SVG, "text");
+      text.setAttribute("x", x);
+      text.setAttribute("y", y);
+      text.style.setProperty("fill", ink);
+      text.style.setProperty("font-family", font);
+      text.style.setProperty("font-size", "10px");
+      text.textContent = entry.label;
+      copy.append(text);
+      x += entry.width - (entry.colour ? SIZE + 5 : 0);
+    }
+    x += GAP;
+  }
+  return y + 8;
+}
+
 function saveChart(id, file) {
   const svg = document.querySelector(`#${id} svg`);
   if (!svg) return;
@@ -2229,11 +2314,26 @@ function saveChart(id, file) {
       copies[index].style.setProperty(property, style.getPropertyValue(property));
     }
   });
+  /* The key goes into the file, because it is not in the picture: it is HTML
+     next to it, and a saved chart has to say what its colours mean on its own.
+     What was already drawn moves down to make room. */
+  const page = getComputedStyle(document.body);
+  const [, , width, height] = copy.getAttribute("viewBox").split(/\s+/).map(Number);
+  const entries = legendEntriesFor(document.getElementById(id));
+  if (entries.length) {
+    const moved = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    while (copy.firstChild) moved.append(copy.firstChild);
+    const used = drawLegendInto(copy, entries, width, page.color, page.fontFamily);
+    moved.setAttribute("transform", `translate(0 ${used})`);
+    copy.append(moved);
+    copy.setAttribute("viewBox", `0 0 ${width} ${height + used}`);
+  }
+
   // A ground plane in the theme color, so that the file is readable on its own.
   const ground = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   ground.setAttribute("width", "100%");
   ground.setAttribute("height", "100%");
-  ground.setAttribute("fill", getComputedStyle(document.body).backgroundColor);
+  ground.setAttribute("fill", page.backgroundColor);
   copy.insertBefore(ground, copy.firstChild);
   copy.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: "image/svg+xml" });
