@@ -171,8 +171,10 @@ Mostly in notes I never find again.
 ```
 
 `## Section:` opens a guide section, `**2 · Speaker [0:15]**` a turn whose text
-follows as its own paragraph. Turns by any speaker not named `Interviewer` are
-codable; the speaker name becomes the department in the analytics. Gaps in the
+follows below it. A turn runs until something else begins — the next turn, a
+heading, or a rule across the page — so an answer written in several paragraphs
+arrives whole. Turns by any speaker not named `Interviewer` are codable; the
+speaker name becomes the department in the analytics. Gaps in the
 numbering are allowed — the same number must mean the same place across
 revisions. `## Erzählanstoß:` is accepted as an equivalent of `## Section:`, so
 German transcripts written for earlier versions keep working.

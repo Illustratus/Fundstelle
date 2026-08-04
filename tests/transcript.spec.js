@@ -36,6 +36,40 @@ test("the shapes a file arrives in are read rather than refused", () => {
   }
 });
 
+/* An answer is not always one paragraph. A turn used to run to the next blank
+   line, so everything after the first paragraph was dropped — out of the
+   reading surface, out of the search, out of every count, and silently. */
+
+test("an answer written in two paragraphs arrives whole", () => {
+  const parsed = parseTranscript(
+    "# Interview 1: Sales\n\n**1 · Sales [0:05]**\n\nFirst paragraph.\n\n" +
+      "Second paragraph.\n\n**2 · Sales [0:30]**\n\nNext turn.\n",
+    "x",
+  );
+  expect(parsed.turns).toHaveLength(2);
+  expect(parsed.turns[0].text).toBe("First paragraph. Second paragraph.");
+  expect(parsed.turns[1].text).toBe("Next turn.");
+  expect(parsed.problems).toEqual([]);
+});
+
+test("a turn ends where something else begins", () => {
+  // A rule across the page, a heading, the next turn: each ends the one before
+  // it, so nothing that is not speech is taken into a citation.
+  const afterRule = parseTranscript(
+    "# Interview 1: Sales\n\n**1 · Sales [0:05]**\n\nThe answer.\n\n---\n\nAn appendix nobody said.\n",
+    "x",
+  );
+  expect(afterRule.turns[0].text).toBe("The answer.");
+
+  const afterHeading = parseTranscript(
+    "# Interview 1: Sales\n\n**1 · Sales [0:05]**\n\nThe answer.\n\n" +
+      "## Section: 2 · Next\n\n**2 · Sales [1:00]**\n\nAfter.\n",
+    "x",
+  );
+  expect(afterHeading.turns.map((turn) => turn.text)).toEqual(["The answer.", "After."]);
+  expect(afterHeading.sections).toHaveLength(1);
+});
+
 test("a turn number used twice is called out", () => {
   const twice =
     "# Interview 1: Sales\n\n**5 · Sales [0:05]**\n\nFirst.\n\n**5 · Sales [0:15]**\n\nSecond.\n";
