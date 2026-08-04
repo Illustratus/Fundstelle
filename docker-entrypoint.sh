@@ -9,8 +9,18 @@
 # to hand over and we simply run.
 set -e
 
-# Where data lands. Both are set in the Dockerfile and may be overridden.
-DATA_DIRS="$(dirname "${CATEGORIES:-/data/categories.json}") ${TRANSCRIPTS:-/data/transcripts}"
+# Where data lands. The container's own defaults are applied here rather than in
+# the Dockerfile, because an `ENV` in the image cannot be told apart from a
+# setting the caller made — and one set by the image always won. That quietly
+# disabled the German variable names of earlier versions: a compose file naming
+# `TRANSKRIPTE` never beat the `TRANSCRIPTS` the image had set for itself, so
+# the tool read an empty folder and showed a study without a single interview
+# in it, next to a volume holding all of them.
+TRANSCRIPTS="${TRANSCRIPTS:-${TRANSKRIPTE:-/data/transcripts}}"
+CATEGORIES="${CATEGORIES:-${KATEGORIEN:-/data/categories.json}}"
+export TRANSCRIPTS CATEGORIES
+
+DATA_DIRS="$(dirname "$CATEGORIES") $TRANSCRIPTS"
 
 if [ "$(id -u)" = "0" ]; then
   for folder in $DATA_DIRS; do

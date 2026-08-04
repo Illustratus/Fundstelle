@@ -19,11 +19,12 @@ COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # All data (transcripts, category system, requirements, codings) lives on a
-# mounted volume so that it outlives the container.
+# mounted volume so that it outlives the container. Where exactly is decided by
+# the entrypoint and not here: a path set in the image is indistinguishable from
+# one the caller set, which took the choice away from anyone naming the folders
+# by their earlier German variable names.
 ENV HOST=0.0.0.0 \
-    PORT=4173 \
-    TRANSCRIPTS=/data/transcripts \
-    CATEGORIES=/data/categories.json
+    PORT=4173
 
 EXPOSE 4173
 VOLUME ["/data"]
