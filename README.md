@@ -43,7 +43,10 @@ in one provenance chain.
   inductive. Refine definitions on the material (the wording you started with is
   preserved and reported — for categories fixed beforehand as well as for ones
   formed on the material), add coding rules and anchor examples as they emerge,
-  merge categories that turn out to be one.
+  merge categories that turn out to be one. A category that has citations but no
+  anchor example yet is named in the analysis, and its gap is written into the
+  coding guide rather than left out of it — an omission that looks like a
+  decision is the worst kind of gap in an appendix.
 - **Review workflow** — units created programmatically (e.g. from a machine
   pre-coding) are marked unreviewed and rendered as suggestions until you
   confirm each one; every export flags unconfirmed codings. `Enter` walks the
