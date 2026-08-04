@@ -152,6 +152,12 @@ quietly dropping the other's work.
   whether the curve has flattened far enough is a judgement about the material,
   not one any arithmetic makes. Twenty interviews and a thousand codings draw in
   a quarter of a second.
+- **Where the category system rubs** — which two categories keep being used in
+  the same speaker turn, ranked by how often the rarer of them is never used
+  without the other. That is the one place Mayring asks for a coding rule, and
+  nothing else in the tool could say where it was. Reported as the weak signal
+  it is: two categories that belong together in the material look exactly like
+  two that were never told apart.
 - **Figures that survive leaving the tool** — every chart saves as an SVG that
   stands on its own: colours resolved, fonts carried, its key drawn in, nothing
   fetched from anywhere. Cross tables come out as Pandoc grid tables set to 80

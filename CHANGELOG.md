@@ -41,6 +41,16 @@ where it lies.
 
 ### Added
 
+- **Which categories keep turning up in the same breath.** A category system is
+  meant to separate things, and two categories almost never used apart are a
+  question about that system — either the material does not make the
+  distinction, or the coding rule that should keep them apart has not been
+  written. Mayring asks for such a rule exactly where a boundary is unclear, and
+  nothing in the tool said where that was. The analysis now ranks the pairs by
+  how often the rarer of the two is never used without the other, counted per
+  speaker turn, and says plainly that it is a weak signal. A system whose
+  categories never meet is told that this is the good result rather than left
+  with an absence.
 - **The sample table a thesis has to contain, written from the transcripts.**
   A transcript may carry `- Key: Value` lines under its heading and the format
   has parsed them from the beginning — a role, a tenure, a site. Exactly one of

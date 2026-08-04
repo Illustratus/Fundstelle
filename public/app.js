@@ -2425,6 +2425,64 @@ function saturationChartHTML(data) {
   );
 }
 
+/**
+ * Which categories keep turning up in the same breath.
+ *
+ * A category system is meant to separate things, and two categories that are
+ * almost never used apart are a question about that system: either the material
+ * does not make the distinction, or the coding rule that should keep them apart
+ * has not been written yet. That is the one place Mayring asks for such a rule,
+ * so this is the tool saying where to look.
+ *
+ * Ranked, not a matrix: a square of categories is half redundant and the reader
+ * has to hunt for the two cells that matter. And ranked by the share rather
+ * than the count, because "seven turns" means one thing for a category used
+ * eight times and another for one used ninety.
+ */
+function cooccurrenceHTML(data) {
+  const found = data.cooccurrence ?? { pairs: [], turns: {} };
+  if (!data.rows.some((row) => row.sum) || data.rows.length < 2) return "";
+
+  if (!found.pairs.length) {
+    return (
+      `<h3>${t("meetTitle")}</h3>` +
+      `<p class="column-note">${t("meetNone")}</p>`
+    );
+  }
+
+  const shown = found.pairs.slice(0, 12);
+  const rows = shown.map((pair) => {
+    const rarer = pair.aTurns <= pair.bTurns ? pair : { ...pair, aName: pair.bName, bName: pair.aName, aTurns: pair.bTurns, bTurns: pair.aTurns };
+    return [
+      `${pair.aName} · ${pair.bName}`,
+      pair.together,
+      `${Math.round(pair.share * 100)} %`,
+      t("meetOfWhich", { name: rarer.aName, n: rarer.aTurns }),
+    ];
+  });
+
+  return (
+    `<h3>${t("meetTitle")}</h3>` +
+    `<p class="column-note">${t("meetNote")}</p>` +
+    `<div class="table-frame"><table id="meet-table"><thead><tr>` +
+    `<th>${t("meetPair")}</th><th class="num">${t("meetTogether")}</th>` +
+    `<th class="num">${t("meetShare")}</th><th>${t("meetOf")}</th>` +
+    `</tr></thead><tbody>` +
+    rows
+      .map(
+        ([pair, together, share, of]) =>
+          `<tr><th scope="row">${escapeHTML(pair)}</th>` +
+          `<td class="num">${together}</td><td class="num">${share}</td>` +
+          `<td>${escapeHTML(of)}</td></tr>`,
+      )
+      .join("") +
+    `</tbody></table></div>` +
+    (found.pairs.length > shown.length
+      ? `<p class="column-note">${escapeHTML(t("meetMore", { n: found.pairs.length - shown.length }))}</p>`
+      : "")
+  );
+}
+
 function stackedBarsHTML({
   id,
   title,
@@ -3045,6 +3103,7 @@ async function drawAnalysis() {
     matrix +
     progress +
     saturationChartHTML(data) +
+    cooccurrenceHTML(data) +
     `<section id="agreement-part"></section>` +
     exports +
     `<section id="citations-part">${citationsHTML(data, color)}</section>` +

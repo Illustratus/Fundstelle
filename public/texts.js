@@ -161,6 +161,22 @@ export const TEXTS = {
       "{n} Kodiereinheiten haben ihren Platz im Transkript verloren und zählen " +
       "in keiner Zahl hier mit. In der Kodieransicht sind sie markiert und lassen " +
       "sich neu verankern.",
+    meetTitle: "Kategorien, die zusammen auftreten",
+    meetNote:
+      "Je Beitrag gezählt: in wie vielen Beiträgen beide Kategorien vergeben " +
+      "wurden. Ein schwaches Signal, und als solches gemeint — zwei Kategorien, " +
+      "die im Material zusammengehören, sehen hier genauso aus wie zwei, die nie " +
+      "auseinandergehalten wurden. Wo der Anteil hoch ist, lohnt eine Kodierregel " +
+      "an der Abgrenzung.",
+    meetNone:
+      "Keine zwei Kategorien wurden bisher im selben Beitrag vergeben. Für die " +
+      "Trennschärfe des Systems ist das das gute Ergebnis.",
+    meetPair: "Kategorien",
+    meetTogether: "Gemeinsame Beiträge",
+    meetShare: "Anteil",
+    meetOf: "Bezogen auf",
+    meetOfWhich: "{name} steht in {n} Beiträgen",
+    meetMore: "Weitere {n} Paare treten seltener zusammen auf.",
     chartSaturationTitle: "Wann kam nichts Neues mehr",
     chartSaturationCaption:
       "Senkrecht die Zahl der bis dahin vergebenen Kategorien, waagerecht die " +
@@ -648,6 +664,21 @@ export const TEXTS = {
       "{n} coding units have lost their place in the transcript and count in " +
       "none of the figures here. They are marked in the coding view and can be " +
       "anchored again.",
+    meetTitle: "Categories that turn up together",
+    meetNote:
+      "Counted per turn: in how many turns both categories were used. A weak " +
+      "signal, and meant as one — two categories that belong together in the " +
+      "material look exactly like two that were never told apart. Where the share " +
+      "is high, a coding rule at the boundary is worth writing.",
+    meetNone:
+      "No two categories have been used in the same turn so far. For the " +
+      "separateness of the system that is the good result.",
+    meetPair: "Categories",
+    meetTogether: "Shared turns",
+    meetShare: "Share",
+    meetOf: "Out of",
+    meetOfWhich: "{name} stands in {n} turns",
+    meetMore: "A further {n} pairs turn up together less often.",
     chartSaturationTitle: "When nothing new arrived any more",
     chartSaturationCaption:
       "Vertically the number of categories used by then, horizontally the " +
