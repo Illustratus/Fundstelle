@@ -1592,6 +1592,23 @@ test("a requirement counts departments across interviews", async ({ page }) => {
   await expect(card.locator(".numbers")).toContainText("2 Bereiche");
   await expect(card.locator(".numbers")).toContainText("2 Belege");
   await expect(card.locator(".numbers")).toContainText("Marketing, Vertrieb");
+
+  /* A requirement every department named sits on the last gridline — the
+     ordinary case for anything important, not an edge case. It has to be drawn
+     inside the picture rather than half over its own axis label. */
+  const strays = await page.locator("#priority svg").evaluate((svg) => {
+    const [, , width, height] = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+    return [...svg.querySelectorAll("circle.point")]
+      .map((point) => ({
+        cx: Number(point.getAttribute("cx")),
+        cy: Number(point.getAttribute("cy")),
+        r: Number(point.getAttribute("r")),
+      }))
+      .filter(
+        ({ cx, cy, r }) => cx - r < 0 || cx + r > width || cy - r < 0 || cy + r > height,
+      );
+  });
+  expect(strays).toEqual([]);
 });
 
 /* Anchoring -----------------------------------------------------------------

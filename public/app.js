@@ -2298,30 +2298,13 @@ function priorityFieldHTML(rows, departmentCount) {
 
   const WIDTH = 720;
   const LEFT = 150;
-  const RIGHT = 24;
   const TOP = 16;
   const BOTTOM = 42;
   const CELL = 46;
+  const SPREAD = 15;
   const maxX = Math.max(1, departmentCount);
   const maxY = OPERATIONS.length;
   const height = TOP + maxY * CELL + BOTTOM;
-  const track = WIDTH - LEFT - RIGHT;
-  const stepX = track / maxX;
-
-  const x = (value) => LEFT + value * stepX;
-  const y = (value) => TOP + (maxY - value) * CELL;
-
-  let grid = "";
-  for (let value = 0; value <= maxX; value++) {
-    grid +=
-      `<line class="grid" x1="${x(value)}" y1="${TOP}" x2="${x(value)}" y2="${y(0)}"></line>` +
-      `<text class="axis" x="${x(value)}" y="${y(0) + 14}" text-anchor="middle">${value}</text>`;
-  }
-  for (let value = 0; value <= maxY; value++) {
-    grid +=
-      `<line class="grid" x1="${LEFT}" y1="${y(value)}" x2="${WIDTH - RIGHT}" y2="${y(value)}"></line>` +
-      `<text class="axis" x="${LEFT - 8}" y="${y(value) + 4}" text-anchor="end">${value}</text>`;
-  }
 
   // Group by coordinate, so that overlapping requirements can be spread out.
   const buckets = new Map();
@@ -2336,10 +2319,39 @@ function priorityFieldHTML(rows, departmentCount) {
   const maxCitations = Math.max(1, ...rows.map((row) => row.citations.length));
   const radius = (count) => 5 + Math.round((count / maxCitations) * 5);
 
+  /* The right-hand margin has to hold whatever sits on the last gridline, and
+     that is the common case rather than the exception: a requirement every
+     department named lands exactly there. With a fixed margin such a dot was
+     drawn half outside the picture and over the axis label beneath it — so the
+     margin is measured from the widest dot and the widest fan of dots sharing a
+     coordinate. */
+  const widestFan = Math.max(0, ...[...buckets.values()].map((bucket) => bucket.length - 1));
+  const RIGHT = Math.ceil(10 + radius(maxCitations) + (widestFan / 2) * SPREAD);
+
+  const track = WIDTH - LEFT - RIGHT;
+  const stepX = track / maxX;
+
+  const x = (value) => LEFT + value * stepX;
+  const y = (value) => TOP + (maxY - value) * CELL;
+
+  let grid = "";
+  for (let value = 0; value <= maxX; value++) {
+    grid +=
+      `<line class="grid" x1="${x(value)}" y1="${TOP}" x2="${x(value)}" y2="${y(0)}"></line>` +
+      // A requirement blocking nothing sits on the baseline, so the labels keep
+      // a dot's distance from it instead of being drawn through.
+      `<text class="axis" x="${x(value)}" y="${y(0) + 22}" text-anchor="middle">${value}</text>`;
+  }
+  for (let value = 0; value <= maxY; value++) {
+    grid +=
+      `<line class="grid" x1="${LEFT}" y1="${y(value)}" x2="${WIDTH - RIGHT}" y2="${y(value)}"></line>` +
+      `<text class="axis" x="${LEFT - 8}" y="${y(value) + 4}" text-anchor="end">${value}</text>`;
+  }
+
   const points = [...buckets.values()]
     .flatMap((bucket) =>
       bucket.map((entry, index) => {
-        const spread = (index - (bucket.length - 1) / 2) * 15;
+        const spread = (index - (bucket.length - 1) / 2) * SPREAD;
         const cx = x(entry.cx) + spread;
         const cy = y(entry.cy);
         const tip = t("priorityTip", {
