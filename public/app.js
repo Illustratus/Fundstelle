@@ -90,6 +90,10 @@ const state = {
   // Last computed analysis, so that the citation slices work without a refetch.
   analysis: null,
   citationFilter: { ...EMPTY_SLICE },
+  // Which requirements the catalog is showing. At twenty of them the list runs
+  // to several screens, and the counts above it say how many are still
+  // undecided without offering any way to reach them.
+  catalogFilter: { open: false, unsupported: false, unreviewed: false },
   noteFilter: "",
   noteKind: "",
   noteCategory: "",
@@ -2755,7 +2759,34 @@ async function drawCatalog() {
     return;
   }
 
-  const cards = state.requirements
+  /* The counts above name what is unfinished — without a level, without a
+     citation, resting on suggestions — and at twenty requirements the list is
+     several screens long. Naming them without a way to reach them is only half
+     the job, so the same three are also a filter. */
+  const slice = state.catalogFilter;
+  const fitsSlice = (requirement) =>
+    (!slice.open || !MOSCOW_ORDER.includes(requirement.moscow)) &&
+    (!slice.unsupported || requirement.citations.length === 0) &&
+    (!slice.unreviewed || requirement.citations.some((citation) => !citation.reviewed));
+  const showing = state.requirements.filter(fitsSlice);
+  const active = slice.open || slice.unsupported || slice.unreviewed;
+
+  const box = (name, label) =>
+    `<label class="box"><input type="checkbox" data-catalog-filter="${name}"` +
+    `${slice[name] ? " checked" : ""}> ${label}</label>`;
+  const filter =
+    `<div class="citation-filter" id="catalog-filter">` +
+    box("open", t("withoutLevel")) +
+    box("unsupported", t("withoutCitation")) +
+    box("unreviewed", t("restingOnSuggestions")) +
+    (active
+      ? `<button type="button" class="button-quiet" id="catalog-filter-clear">` +
+        `${t("clearSlice", { shown: showing.length, all: state.requirements.length })}</button>`
+      : `<span class="filter-status">${state.requirements.length} ` +
+        `${plural(state.requirements.length, "requirementOne", "requirementMany")}</span>`) +
+    `</div>`;
+
+  const cards = showing
     .map((requirement) => {
       const levels = state.moscow
         .map(
@@ -2830,7 +2861,8 @@ async function drawCatalog() {
   root.innerHTML =
     head +
     `<div id="catalog-charts">${catalogChartsHTML(state.requirements, state.departments)}</div>` +
-    `<div class="catalog-list">${cards}</div>` +
+    filter +
+    `<div class="catalog-list">${cards || `<p class="empty-state">${t("noRequirementInSlice")}</p>`}</div>` +
     `<div class="exports"><a class="button-quiet" href="${exportHref("/api/export/requirements-catalog.md")}" download>` +
     `${t("catalogTitle")}</a></div>`;
 
@@ -3585,7 +3617,18 @@ function connectEvents() {
     drawCitations();
   });
 
+  catalog.addEventListener("change", (event) => {
+    const box = event.target.closest("[data-catalog-filter]");
+    if (!box) return;
+    state.catalogFilter[box.dataset.catalogFilter] = box.checked;
+    drawCatalog().catch((error) => notify(error.message, "error"));
+  });
+
   catalog.addEventListener("click", async (event) => {
+    if (event.target.id === "catalog-filter-clear") {
+      state.catalogFilter = { open: false, unsupported: false, unreviewed: false };
+      return drawCatalog().catch((error) => notify(error.message, "error"));
+    }
     const merge = event.target.closest("[data-requirement-merge]");
     if (merge) {
       const card = merge.closest(".requirement");

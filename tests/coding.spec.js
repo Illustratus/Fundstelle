@@ -1362,17 +1362,34 @@ test("the set slice can be exported", async ({ page, request }) => {
 });
 
 test("all notes stand together and are searchable", async ({ page }) => {
+  /* Leaving a note field saves it, and the save is in flight while the test
+     reads on — the analysis is fetched next and would be a note short. Each one
+     therefore waits for its own save, the same way the notes export test does. */
+  const saved = (match) =>
+    page.waitForResponse(
+      (response) => match(new URL(response.url()).pathname) && response.request().method() === "PATCH",
+    );
+
   await page.locator("#note-shell summary").click();
   await page.locator("#note").fill("Gespräch lief schleppend an.");
-  await page.locator("#note").blur();
+  await Promise.all([
+    saved((path) => /^\/api\/interviews\/[^/]+$/.test(path)),
+    page.locator("#note").blur(),
+  ]);
 
   await page.locator('.category[data-category="agreement"]').click();
   await page.locator('[data-category-memo="agreement"]').fill("Abgrenzung zum Alltag offen.");
-  await page.locator('[data-category-memo="agreement"]').blur();
+  await Promise.all([
+    saved((path) => path.includes("/api/categories/agreement")),
+    page.locator('[data-category-memo="agreement"]').blur(),
+  ]);
 
   await code(page, 22, 0, 40, "agreement");
   await page.locator("#detail-memo").fill("Hier wird etwas abgelegt.");
-  await page.locator("#detail-memo").blur();
+  await Promise.all([
+    saved((path) => /^\/api\/interviews\/[^/]+\/codings\/[^/]+$/.test(path)),
+    page.locator("#detail-memo").blur(),
+  ]);
 
   await page.locator('.tab[data-view="analysis"]').click();
   const entries = page.locator("#notes-part .note-entry");
@@ -2236,4 +2253,65 @@ test("the chart saves as a standalone SVG file", async ({ page }) => {
   const content = readFileSync(await file.path(), "utf8");
   expect(content).toContain("xmlns");
   expect(content).toMatch(/class="segment[^>]*fill:\s*rgb\(/);
+});
+
+/* At twenty requirements the catalog runs to several screens. The counts say
+   what is unfinished; naming that without a way to reach it is half the job. */
+
+test("the catalog can be cut down to what is still unfinished", async ({ page, request }) => {
+  // Three requirements, each unfinished in its own way, and one that is done.
+  const done = await (
+    await request.post("/api/requirements", { data: { title: "Fertig", moscow: "must" } })
+  ).json();
+  await request.post("/api/requirements", { data: { title: "Ohne Stufe" } });
+  await request.post("/api/requirements", { data: { title: "Ohne Beleg", moscow: "should" } });
+  const shaky = await (
+    await request.post("/api/requirements", { data: { title: "Nur Vorschläge", moscow: "could" } })
+  ).json();
+
+  const transcript = await (await request.get(`/api/interviews/${FIRST}`)).json();
+  const turns = transcript.turns.filter((t) => !t.interviewer && t.text.length > 60).slice(0, 2);
+  for (const [index, turn] of turns.entries()) {
+    const coding = await (
+      await request.post(`/api/interviews/${FIRST}/codings`, {
+        data: {
+          turn: turn.number,
+          start: 0,
+          end: 45,
+          category: "routine",
+          text: turn.text.slice(0, 45),
+          reviewed: index === 0,
+          requirements: [index === 0 ? done.id : shaky.id],
+        },
+      })
+    ).json();
+    expect(coding.id).toBeTruthy();
+  }
+
+  await page.reload();
+  await page.locator('.tab[data-view="catalog"]').click();
+  await expect(page.locator(".requirement")).toHaveCount(4);
+
+  // Without a level.
+  await page.locator('[data-catalog-filter="open"]').check();
+  await expect(page.locator(".requirement")).toHaveCount(1);
+  await expect(page.locator(".requirement .title")).toHaveValue("Ohne Stufe");
+  await expect(page.locator("#catalog-filter-clear")).toContainText("1 von 4");
+  await page.locator("#catalog-filter-clear").click();
+  await expect(page.locator(".requirement")).toHaveCount(4);
+
+  // Without any citation at all — two of them, since "Ohne Stufe" has none either.
+  await page.locator('[data-catalog-filter="unsupported"]').check();
+  await expect(page.locator(".requirement")).toHaveCount(2);
+  await page.locator("#catalog-filter-clear").click();
+
+  // Resting on evidence nobody has confirmed.
+  await page.locator('[data-catalog-filter="unreviewed"]').check();
+  await expect(page.locator(".requirement")).toHaveCount(1);
+  await expect(page.locator(".requirement .title")).toHaveValue("Nur Vorschläge");
+
+  // Two cuts at once narrow further rather than widening.
+  await page.locator('[data-catalog-filter="unsupported"]').check();
+  await expect(page.locator(".requirement")).toHaveCount(0);
+  await expect(page.locator("#view-catalog .empty-state")).toContainText("Keine Anforderung");
 });

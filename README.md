@@ -50,7 +50,10 @@ in one provenance chain.
   interviews into requirements, prioritized MoSCoW-style; how many departments
   name a requirement is counted from the material, never typed in. A MoSCoW
   band, a prioritization field (naming departments × blocked operations) and a
-  coverage chart make the prioritization checkable at a glance.
+  coverage chart make the prioritization checkable at a glance. At twenty
+  requirements the list runs to several screens, so it cuts down to what is
+  still unfinished: without a level, without a citation, or resting on evidence
+  nobody has confirmed.
 - **Production-grade analytics** — stacked bar chart per category and
   department, a category × guide-section heatmap, cross tables, per-interview
   progress; every chart exports as a standalone SVG with computed colors, and
