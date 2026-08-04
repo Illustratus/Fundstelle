@@ -20,7 +20,9 @@ whole application. Your data never leaves your disk.
 Interview transcripts are personal data even after pseudonymization. Web-based
 QDA services add a processor you may not be allowed to use — this tool binds to
 `127.0.0.1` and keeps codings in the same folder (and the same git history) as
-the transcripts they refer to. Findings, codings, and the paper you write stay
+the transcripts they refer to — written so that a change reads as one change:
+adding a coding unit adds a coding unit, and writing a memo touches the memo
+and the moment it was written, nothing else. Findings, codings, and the paper you write stay
 in one provenance chain.
 
 ## Features

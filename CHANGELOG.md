@@ -39,6 +39,17 @@ where it lies.
 
 ### Fixed
 
+- **A change in the codings is one change in the diff.** The tool's reason for
+  existing is that the codings live in the same folder — and the same git
+  history — as the transcripts, and a history is only worth having if a change
+  in it can be read. The fields of a coding unit were written in whatever order
+  the object happened to be built in: one order when a unit was created,
+  another after it had been read back and migrated. A file therefore held the
+  same kind of record in two orders at once, and adding a single unit rewrote
+  the lines of a unit nobody had touched — +17/−4 for one coding. There is one
+  shape now, settled at the single place every write passes through, so adding
+  a unit is +14/−1 and writing one memo touches two lines: the memo and the
+  moment it was written.
 - **A saved chart is the picture that was on the screen.** The saving copied a
   hand-picked six computed properties onto every element, and a hand-picked list
   falls behind the stylesheet it was written for. It had: `stroke-linejoin` was
