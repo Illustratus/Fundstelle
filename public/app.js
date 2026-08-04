@@ -2887,10 +2887,26 @@ async function drawAnalysis() {
       .join("") +
     `</tbody></table></div>`;
 
+  /* Named here rather than left to be found in the appendix. Mayring asks every
+     category for a definition, an anchor example and — where the boundary is
+     unclear — a coding rule; the guide writes the gap where one is missing, and
+     the gap is far cheaper to close before the export than after it. A category
+     nothing has been coded with yet is not counted: there is nothing it could
+     have been anchored in. */
+  const unanchored = data.rows.filter((row) => row.sum > 0 && !row.anchors);
+  const missing = unanchored.length
+    ? `<p class="drift-line">${escapeHTML(
+        t("anchorsMissing", {
+          n: unanchored.length,
+          names: unanchored.map((row) => row.name).join(", "),
+        }),
+      )}</p>`
+    : "";
+
   const exports =
     // Marked as one block so that printing can drop the heading with the links;
     // a heading whose only content is buttons is not a section on paper.
-    `<div class="exports-part"><h3>${t("exports")}</h3><div class="exports">` +
+    `<div class="exports-part"><h3>${t("exports")}</h3>${missing}<div class="exports">` +
     `<a class="button-quiet" href="${exportHref("/api/export/coding-guide.md")}" download>${t("exportCodingGuide")}</a>` +
     `<a class="button-quiet" href="${exportHref("/api/export/notes.md")}" download>${t("exportNotes")}</a>` +
     `<a class="button-quiet" href="${exportHref("/api/export/agreement.md")}" download>${t("exportAgreement")}</a>` +

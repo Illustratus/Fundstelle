@@ -133,6 +133,10 @@ export const TEXTS = {
     noCategoryContains: "Keine Kategorie enthält „{filter}“.",
     cancel: "Abbrechen",
 
+    anchorsMissing:
+      "{n} Kategorien haben noch kein Ankerbeispiel: {names}. Der Kodierleitfaden " +
+      "weist die Lücke aus. Eine Fundstelle wird zum Anker, indem man sie " +
+      "auswählt und „Ankerbeispiel“ ankreuzt.",
     analysisDisplaced:
       "{n} Kodiereinheiten haben ihren Platz im Transkript verloren und zählen " +
       "in keiner Zahl hier mit. In der Kodieransicht sind sie markiert und lassen " +
@@ -592,6 +596,10 @@ export const TEXTS = {
     noCategoryContains: "No category contains “{filter}”.",
     cancel: "Cancel",
 
+    anchorsMissing:
+      "{n} categories have no anchor example yet: {names}. The coding guide " +
+      "shows the gap. A citation becomes an anchor by selecting it and ticking " +
+      "“anchor example”.",
     analysisDisplaced:
       "{n} coding units have lost their place in the transcript and count in " +
       "none of the figures here. They are marked in the coding view and can be " +

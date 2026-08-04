@@ -39,6 +39,16 @@ where it lies.
 
 ### Fixed
 
+- **A missing anchor example is written into the coding guide, not left out of
+  it.** Mayring asks every category for a definition, an anchor example and,
+  where a boundary is unclear, a coding rule. A missing definition had always
+  been marked in the guide; a missing anchor example produced no field at all,
+  so the appendix read as though that category needed none and the first person
+  to notice was whoever reviews the submission. The gap is now named, in the
+  language the export was asked in, and the analysis says which categories it
+  affects beside the export button — where it is far cheaper to close. A
+  category nothing has been coded with yet stays silent: there is nothing it
+  could have been anchored in.
 - **The section bar said "distribution" and showed a coverage.** The percentages
   beside the transcript are how much of what was said in each guide section is
   held in coding units — a share within the block. The note above them said the

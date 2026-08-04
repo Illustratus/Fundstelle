@@ -233,9 +233,16 @@ test("the coding guide carries every anchor example and no more", async ({ reque
 
   /* Counted as a field label, not as a word: the lead paragraph says
      "Ankerbeispiele" too, and counting that found a discrepancy that was not
-     there. */
-  const labelled = (markdown.match(/^\| Ankerbeispiel/gm) ?? []).length;
-  expect(labelled).toBe(anchors.length);
+     there. A category with citations but none marked carries the same label
+     over a named gap, so the two are told apart — the filled fields have to
+     match the anchors exactly, and the gaps have to match the categories that
+     have none. */
+  const rows = markdown.match(/^\| Ankerbeispiel.*$/gm) ?? [];
+  const gaps = rows.filter((row) => row.includes("FEHLT"));
+  expect(rows.length - gaps.length).toBe(anchors.length);
+
+  const withoutAnchor = analysis.rows.filter((row) => row.sum > 0 && !row.anchors);
+  expect(gaps.length).toBe(withoutAnchor.length);
 
   for (const anchor of anchors) {
     expect(markdown).toContain(anchor.text.slice(0, 30));
