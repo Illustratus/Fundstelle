@@ -244,9 +244,16 @@ ambiguous. The file itself is never corrected; it is yours.
 On first start (no `categories.json` yet) the tool seeds a deductive start
 system. Point `START_SYSTEM` at a JSON file to seed your own — see
 [example-start-system.json](example-start-system.json) for the format:
-propositions are optional color groups, `children` nests subcategories, missing
-abbreviations are derived from the name. A configured but unreadable file
-fails loudly instead of silently coding with the wrong system.
+propositions are optional color groups, missing abbreviations are derived from
+the name. A configured but unreadable file fails loudly instead of silently
+coding with the wrong system.
+
+Subcategories can be written either way: nested under `children`, or as a flat
+list where each one names its `parent`. The second is the shape the tool itself
+writes, so a `categories.json` from one study can be handed straight to the next
+as its start system. The system stays two levels deep — a third level, a parent
+that does not exist, or a category placed under itself abort at startup with a
+message naming the category.
 
 Any text in a start system may be a plain string or an object keyed by
 language, which is how the bundled example is written:

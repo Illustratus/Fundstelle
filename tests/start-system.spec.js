@@ -377,3 +377,110 @@ test("the named case carries what it needs to be phrased in either language", as
     expect(translator(language)(error.key, error.params)).toContain("routine");
   }
 });
+
+/* A category system the tool itself wrote, handed back to it as a start system.
+   That is the most obvious thing anyone would do with a categories.json —
+   carry one study's system into the next — and it is the one shape whose
+   hierarchy used to disappear. A hand-written file nests its sub-categories
+   under `children`; the file the tool writes is flat and says `parent`, and
+   only the first was read. The sub-categories came out promoted to top level,
+   silently, and the analysis then counted a two-level system as a flat one. */
+
+const startFile = (categories) => {
+  const root = mkdtempSync(join(tmpdir(), "fundstelle-start-"));
+  const file = join(root, "start-system.json");
+  writeFileSync(file, JSON.stringify({ categories }));
+  return file;
+};
+
+const DEFINED = { definition: "Aussagen darüber." };
+
+test("a flat start system keeps the hierarchy it declares", async () => {
+  const file = startFile([
+    { id: "routine", name: "Arbeitsalltag", proposition: "practice", ...DEFINED },
+    { id: "routine.tools", name: "Werkzeuge", parent: "routine", ...DEFINED },
+    { id: "agreement", name: "Absprachen", ...DEFINED },
+  ]);
+  const { categories } = await freshStore(file).categories("de");
+
+  expect(categories.map((category) => category.id)).toEqual([
+    "routine",
+    "routine.tools",
+    "agreement",
+  ]);
+  expect(categories.find((c) => c.id === "routine.tools").parent).toBe("routine");
+  // A sub-category that names no proposition takes its parent's, exactly as a
+  // nested one does — the colour encodes the proposition, so a child that fell
+  // back to "none" would be drawn in the wrong key.
+  expect(categories.find((c) => c.id === "routine.tools").proposition).toBe("practice");
+});
+
+test("a parent standing further down the file is still found", async () => {
+  // A flat file has no order to rely on, so the parents cannot be resolved
+  // while reading it.
+  const file = startFile([
+    { id: "routine.tools", name: "Werkzeuge", parent: "routine", ...DEFINED },
+    { id: "routine", name: "Arbeitsalltag", ...DEFINED },
+  ]);
+  const { categories } = await freshStore(file).categories("de");
+  expect(categories.find((c) => c.id === "routine.tools").parent).toBe("routine");
+});
+
+test("both shapes describe the same system", async () => {
+  const nested = await freshStore(
+    startFile([
+      {
+        id: "routine",
+        name: "Arbeitsalltag",
+        proposition: "practice",
+        ...DEFINED,
+        children: [{ id: "routine.tools", name: "Werkzeuge", ...DEFINED }],
+      },
+    ]),
+  ).categories("de");
+  const flat = await freshStore(
+    startFile([
+      { id: "routine", name: "Arbeitsalltag", proposition: "practice", ...DEFINED },
+      { id: "routine.tools", name: "Werkzeuge", parent: "routine", ...DEFINED },
+    ]),
+  ).categories("de");
+  expect(flat.categories).toEqual(nested.categories);
+});
+
+test("a parent that does not exist aborts loudly", async () => {
+  /* Repairing it would leave the category under a ghost and out of the panel it
+     belongs in; either way the file says something its author did not mean. */
+  const file = startFile([
+    { id: "routine.tools", name: "Werkzeuge", parent: "nowhere", ...DEFINED },
+  ]);
+  const error = await freshStore(file)
+    .categories()
+    .catch((thrown) => thrown);
+  expect(error.key).toBe("errorStartSystemUnknownParent");
+  expect(translator("de")(error.key, error.params)).toContain("nowhere");
+  expect(translator("en")(error.key, error.params)).toContain("routine.tools");
+});
+
+test("a third level aborts loudly rather than being smuggled in", async () => {
+  // Moving a category by hand is already refused a third level; a start system
+  // must not be able to reach one through the back door.
+  const file = startFile([
+    { id: "routine", name: "Arbeitsalltag", ...DEFINED },
+    { id: "routine.tools", name: "Werkzeuge", parent: "routine", ...DEFINED },
+    { id: "routine.tools.paper", name: "Papier", parent: "routine.tools", ...DEFINED },
+  ]);
+  const error = await freshStore(file)
+    .categories()
+    .catch((thrown) => thrown);
+  expect(error.key).toBe("errorStartSystemThreeLevels");
+  expect(translator("de")(error.key, error.params)).toContain("zweistufig");
+  expect(translator("en")(error.key, error.params)).toContain("two levels");
+});
+
+test("a category under itself aborts loudly", async () => {
+  const file = startFile([{ id: "routine", name: "Arbeitsalltag", parent: "routine", ...DEFINED }]);
+  const error = await freshStore(file)
+    .categories()
+    .catch((thrown) => thrown);
+  expect(error.key).toBe("errorStartSystemSelfParent");
+});

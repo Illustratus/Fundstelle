@@ -1,8 +1,16 @@
 {
   "name": "fundstelle",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Local-first coding tool for the qualitative content analysis of interviews",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Illustratus/Fundstelle.git"
+  },
+  "homepage": "https://github.com/Illustratus/Fundstelle#readme",
+  "bugs": {
+    "url": "https://github.com/Illustratus/Fundstelle/issues"
+  },
   "keywords": [
     "qualitative-content-analysis",
     "qda",

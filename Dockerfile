@@ -6,10 +6,14 @@ FROM node:22-alpine
 # root in the entrypoint once the data folder has been handed over.
 RUN apk add --no-cache tini su-exec
 
+# The version is passed in at build time so the image can say which release it
+# is; a label baked to a literal goes stale the first time it is not updated.
+ARG VERSION=0.0.0-dev
 LABEL org.opencontainers.image.title="Fundstelle" \
       org.opencontainers.image.description="Local-first tool for qualitative content analysis" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.source="https://github.com/illustratus/fundstelle"
+      org.opencontainers.image.version="$VERSION" \
+      org.opencontainers.image.source="https://github.com/Illustratus/Fundstelle"
 
 WORKDIR /app
 COPY server.js example-start-system.json ./
