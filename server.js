@@ -16,7 +16,7 @@ import { findInterviews, loadTranscript } from "./lib/transcript.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withoutCheckMarks } from "./lib/anchoring.js";
-import { negotiate, translator } from "./lib/texts.js";
+import { LANGUAGES, negotiate, translator } from "./lib/texts.js";
 import {
   MOSCOW,
   analysis,
@@ -49,6 +49,12 @@ const HOST = process.env.HOST ?? "127.0.0.1";
 // your own on first start, instead of the bundled example.
 const CATEGORIES_FILE = setting("CATEGORIES", "KATEGORIEN");
 const START_SYSTEM_FILE = setting("START_SYSTEM", "STARTSYSTEM");
+// Pins the language a bilingual start system is seeded in. Without it the first
+// request decides, which is right for one person on their own machine and wrong
+// for a shared or scripted setup that wants the same seed every time.
+const START_LANGUAGE = LANGUAGES.includes(setting("START_LANGUAGE"))
+  ? setting("START_LANGUAGE")
+  : null;
 
 const store = new Store({
   toolRoot: resolve(HERE, "data"),
@@ -165,6 +171,9 @@ const server = createServer(async (request, response) => {
   // operated in, and a bare `curl` still gets something readable.
   const language = negotiate(url.searchParams.get("lang"), request.headers["accept-language"]);
   const t = translator(language);
+  // Only the very first read seeds anything; afterwards the stored system wins
+  // and this value is never looked at again.
+  const seedLanguage = START_LANGUAGE ?? language;
 
   try {
     if (!path.startsWith("/api/")) return await staticFile(response, path);
@@ -232,7 +241,7 @@ const server = createServer(async (request, response) => {
 
     // Categories ------------------------------------------------------------
     if (path === "/api/categories" && request.method === "GET") {
-      const { categories, propositions } = await store.categories();
+      const { categories, propositions } = await store.categories(seedLanguage);
       return send(response, 200, { categories, propositions });
     }
     if (path === "/api/categories" && request.method === "POST") {
@@ -313,7 +322,7 @@ const server = createServer(async (request, response) => {
     if (path === "/api/requirements" && request.method === "GET") {
       const all = await allInterviews();
       const { requirements } = await store.requirements();
-      const { categories, propositions } = await store.categories();
+      const { categories, propositions } = await store.categories(seedLanguage);
       return send(response, 200, {
         requirements: catalog(all, requirements, categories),
         moscow: MOSCOW,
@@ -359,7 +368,7 @@ const server = createServer(async (request, response) => {
     // Analysis --------------------------------------------------------------
     if (path === "/api/analysis" && request.method === "GET") {
       const all = await allInterviews();
-      const { categories, propositions } = await store.categories();
+      const { categories, propositions } = await store.categories(seedLanguage);
       return send(response, 200, {
         ...analysis(all, categories),
         categories,
@@ -370,12 +379,12 @@ const server = createServer(async (request, response) => {
     // Exports ---------------------------------------------------------------
     if (path === "/api/export/coding-guide.md") {
       const all = await allInterviews();
-      const { categories } = await store.categories();
+      const { categories } = await store.categories(seedLanguage);
       return send(response, 200, codingGuideMarkdown(all, categories, language), MARKDOWN);
     }
     if (path === "/api/export/citations.md") {
       const all = await allInterviews();
-      const { categories } = await store.categories();
+      const { categories } = await store.categories(seedLanguage);
       const slice = {
         department: url.searchParams.get("department") ?? "",
         section: url.searchParams.get("section") ?? "",
@@ -389,12 +398,12 @@ const server = createServer(async (request, response) => {
     }
     if (path === "/api/export/notes.md") {
       const all = await allInterviews();
-      const { categories } = await store.categories();
+      const { categories } = await store.categories(seedLanguage);
       return send(response, 200, notesMarkdown(all, categories, language), MARKDOWN);
     }
     if (path === "/api/export/matrix.md") {
       const all = await allInterviews();
-      const { categories } = await store.categories();
+      const { categories } = await store.categories(seedLanguage);
       return send(
         response,
         200,
@@ -405,7 +414,7 @@ const server = createServer(async (request, response) => {
     if (path === "/api/export/requirements-catalog.md") {
       const all = await allInterviews();
       const { requirements } = await store.requirements();
-      const { categories } = await store.categories();
+      const { categories } = await store.categories(seedLanguage);
       return send(
         response,
         200,
@@ -417,7 +426,7 @@ const server = createServer(async (request, response) => {
     if (codingTable) {
       const id = decodeURIComponent(codingTable[1]);
       const { transcript, codings } = await loadChecked(id);
-      const { categories } = await store.categories();
+      const { categories } = await store.categories(seedLanguage);
       return send(response, 200, codingTableMarkdown(transcript, codings, categories, language), MARKDOWN);
     }
 

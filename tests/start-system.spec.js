@@ -12,9 +12,9 @@ import { translator } from "../lib/texts.js";
  * loud abort on an unusable file.
  */
 
-function freshStore(startSystemFile = null) {
+function freshStore(startSystemFile = null, seedLanguage = undefined) {
   const root = mkdtempSync(join(tmpdir(), "fundstelle-start-"));
-  return new Store({ toolRoot: root, transcriptRoot: root, startSystemFile });
+  return new Store({ toolRoot: root, transcriptRoot: root, startSystemFile, seedLanguage });
 }
 
 test("without a start system file the bundled system appears", async () => {
@@ -26,6 +26,102 @@ test("without a start system file the bundled system appears", async () => {
   ]);
   expect(categories.find((c) => c.id === "routine.disruption").parent).toBe("routine");
   expect(propositions.practice.name).toContain("Proposition 1");
+});
+
+/* The bundled system carries both languages, because the first screen of a
+   fresh installation should not be in a language nobody asked for. What is
+   written out is one language, the way an author would have typed it. */
+
+test("the bundled system is seeded in the language that was asked for", async () => {
+  const german = await freshStore().categories("de");
+  expect(german.categories.map((c) => c.name)).toEqual([
+    "Arbeitsalltag",
+    "Störungen",
+    "Absprachen",
+  ]);
+  expect(german.categories[0].definition).toContain("wiederkehrende Abläufe");
+  expect(german.propositions.practice.name).toBe("Proposition 1: Werkzeuge prägen den Arbeitsalltag");
+
+  const english = await freshStore().categories("en");
+  expect(english.categories.map((c) => c.name)).toEqual([
+    "Everyday work",
+    "Disruptions",
+    "Agreements",
+  ]);
+  expect(english.categories[0].definition).toContain("recurring sequences");
+  expect(english.propositions.practice.name).toBe("Proposition 1: Tools shape the working day");
+
+  // The abbreviation follows the name it was derived from.
+  expect(german.categories[1].abbreviation).toBe("Stö");
+  expect(english.categories[1].abbreviation).toBe("Dis");
+});
+
+test("what is seeded is one language, not both", async () => {
+  const store = freshStore();
+  const { categories } = await store.categories("en");
+  for (const category of categories) {
+    expect(typeof category.name).toBe("string");
+    expect(typeof category.definition).toBe("string");
+  }
+  // And it stays that way: the second read finds the file and ignores the wish.
+  const again = await store.categories("de");
+  expect(again.categories[0].name).toBe("Everyday work");
+});
+
+test("a pinned seed language outranks what the request asks for", async () => {
+  // What `START_LANGUAGE` sets on the server: a shared or scripted setup wants
+  // the same seed every time, whoever opens the tool first.
+  const { categories } = await freshStore(null, "de").categories();
+  expect(categories.map((c) => c.name)).toEqual(["Arbeitsalltag", "Störungen", "Absprachen"]);
+});
+
+test("a language nobody wrote falls back instead of coming out empty", async () => {
+  const { categories, propositions } = await freshStore().categories("fr");
+  expect(categories[0].name).toBe("Everyday work");
+  expect(propositions.practice.name).toContain("Proposition 1");
+});
+
+test("a start system of one's own may be bilingual too", async () => {
+  const root = mkdtempSync(join(tmpdir(), "fundstelle-start-"));
+  const file = join(root, "start-system.json");
+  writeFileSync(
+    file,
+    JSON.stringify({
+      propositions: { core: { name: { de: "Kernthese", en: "Core claim" }, color: "#123456" } },
+      categories: [
+        {
+          id: "routine",
+          name: { de: "Arbeitsalltag", en: "Everyday work" },
+          proposition: "core",
+          definition: { de: "Aussagen über Abläufe.", en: "Statements about sequences." },
+        },
+      ],
+    }),
+  );
+
+  const german = await freshStore(file).categories("de");
+  expect(german.categories[0].name).toBe("Arbeitsalltag");
+  expect(german.propositions.core.name).toBe("Kernthese");
+
+  const english = await freshStore(file).categories("en");
+  expect(english.categories[0].name).toBe("Everyday work");
+  expect(english.propositions.core.name).toBe("Core claim");
+  expect(english.propositions.core.color).toBe("#123456");
+});
+
+test("a start system in one language is left exactly as it is", async () => {
+  const root = mkdtempSync(join(tmpdir(), "fundstelle-start-"));
+  const file = join(root, "start-system.json");
+  writeFileSync(
+    file,
+    JSON.stringify({
+      categories: [{ id: "own", name: "Eigene Kategorie", definition: "Nur auf Deutsch." }],
+    }),
+  );
+
+  // Asking for English cannot invent a translation, and must not blank the name.
+  const { categories } = await freshStore(file).categories("en");
+  expect(categories[0]).toMatchObject({ name: "Eigene Kategorie", definition: "Nur auf Deutsch." });
 });
 
 test("a start system of one's own replaces the bundled one", async () => {

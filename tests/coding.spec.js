@@ -1852,6 +1852,13 @@ test("the error language is negotiated like everything else", async ({ request }
   expect(german.code).toBe("errorUnknownCategory");
 });
 
+test("the coding guide carries a class name templates can select on", async ({ request }) => {
+  const guide = await (await request.get("/api/export/coding-guide.md?lang=de")).text();
+  // The English name leads; the German one stays so that typesetting written
+  // for an earlier version keeps working.
+  expect(guide).toContain("::: {.coding-guide .leitfaden}");
+});
+
 test("the language switch in the header changes permanently and back", async ({ page }) => {
   await expect(page.locator("#language")).toHaveText("EN");
   await page.locator("#language").click();

@@ -36,6 +36,9 @@ export default defineConfig({
       PORT: String(PORT),
       TRANSCRIPTS: join(SANDBOX, "transcripts"),
       CATEGORIES: join(SANDBOX, "categories.json"),
+      // The seed would otherwise follow whichever request happens to arrive
+      // first, and the suite reads the seeded category names by name.
+      START_LANGUAGE: "de",
     },
   },
 });

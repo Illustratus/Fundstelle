@@ -1,28 +1,49 @@
 {
-  "$comment": "Template for your own deductive start system, see README (START_SYSTEM). Propositions are optional color groups; `children` carries subcategories. Abbreviations are optional (otherwise the first three letters of the name).",
+  "$comment": "Template for your own deductive start system, see README (START_SYSTEM). Propositions are optional color groups; `children` carries subcategories. Abbreviations are optional (otherwise the first three letters of the name). Any text may be a plain string or an object keyed by language, as below — seeding writes out one language and the choice is yours from then on.",
   "propositions": {
-    "practice": { "name": "Proposition 1: Tools shape the working day", "color": "#6C8EBF" },
-    "coordination": { "name": "Proposition 2: Agreements stay informal", "color": "#D79B00" }
+    "practice": {
+      "name": {
+        "de": "Proposition 1: Werkzeuge prägen den Arbeitsalltag",
+        "en": "Proposition 1: Tools shape the working day"
+      },
+      "color": "#6C8EBF"
+    },
+    "coordination": {
+      "name": {
+        "de": "Proposition 2: Absprachen bleiben informell",
+        "en": "Proposition 2: Agreements stay informal"
+      },
+      "color": "#D79B00"
+    }
   },
   "categories": [
     {
       "id": "routine",
-      "name": "Arbeitsalltag",
+      "name": { "de": "Arbeitsalltag", "en": "Everyday work" },
       "proposition": "practice",
-      "definition": "Aussagen über wiederkehrende Abläufe im Arbeitstag, die zeigen, welche Tätigkeit mit welchem Werkzeug in welcher Reihenfolge erledigt wird.",
+      "definition": {
+        "de": "Aussagen über wiederkehrende Abläufe im Arbeitstag, die zeigen, welche Tätigkeit mit welchem Werkzeug in welcher Reihenfolge erledigt wird.",
+        "en": "Statements about recurring sequences in the working day that show which task is done with which tool in which order."
+      },
       "children": [
         {
           "id": "routine.disruption",
-          "name": "Störungen",
-          "definition": "Aussagen über Unterbrechungen des Arbeitsflusses, ihre Auslöser und ihre Folgen."
+          "name": { "de": "Störungen", "en": "Disruptions" },
+          "definition": {
+            "de": "Aussagen über Unterbrechungen des Arbeitsflusses, ihre Auslöser und ihre Folgen.",
+            "en": "Statements about interruptions of the workflow, what triggers them and what follows from them."
+          }
         }
       ]
     },
     {
       "id": "agreement",
-      "name": "Absprachen",
+      "name": { "de": "Absprachen", "en": "Agreements" },
       "proposition": "coordination",
-      "definition": "Aussagen über getroffene oder gescheiterte Absprachen, die zeigen, worüber, mit wem und auf welchem Weg abgestimmt wird."
+      "definition": {
+        "de": "Aussagen über getroffene oder gescheiterte Absprachen, die zeigen, worüber, mit wem und auf welchem Weg abgestimmt wird.",
+        "en": "Statements about agreements made or missed that show what is coordinated, with whom and through which channel."
+      }
     }
   ]
 }

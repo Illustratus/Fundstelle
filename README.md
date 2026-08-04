@@ -112,6 +112,7 @@ location. Nothing that was already there is touched.
 | `TRANSCRIPTS` | root folder of the interview directories | `data/transcripts` |
 | `CATEGORIES` | path to `categories.json` (its sibling `requirements.json` is derived) | `data/categories.json` |
 | `START_SYSTEM` | your own deductive start system, seeded on first start | built-in example |
+| `START_LANGUAGE` | `de` or `en`; pins the language the start system is seeded in | whoever opens it first |
 | `PORT` | server port | `4173` |
 | `HOST` | bind address; `0.0.0.0` only inside a container | `127.0.0.1` |
 
@@ -156,6 +157,22 @@ propositions are optional color groups, `children` nests subcategories, missing
 abbreviations are derived from the name. A configured but unreadable file
 fails loudly instead of silently coding with the wrong system.
 
+Any text in a start system may be a plain string or an object keyed by
+language, which is how the bundled example is written:
+
+```json
+{ "id": "routine",
+  "name": { "de": "Arbeitsalltag", "en": "Everyday work" },
+  "definition": { "de": "Aussagen über …", "en": "Statements about …" } }
+```
+
+Seeding resolves one language and writes plain strings, so from the first edit
+onwards the categories are yours to rename. Which language that is follows
+whoever opens the tool first; `START_LANGUAGE=de` pins it, which is what a
+shared or scripted setup wants. A text that exists in only one language is used
+as it stands rather than coming out blank — you can always hand the tool a
+single-language file.
+
 ## Upgrading from an earlier version
 
 Version 0.1 renamed the files and the keys inside them from German to English.
@@ -168,6 +185,11 @@ run, as you would with any format change.
 The data directory moved from `daten/` to `data/` and the transcript folder
 from `daten/transkripte/` to `data/transcripts/`. If you used the defaults,
 rename the folders — or point `TRANSCRIPTS` and `CATEGORIES` at the old ones.
+
+The coding guide now opens its Pandoc block as `::: {.coding-guide .leitfaden}`
+instead of `::: {.leitfaden}`. Both class names are applied, so a LaTeX template
+that selects on the old one keeps working; write new templates against
+`coding-guide`.
 
 ## Tests
 
