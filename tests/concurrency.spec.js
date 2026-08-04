@@ -199,3 +199,91 @@ test("a lock left behind by a process that died is broken, not waited on", async
   expect(categories.some((category) => category.name === "Trotzdem")).toBe(true);
   expect(existsSync(lock), "and the lock is cleared away after").toBe(false);
 });
+
+test("a lock held by someone still working is not broken underneath them", async () => {
+  /* A lock is judged stale by its age, and that age used to be stamped once
+     when it was taken. Work outlasting the threshold — a large file on a
+     mounted drive — would have had its own lock broken by the next process
+     along, which is the very collision the lock exists to prevent. */
+  const { mkdtempSync, existsSync, statSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { Store } = await import("../lib/store.js");
+
+  const root = mkdtempSync(join(tmpdir(), "fundstelle-beat-"));
+  const categoriesFile = join(root, "categories.json");
+  // Short thresholds so the point can be made in a moment rather than in ten
+  // seconds; the mechanism is the same at either scale.
+  const make = () =>
+    new Store({
+      toolRoot: root,
+      transcriptRoot: root,
+      categoriesFile,
+      seedLanguage: "de",
+      lockStale: 400,
+      lockWait: 2000,
+    });
+  const store = make();
+  await store.ensureSeeded("de");
+
+  // A change that takes longer than a lock is allowed to look untouched.
+  const slow = make();
+  const write = slow.writeCategories.bind(slow);
+  slow.writeCategories = async (data) => {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    return write(data);
+  };
+
+  const lock = `${categoriesFile}.lock`;
+  const stamps = new Set();
+  const watching = setInterval(() => {
+    if (existsSync(lock)) stamps.add(Math.round(statSync(lock).mtimeMs));
+  }, 50);
+
+  await slow.addCategory({ name: "Langsam", definition: "Am Material." });
+  clearInterval(watching);
+
+  // Its age was refreshed while it worked, so nobody could mistake it for dead.
+  expect(stamps.size).toBeGreaterThan(1);
+  expect(existsSync(lock), "and it is cleared away when the work is done").toBe(false);
+
+  const { categories } = await store.categories();
+  expect(categories.some((category) => category.name === "Langsam")).toBe(true);
+});
+
+test("waiting on a lock that never frees says so rather than hanging", async () => {
+  const { mkdtempSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { Store } = await import("../lib/store.js");
+  const { translator } = await import("../lib/texts.js");
+
+  const root = mkdtempSync(join(tmpdir(), "fundstelle-busy-"));
+  const categoriesFile = join(root, "categories.json");
+  const store = new Store({
+    toolRoot: root,
+    transcriptRoot: root,
+    categoriesFile,
+    seedLanguage: "de",
+    lockStale: 400,
+    lockWait: 500,
+  });
+  await store.ensureSeeded("de");
+
+  // Somebody alive is holding it: fresh, and kept fresh.
+  const lock = `${categoriesFile}.lock`;
+  writeFileSync(lock, "1");
+  const holding = setInterval(() => writeFileSync(lock, "1"), 50);
+
+  const error = await store
+    .addCategory({ name: "Wartet", definition: "Am Material." })
+    .catch((thrown) => thrown);
+  clearInterval(holding);
+
+  expect(error.key).toBe("errorBusy");
+  expect(error.status).toBe(503);
+  // And it is a sentence in both languages, naming the folder to go and look at.
+  for (const language of ["de", "en"]) {
+    expect(translator(language)(error.key, error.params)).toContain(root);
+  }
+});
