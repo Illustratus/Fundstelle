@@ -1241,14 +1241,21 @@ body.anchoring .text { cursor: crosshair; }
 body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offset: 6px; }
 
 /* Charts of the analysis ---------------------------------------------------
-   Series colors of the departments: a categorical palette, validated by
-   computation (color-vision distance, lightness, contrast) against both
-   surfaces; the dark values are their own steps of the same hues, not an
-   inversion. The order is fixed per department — the data never recolors
-   anyone. */
+   Series colors of the departments: a categorical palette; the dark values are
+   their own steps of the same hues, not an inversion. The order is fixed per
+   department — the data never recolors anyone.
+
+   Every series stands at least 3:1 off the surface it is drawn on, which the
+   dark set already did and the light set did not: its amber reached 1.99, and a
+   segment whose edge cannot be made out is a segment that cannot be read. The
+   four that fell short were darkened along their own hue until they cleared it,
+   so the departments stay recognizable. Neighbours inside a bar are told apart
+   by hue and by the two pixels of air between them, not by lightness — which is
+   why the check that matters is against the surface. `npm run test:contrast`
+   measures it in the running application. */
 :root {
-  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
-  --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  --series-1: #2a78d6; --series-2: #ea632d; --series-3: #19a06f; --series-4: #bd8000;
+  --series-5: #e35f91; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -1257,8 +1264,8 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   }
 }
 :root[data-theme="light"] {
-  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
-  --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  --series-1: #2a78d6; --series-2: #ea632d; --series-3: #19a06f; --series-4: #bd8000;
+  --series-5: #e35f91; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
 }
 :root[data-theme="dark"] {
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
@@ -1282,7 +1289,11 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .segment:hover { opacity: .82; }
 .chart .grid { stroke: var(--line); }
 .chart .baseline { stroke: var(--line-strong); }
-.chart .axis { fill: var(--ink-faint); font-size: 10px; font-family: var(--sans); }
+/* Axis figures and the section headings carry meaning — which number, which
+   section — so they are text and not decoration, and `--ink-faint` left them at
+   2.9:1. `--ink-soft` is the quietest tone that still clears 4.5:1 on both
+   surfaces. */
+.chart .axis { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); }
 .chart .axis-title { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); letter-spacing: .04em; }
 .chart .row-label { fill: var(--ink); font-size: 11.5px; font-family: var(--sans); }
 .chart .row-label.child { fill: var(--ink-soft); }
@@ -1326,21 +1337,21 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
    inversion. */
 :root {
   --level-1: #dcebe7; --level-2: #b0d4cb; --level-3: #7bb5a8;
-  --level-4: #45897b; --level-5: #1f4f4a;
+  --level-4: #407f72; --level-5: #1f4f4a;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --level-1: #17332f; --level-2: #1e4a43; --level-3: #2c6a5f;
-    --level-4: #459181; --level-5: #79c4b4;
+    --level-4: #499384; --level-5: #79c4b4;
   }
 }
 :root[data-theme="light"] {
   --level-1: #dcebe7; --level-2: #b0d4cb; --level-3: #7bb5a8;
-  --level-4: #45897b; --level-5: #1f4f4a;
+  --level-4: #407f72; --level-5: #1f4f4a;
 }
 :root[data-theme="dark"] {
   --level-1: #17332f; --level-2: #1e4a43; --level-3: #2c6a5f;
-  --level-4: #459181; --level-5: #79c4b4;
+  --level-4: #499384; --level-5: #79c4b4;
 }
 
 .level-1 { --level: var(--level-1); }

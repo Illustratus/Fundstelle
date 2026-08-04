@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "playwright test",
+    "test:contrast": "playwright test tests/contrast.spec.js",
     "test:docker": "sh tests/docker-smoke.sh",
     "fixtures": "node tests/fixtures/generator.mjs"
   },
