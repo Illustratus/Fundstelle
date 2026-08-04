@@ -1754,6 +1754,24 @@ function shorten(text, limit = 30) {
   return text.length > limit ? text.slice(0, limit - 1).trimEnd() + "…" : text;
 }
 
+/**
+ * What a chart says, in a sentence, for whoever cannot see it.
+ *
+ * `role="img"` with a title announces "Coding units per category, image" and
+ * stops there — the picture is the whole content, and none of it arrives. So
+ * every chart carries a summary in numbers: how much of what, where the weight
+ * lies, and where the same figures can be read one by one. It is not drawn,
+ * because on screen the picture already says it.
+ */
+function chartSummaryHTML(id, sentence) {
+  return `<p id="${id}-summary" class="visually-hidden">${escapeHTML(sentence)}</p>`;
+}
+
+/** The largest row, named — the one thing a reader takes from a bar chart. */
+function largestRow(rows) {
+  return rows.reduce((best, row) => (row.sum > (best?.sum ?? -1) ? row : best), null);
+}
+
 const chartLegend = (series) =>
   series.length > 1
     ? `<div class="chart-legend">` +
@@ -1770,7 +1788,7 @@ const chartLegend = (series) =>
  * both answer the same question — how much of this comes from where — and a
  * second visual idiom for the same question would only cost the reader.
  */
-function stackedBarsHTML({ id, title, caption, file, rows, departments }) {
+function stackedBarsHTML({ id, title, caption, file, rows, departments, summaryKey }) {
   if (!rows.length || !departments.length) return "";
   const series = seriesFrom(departments);
 
@@ -1834,12 +1852,23 @@ function stackedBarsHTML({ id, title, caption, file, rows, departments }) {
     })
     .join("");
 
+  const largest = largestRow(rows);
+  const summary = t(summaryKey ?? "summaryBars", {
+    rows: rows.length,
+    total: rows.reduce((n, row) => n + row.sum, 0),
+    departments: departments.length,
+    top: largest?.name ?? "—",
+    topValue: largest?.sum ?? 0,
+  });
+
   return (
     `<div class="chart-head"><h3 id="${id}-title">${escapeHTML(title)}</h3>` +
     `<button type="button" class="button-quiet" data-svg="${id}" data-file="${file}">${t("saveAsSvg")}</button></div>` +
     chartLegend(series) +
+    chartSummaryHTML(id, summary) +
     `<figure class="chart" id="${id}">` +
-    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="${id}-title" preserveAspectRatio="xMinYMin meet">` +
+    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="${id}-title"` +
+    ` aria-describedby="${id}-summary" preserveAspectRatio="xMinYMin meet">` +
     `<line class="baseline" x1="${LABEL}" y1="${TOP}" x2="${LABEL}" y2="${height - 20}"></line>` +
     grid +
     bars +
@@ -1965,12 +1994,31 @@ function heatmapHTML(data) {
     [1, 2, 3, 4, 5].map((level) => `<i class="level-${level}"></i>`).join("") +
     `<span>${max}</span><span class="ramp-label">${t("rampLabel")}</span></div>`;
 
+  // The strongest cell is the one finding of the heatmap: this category is
+  // concentrated in that section rather than spread across the conversation.
+  let strongest = { value: 0, row: "—", section: "—" };
+  for (const row of data.rows) {
+    for (const section of sections) {
+      const n = counts.get(`${row.category}|${section.name}`) ?? 0;
+      if (n > strongest.value) strongest = { value: n, row: row.name, section: section.short };
+    }
+  }
+  const summary = t("summaryHeatmap", {
+    rows: data.rows.length,
+    sections: sections.length,
+    top: strongest.row,
+    section: strongest.section,
+    value: strongest.value,
+  });
+
   return (
     `<div class="chart-head"><h3 id="heatmap-title">${t("heatmapTitle")}</h3>` +
     `<button type="button" class="button-quiet" data-svg="heatmap" data-file="distribution-across-sections.svg">${t("saveAsSvg")}</button></div>` +
     ramp +
+    chartSummaryHTML("heatmap", summary) +
     `<figure class="chart" id="heatmap">` +
     `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="heatmap-title"` +
+    ` aria-describedby="heatmap-summary"` +
     ` data-angle="${ANGLE}" data-baseline="${grid + 10}" preserveAspectRatio="xMinYMin meet">` +
     heads +
     cells +
@@ -2068,16 +2116,33 @@ async function drawAnalysis() {
     `<div class="section-heading"><h3>${t("categoriesByDepartment")}</h3>` +
     `<a class="button-quiet" id="matrix-export" href="${exportHref("/api/export/matrix.md")}" download` +
     ` title="${escapeHTML(t("exportMatrixTitle"))}">${t("exportMatrix")}</a></div>` +
-    `<div class="table-frame"><table><thead><tr>` +
-    `<th>${t("category")}</th>` +
-    data.departments.map((d) => `<th class="num">${escapeHTML(d)}</th>`).join("") +
-    `<th class="num">${t("total")}</th><th class="num">${t("departments")}</th></tr></thead><tbody>` +
+    /* The row and column headers are marked as such, so that a screen reader
+       can say which category and which department a number belongs to instead
+       of reading a wall of figures. The caption is not drawn, because the
+       heading above already says it on screen. */
+    `<div class="table-frame"><table>` +
+    `<caption class="visually-hidden">${t("matrixCaption")}</caption><thead><tr>` +
+    `<th scope="col">${t("category")}</th>` +
+    data.departments
+      .map((d) => `<th class="num" scope="col">${escapeHTML(d)}</th>`)
+      .join("") +
+    `<th class="num" scope="col">${t("total")}</th>` +
+    `<th class="num" scope="col">${t("departments")}</th></tr></thead><tbody>` +
     data.rows
       .map(
         (row) =>
-          `<tr class="${row.parent ? "child" : ""}"><td><span class="category-cell">` +
-          `<i class="dot" style="--mark-color:${color(row.category)}"></i>${escapeHTML(row.name)}</span></td>` +
-          row.values.map((v) => `<td class="num${v ? "" : " empty"}">${v || "·"}</td>`).join("") +
+          `<tr class="${row.parent ? "child" : ""}"><th scope="row"><span class="category-cell">` +
+          `<i class="dot" style="--mark-color:${color(row.category)}"></i>${escapeHTML(row.name)}</span></th>` +
+          row.values
+            .map((v) =>
+              v
+                ? `<td class="num">${v}</td>`
+                : // A middle dot reads as nothing at all; the zero it stands
+                  // for is said instead.
+                  `<td class="num empty"><span aria-hidden="true">·</span>` +
+                  `<span class="visually-hidden">0</span></td>`,
+            )
+            .join("") +
           `<td class="num">${row.sum}</td><td class="num">${row.departmentsNaming}</td></tr>`,
       )
       .join("") +
@@ -2266,12 +2331,19 @@ function moscowBandHTML(rows) {
       .join("") +
     `</div>`;
 
+  const summary = t("summaryMoscow", {
+    total,
+    levels: levels.map((level) => `${level.name}: ${level.count}`).join(", "),
+  });
+
   return (
     `<div class="chart-head"><h3 id="moscow-title">${t("chartMoscowTitle")}</h3>` +
     `<button type="button" class="button-quiet" data-svg="moscow" data-file="moscow-distribution.svg">${t("saveAsSvg")}</button></div>` +
     legend +
+    chartSummaryHTML("moscow", summary) +
     `<figure class="chart" id="moscow">` +
-    `<svg viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-labelledby="moscow-title" preserveAspectRatio="xMinYMin meet">` +
+    `<svg viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-labelledby="moscow-title"` +
+    ` aria-describedby="moscow-summary" preserveAspectRatio="xMinYMin meet">` +
     bands +
     `</svg>` +
     `<div class="chart-tip" hidden></div>` +
@@ -2383,12 +2455,25 @@ function priorityFieldHTML(rows, departmentCount) {
       .join("") +
     `</div>`;
 
+  // Upper right is the point of the field: named by many, blocking much.
+  const urgent = rows.filter(
+    (row) => row.departments.length >= Math.max(2, maxX) && (row.blockedOperations ?? []).length >= 2,
+  );
+  const summary = t("summaryPriority", {
+    rows: rows.length,
+    departments: maxX,
+    urgent: urgent.length,
+    names: urgent.map((row) => row.title).join(", ") || t("summaryNone"),
+  });
+
   return (
     `<div class="chart-head"><h3 id="priority-title">${t("chartPriorityTitle")}</h3>` +
     `<button type="button" class="button-quiet" data-svg="priority" data-file="prioritization.svg">${t("saveAsSvg")}</button></div>` +
     legend +
+    chartSummaryHTML("priority", summary) +
     `<figure class="chart" id="priority">` +
-    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="priority-title" preserveAspectRatio="xMinYMin meet">` +
+    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="priority-title"` +
+    ` aria-describedby="priority-summary" preserveAspectRatio="xMinYMin meet">` +
     grid +
     axisTitles +
     points +
@@ -2404,6 +2489,7 @@ function coverageChartHTML(rows, departments) {
   if (!withCitations.length || !departments.length) return "";
   return stackedBarsHTML({
     id: "coverage",
+    summaryKey: "summaryCoverage",
     title: t("chartCoverageTitle"),
     caption: t("chartCoverageCaption"),
     file: "citations-per-requirement.svg",

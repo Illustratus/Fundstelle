@@ -59,6 +59,10 @@ in one provenance chain.
   light and dark themes, visible focus states, and reduced-motion support. The
   chart palettes are held to the WCAG contrast thresholds in both themes by a
   test that measures them, not by eye.
+- **The analysis reads aloud** — every chart carries a summary in numbers, not
+  just a title, so what it shows arrives without seeing it; the cross table
+  names the category and the department of each figure, and a cell that stands
+  empty still says nought.
 
 ## Quick start
 

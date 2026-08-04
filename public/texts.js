@@ -297,6 +297,22 @@ export const TEXTS = {
     chartCoverageTitle: "Belege je Anforderung und Bereich",
     chartCoverageCaption:
       "Segmentfarbe = Bereich, Reihenfolge wie im Katalog. Eine Anforderung, die nur ein Bereich nennt, trägt einen einfarbigen Balken.",
+    matrixCaption: "Kodiereinheiten je Kategorie und Bereich; Zeilen sind Kategorien, Spalten Bereiche.",
+    summaryBars:
+      "Balkendiagramm: {rows} Kategorien, {total} Kodiereinheiten aus {departments} Bereichen. " +
+      "Am häufigsten {top} mit {topValue}. Dieselben Zahlen stehen einzeln in der Kreuztabelle darunter.",
+    summaryCoverage:
+      "Balkendiagramm: {rows} Anforderungen, {total} Belege aus {departments} Bereichen. " +
+      "Am meisten belegt ist {top} mit {topValue}. Die Anforderungen stehen einzeln darunter.",
+    summaryHeatmap:
+      "Wärmekarte: {rows} Kategorien über {sections} Erzählanstöße. Die stärkste Zelle ist " +
+      "{top} im Anstoß {section} mit {value} Kodiereinheiten.",
+    summaryMoscow: "Verteilung von {total} Anforderungen auf die Stufen — {levels}.",
+    summaryPriority:
+      "Streudiagramm: {rows} Anforderungen, waagerecht die nennenden Bereiche (bis {departments}), " +
+      "senkrecht die blockierten Operationen. Oben rechts, also von allen genannt und mehrfach " +
+      "blockierend: {urgent} — {names}.",
+    summaryNone: "keine",
     chartPriorityTitle: "Priorisierung: Bereiche und blockierte Operationen",
     chartPriorityCaption:
       "Waagerecht die Zahl der nennenden Bereiche, aus den Belegen gezählt; senkrecht die Zahl der blockierten Operationen, von dir eingetragen. Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. Rechts oben liegt, was die Stufe „Must have“ trägt.",
@@ -568,6 +584,22 @@ export const TEXTS = {
     chartCoverageTitle: "Citations per requirement and department",
     chartCoverageCaption:
       "Segment color = department, order as in the catalog. A requirement named by one department only carries a single-color bar.",
+    matrixCaption: "Coding units per category and department; rows are categories, columns departments.",
+    summaryBars:
+      "Bar chart: {rows} categories, {total} coding units from {departments} departments. " +
+      "Most frequent is {top} with {topValue}. The same numbers stand one by one in the cross table below.",
+    summaryCoverage:
+      "Bar chart: {rows} requirements, {total} citations from {departments} departments. " +
+      "Best evidenced is {top} with {topValue}. The requirements are listed one by one below.",
+    summaryHeatmap:
+      "Heatmap: {rows} categories across {sections} guide sections. The strongest cell is " +
+      "{top} in section {section} with {value} coding units.",
+    summaryMoscow: "Distribution of {total} requirements across the levels — {levels}.",
+    summaryPriority:
+      "Scatter plot: {rows} requirements, horizontally the naming departments (up to {departments}), " +
+      "vertically the blocked operations. Upper right, named by all and blocking more than one: " +
+      "{urgent} — {names}.",
+    summaryNone: "none",
     chartPriorityTitle: "Prioritization: departments and blocked operations",
     chartPriorityCaption:
       "Horizontally the number of naming departments, counted from the citations; vertically the number of blocked operations, entered by you. Dot size = citations, dot color = MoSCoW level. Whatever carries “Must have” sits in the upper right.",
