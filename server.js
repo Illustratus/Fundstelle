@@ -264,8 +264,9 @@ const server = createServer(async (request, response) => {
       if (found.length) return send(response, 200, { word, interviews: found });
 
       // Nothing found: try the same search without the inflecting ending and
-      // say what was searched for instead.
-      const stem = trimStem(word);
+      // say what was searched for instead. Which endings inflect depends on the
+      // language the study is in, which is the one the request came in.
+      const stem = trimStem(word, language);
       if (!stem) return send(response, 200, { word, interviews: [] });
       return send(response, 200, {
         word,

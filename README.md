@@ -58,9 +58,14 @@ in one provenance chain.
   department, a category × guide-section heatmap, cross tables, per-interview
   progress; every chart exports as a standalone SVG with computed colors, and
   the cross table as a Pandoc grid table set to 80 characters.
-- **Search that understands inflection** — `*` wildcards inside words and
-  automatic suffix trimming, with the same semantics in transcript search,
-  citation filters, and note search.
+- **Search that understands inflection** — `*` stands for any characters inside
+  a word, never across a space. A word that finds nothing at all is tried again
+  without its inflecting ending, and the search then says which term it actually
+  ran with; reinterpreting your input in silence would be worse than no hit.
+  Both work the same way in the transcript search, the citation filter and the
+  note search, and the citation export runs the slice the screen ran. Which
+  endings inflect follows the language you work in — a short list for German and
+  one for English, not a stemmer pretending to be complete.
 - **Keyboard-first** — number keys assign categories, typing filters, `j`/`k`
   walk the transcript, `/` jumps to search, `Enter` drives the review pass.
 - **Bilingual to the last file** — every export and every error message is

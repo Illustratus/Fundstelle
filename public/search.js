@@ -39,8 +39,21 @@ export function matchesSlice(citation, slice = {}) {
   );
 }
 
-/** Endings that inflect in German, longest first. */
-const ENDINGS = ["ungen", "enden", "ende", "eten", "erte", "ung", "est", "ten", "tet", "end", "en", "em", "er", "es", "et", "st", "te", "e", "n", "s", "t"];
+/**
+ * Endings that inflect, longest first, per language.
+ *
+ * Not a stemmer and not trying to be one: a short list of the endings that
+ * actually get in the way, applied only when a word finds nothing at all, and
+ * always announced. The German list was here from the start and the English one
+ * was not, so an English study got half the feature — the plural came through
+ * by coincidence, because "s" and "es" inflect in both, while "-ing" and "-ed"
+ * reached nothing. Matching is by substring, so a stem trimmed a little too far
+ * still finds the word it came from.
+ */
+const ENDINGS = {
+  de: ["ungen", "enden", "ende", "eten", "erte", "ung", "est", "ten", "tet", "end", "en", "em", "er", "es", "et", "st", "te", "e", "n", "s", "t"],
+  en: ["ingly", "ings", "ing", "ies", "ied", "ers", "est", "ed", "er", "es", "ly", "s"],
+};
 
 const SPECIAL_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
 
@@ -85,13 +98,13 @@ export function occurrences(text, word) {
  * is the whole condition for doing it — reinterpreting the input in silence
  * would be worse than no hit at all.
  */
-export function effectiveWord(texts, word) {
+export function effectiveWord(texts, word, language) {
   const wanted = (word ?? "").trim();
   if (!wanted) return { word: "", instead: null };
   if (texts.some((text) => occurrences(text, wanted).length)) {
     return { word: wanted, instead: null };
   }
-  const stem = trimStem(wanted);
+  const stem = trimStem(wanted, language);
   if (stem && texts.some((text) => occurrences(text, stem).length)) {
     return { word: stem, instead: stem };
   }
@@ -104,10 +117,10 @@ export function effectiveWord(texts, word) {
  * Only for terms without a wildcard: whoever sets one has already decided and
  * does not get corrected.
  */
-export function trimStem(word) {
+export function trimStem(word, language = "en") {
   const wanted = word.trim();
   if (!wanted || wanted.includes("*") || /\s/.test(wanted)) return null;
-  for (const ending of ENDINGS) {
+  for (const ending of ENDINGS[language] ?? ENDINGS.en) {
     if (wanted.length - ending.length >= 4 && wanted.toLowerCase().endsWith(ending)) {
       return wanted.slice(0, -ending.length);
     }

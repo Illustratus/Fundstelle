@@ -389,7 +389,7 @@ function highlightMatches(scroll = false) {
   // Nothing found? Then without the inflecting ending — and the status says
   // what was searched for instead.
   if (!matches.length && input.length >= 2) {
-    const stem = trimStem(input);
+    const stem = trimStem(input, language());
     if (stem) {
       const second = markAll(root, stem);
       if (second.length) {
@@ -1447,7 +1447,7 @@ function notesHTML(data) {
       .flat()
       .map((citation) => citation.memo ?? ""),
   ].filter((text) => text.trim());
-  const wording = effectiveWord(searchable, wanted);
+  const wording = effectiveWord(searchable, wanted, language());
   const fits = (text) => !wording.word || occurrences(text, wording.word).length > 0;
   const severalDepartments = data.departments.length > 1;
 
@@ -1699,6 +1699,7 @@ function citationsHTML(data, color) {
   const wording = effectiveWord(
     all.map((citation) => `${citation.text} ${citation.memo ?? ""}`),
     filter.word,
+    language(),
   );
   const shown = all.filter(fits).length;
   const active = Boolean(

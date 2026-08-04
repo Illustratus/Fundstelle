@@ -25,30 +25,30 @@ test("a wildcard means the same thing wherever it is typed", () => {
   expect(occurrences(text, "ab*leg*").length).toBe(2);
   expect(matchesSlice({ text, memo: "" }, { word: "ab*leg*" })).toBe(true);
   // And a wildcard is never second-guessed by trimming.
-  expect(trimStem("ab*leg*")).toBe(null);
-  expect(effectiveWord([text], "ab*leg*").instead).toBe(null);
+  expect(trimStem("ab*leg*", "de")).toBe(null);
+  expect(effectiveWord([text], "ab*leg*", "de").instead).toBe(null);
 });
 
 test("a word that finds nothing is tried without its ending", () => {
-  const settled = effectiveWord(SINGULAR, "Unterlagen");
+  const settled = effectiveWord(SINGULAR, "Unterlagen", "de");
   expect(settled.word).toBe("Unterlag");
   // …and says so, which is the whole condition for doing it.
   expect(settled.instead).toBe("Unterlag");
 
   // A word that finds something is left exactly as it was typed.
-  expect(effectiveWord(SINGULAR, "Unterlage")).toEqual({
+  expect(effectiveWord(SINGULAR, "Unterlage", "de")).toEqual({
     word: "Unterlage",
     instead: null,
   });
   // A word that finds nothing either way is not quietly replaced.
-  expect(effectiveWord(SINGULAR, "Protokolle").instead).toBe(null);
+  expect(effectiveWord(SINGULAR, "Protokolle", "de").instead).toBe(null);
 });
 
 test("the ending is trimmed once for the whole set, not text by text", () => {
   /* If one citation matched the word and the next only its stem, the slice
      would be two searches at once and its count would mean nothing. */
   const mixed = ["Die Unterlagen liegen dort.", "Die Unterlage liegt hier."];
-  const settled = effectiveWord(mixed, "Unterlagen");
+  const settled = effectiveWord(mixed, "Unterlagen", "de");
   // The word itself hits the first text, so nothing is trimmed for either.
   expect(settled).toEqual({ word: "Unterlagen", instead: null });
 });
@@ -126,4 +126,53 @@ test("the citation filter reaches what the transcript search reaches", async ({
   await page.locator('[data-filter="word"]').fill("Unterlagenen");
   await expect(page.locator(".citation")).toHaveCount(1);
   await expect(page.locator('.citation-filter .instead')).toContainText("Unterlagen");
+});
+
+/* Which endings inflect is a fact about a language, and the list was German
+   only. An English study got half the feature: the plural came through by
+   coincidence, because "s" and "es" inflect in both, while "-ing" and "-ed"
+   reached nothing at all. */
+
+test("the endings that get trimmed follow the language of the study", () => {
+  for (const [term, target] of [
+    ["searching", "search"],
+    ["recorded", "record"],
+    ["stored", "store"],
+    ["agreed", "agree"],
+    ["meetings", "meeting"],
+  ]) {
+    const stem = trimStem(term, "en");
+    expect(stem, `${term} is trimmed`).toBeTruthy();
+    // Matching is by substring, so a stem trimmed a little too far still finds
+    // the word it came from.
+    expect(occurrences(`We ${target} things.`, stem).length, `${stem} reaches ${target}`)
+      .toBeGreaterThan(0);
+  }
+
+  // German is untouched by the change.
+  expect(trimStem("Unterlagen", "de")).toBe("Unterlag");
+  expect(trimStem("Protokolle", "de")).toBe("Protokoll");
+
+  // Neither list second-guesses a wildcard.
+  expect(trimStem("search*", "en")).toBe(null);
+  expect(trimStem("ab*leg*", "de")).toBe(null);
+});
+
+test("the two languages do not borrow each other's endings", () => {
+  // "-ing" is not a German ending, and the German list must not invent one.
+  expect(trimStem("searching", "de")).not.toBe("search");
+  // A language nobody wrote a list for falls back rather than throwing.
+  expect(() => trimStem("searching", "fr")).not.toThrow();
+  expect(trimStem("searching", "fr")).toBe("search");
+});
+
+test("an English study reaches its own citations", () => {
+  const english = ["We store the quotes on the drive.", "Nothing else on that."];
+  const settled = effectiveWord(english, "stored", "en");
+  expect(settled.word).toBe("stor");
+  expect(settled.instead).toBe("stor");
+  expect(occurrences(english[0], settled.word).length).toBe(1);
+
+  // And under the German list the same search would have found nothing.
+  expect(effectiveWord(english, "stored", "de").instead).toBe(null);
 });
