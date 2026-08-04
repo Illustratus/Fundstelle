@@ -22,130 +22,8 @@ QDA services add a processor you may not be allowed to use — this tool binds t
 `127.0.0.1` and keeps codings in the same folder (and the same git history) as
 the transcripts they refer to — written so that a change reads as one change:
 adding a coding unit adds a coding unit, and writing a memo touches the memo
-and the moment it was written, nothing else. Findings, codings, and the paper you write stay
-in one provenance chain.
-
-## Features
-
-- **Methodical coding, enforced in the workflow** — dragging a selection snaps
-  it to word and sentence boundaries, so a citation never begins mid-word. The
-  rules of the method are kept by the server rather than by the interface:
-  exactly one category per place, a unit belongs to a single speaker turn, and
-  the interviewer's own words cannot be coded at all — they are the instrument,
-  not the material. Snapping is the interface being helpful; the server takes
-  the ranges it is given, so a machine pre-coding is not turned away over a
-  boundary.
-- **Deductive start system plus inductive categories** — build the start system
-  in the interface while nothing is coded yet, or bring your own as a file (see
-  below). "Fixed before the survey" is a statement about a moment and the tool
-  can tell which side of it you are on: until the first coding unit exists a
-  category can be added, renamed, dissolved or removed as part of the start
-  system — including the bundled example, which you would otherwise be stuck
-  with — and from that unit onwards the system stands and everything new is
-  inductive. Refine definitions on the material (the wording you started with is
-  preserved and reported — for categories fixed beforehand as well as for ones
-  formed on the material), add coding rules and anchor examples as they emerge,
-  merge categories that turn out to be one. A category that has citations but no
-  anchor example yet is named in the analysis, and its gap is written into the
-  coding guide rather than left out of it — an omission that looks like a
-  decision is the worst kind of gap in an appendix.
-- **Review workflow** — units created programmatically (e.g. from a machine
-  pre-coding) are marked unreviewed and rendered as suggestions until you
-  confirm each one; every export flags unconfirmed codings. `Enter` walks the
-  pass and keeps up with the keyboard, and "all reviewed" says which it means:
-  the interview on screen, or the study — the interviews that still hold
-  suggestions are marked in the list and are one click away.
-- **Anchoring survives transcript edits** — codings hold their position by
-  turn number and character range, are silently re-anchored when the text
-  shifts, and are loudly reported when they can't be. Only what is unambiguous
-  moves: a citation that now reads twice, or one that would come to rest on top
-  of a neighbour, is handed over for re-anchoring rather than guessed at. Until
-  it has a place again it counts in no figure and appears in no export — a
-  citation nobody can point to is not evidence yet — and both the analysis and
-  the appendix say how many are waiting.
-- **Requirements catalog, graphically worked up** — bundle codings across
-  interviews into requirements, prioritized MoSCoW-style; how many departments
-  name a requirement is counted from the material, never typed in. A MoSCoW
-  band, a prioritization field (naming departments × blocked operations) and a
-  coverage chart make the prioritization checkable at a glance. At twenty
-  requirements the list runs to several screens, so it cuts down to what is
-  still unfinished: without a level, without a citation, or resting on evidence
-  nobody has confirmed.
-- **Production-grade analytics** — stacked bar chart per category and
-  department, a category × guide-section heatmap, cross tables, per-interview
-  progress, and a saturation curve that answers the question every qualitative
-  study is asked: how many categories turned up for the first time in each
-  interview, and how many were in play by then. It shows and stops — whether the
-  curve has flattened far enough is a judgement about the material, not one any
-  arithmetic makes; requirements sharing a coordinate in the prioritization field are
-  packed into their own cell rather than fanned across the neighbouring one, so
-  a figure is never drawn nearer a gridline it does not belong to; every chart
-  saves as an SVG that stands on its own — colours
-  resolved, fonts carried, its key drawn in, nothing fetched from anywhere, and
-  the suite opens each saved file as a document of its own and compares every
-  drawn element against the page it came from —
-  and the cross table as a Pandoc grid table set to 80 characters — run through
-  Pandoc by the test suite, to HTML and to LaTeX, because a table that parses is
-  not yet a table that typesets. Twenty interviews
-  and a thousand codings draw in a quarter of a second; a category holding
-  hundreds of citations shows its first few and offers the rest, while its count
-  and every export stay the whole number.
-- **Intercoder reliability, without a second workflow** — the second coder runs
-  their own copy of Fundstelle on the same transcripts and hands you their
-  `coding.json`; put it beside your own as `coding.<name>.json` and the analysis
-  compares them. Cohen's κ per category and overall, the raw agreement, the four
-  cell counts it was computed from, and the list of turns the two read
-  differently — which is what a consensus round actually works from. The unit is
-  stated wherever the figure is: per turn and category, so that cutting a
-  passage differently is agreement rather than a difference. The file is only
-  ever read, never written, because a second coding the tool could edit would no
-  longer be independent of it. Exports as Markdown for the methods chapter.
-- **Your transcript, not a reformatted one** — drop what the recording actually
-  produced (WebVTT from Teams or Zoom, SRT, Whisper output, a text file whose
-  lines begin with a name) on the header, and the tool reads it, shows you how it
-  read it, and writes the format it codes in; the same conversion runs from the
-  command line for a batch.
-  Subtitle cues by the same speaker are joined into turns, because a cue is
-  shorter than a thought. Which speaker is the interviewer is asked, never
-  guessed: their turns cannot be coded, so a wrong guess would take half the
-  material out.
-- **Search that understands inflection** — `*` stands for any characters inside
-  a word, never across a space. A word that finds nothing at all is tried again
-  without its inflecting ending, and the search then says which term it actually
-  ran with; reinterpreting your input in silence would be worse than no hit.
-  Both work the same way in the transcript search, the citation filter and the
-  note search, and the citation export runs the slice the screen ran. Which
-  endings inflect follows the language you work in — a short list for German and
-  one for English, not a stemmer pretending to be complete.
-- **Keyboard-first, including the act of coding** — `s` takes up a sentence and
-  the arrows walk on from there, across the turn boundary and past the
-  interviewer; `⇧↓` takes one sentence more when the unit is longer than one.
-  Number keys assign categories, typing filters, `j`/`k` walk the transcript,
-  `/` jumps to search, `Enter` drives the review pass. After assigning, the
-  cursor already stands on the next sentence, so a pass through an interview
-  never needs the mouse. Press `?` for the whole list, in the language of the
-  interface.
-- **Bilingual to the last file** — every export and every error message is
-  written in the language you work in. The interface sends its choice along, so
-  a coding guide exported from the English interface reads as English prose with
-  English column headings; `?lang=de` or `?lang=en` on any export URL asks
-  directly, and a bare request follows `Accept-Language`.
-- **Considered design** — an editorial, manuscript-like reading surface with
-  light and dark themes, visible focus states, and reduced-motion support. The
-  chart palettes are held to the WCAG contrast thresholds in both themes by a
-  test that measures them, not by eye — and so is every word of the interface:
-  a test walks each view and measures each label against the surface it really
-  sits on. Printing gives a document rather than a
-  screenshot: the controls drop away, what is folded shut is printed open, and a
-  page printed from the dark theme comes out on white paper with its heatmap
-  reading the right way round.
-- **The analysis reads aloud** — every chart carries a summary in numbers, not
-  just a title, so what it shows arrives without seeing it; the cross table
-  names the category and the department of each figure, and a cell that stands
-  empty still says nought.
-- **Nothing that needs a mouse** — every chart folds open into the figures it
-  draws, so the numbers behind a hover are one keystroke away; a table wider
-  than its frame can be scrolled from the keyboard.
+and the moment it was written, nothing else. Findings, codings, and the paper
+you write stay in one provenance chain.
 
 ## Quick start
 
@@ -222,6 +100,98 @@ again immediately; a lock left behind by a process that was killed is broken by
 the next change rather than waited on. They are what lets two servers share one
 folder — a container and a local start, or a mounted drive — without either
 quietly dropping the other's work.
+
+## Features
+
+- **Methodical coding, kept by the server** — exactly one category per place, a
+  unit belongs to a single speaker turn, and the interviewer's own words cannot
+  be coded at all: they are the instrument, not the material. Dragging snaps a
+  selection to word and sentence boundaries so a citation never begins mid-word,
+  but snapping is the interface being helpful — the server takes the ranges it is
+  given, so a machine pre-coding is not turned away over a boundary.
+- **Deductive start system plus inductive categories** — build the start system
+  in the interface while nothing is coded yet, or bring your own as a file. Until
+  the first coding unit exists a category can be added, renamed, dissolved or
+  removed as part of the start system; from that unit onwards the system stands
+  and everything new is inductive, because "fixed before the survey" is a
+  statement about a moment and the tool can tell which side of it you are on.
+  Definitions can be refined on the material, and the wording you started with is
+  kept and reported.
+- **Anchor examples and coding rules, with the gaps named** — both are recorded
+  as they emerge. A category that has citations but no anchor example is named in
+  the analysis, and its gap is written into the coding guide rather than left out
+  of it: an omission that looks like a decision is the worst kind of gap in an
+  appendix.
+- **Review workflow** — units created programmatically are marked unreviewed and
+  rendered as suggestions until you confirm each one; every export flags them.
+  `Enter` walks the pass, and "all reviewed" says which it means — this
+  interview, or the study.
+- **Anchoring survives transcript edits** — codings hold their position by turn
+  number and character range, are silently re-anchored when the text shifts, and
+  are handed back when they can't be: a citation that now reads twice, or one
+  that would come to rest on a neighbour, is never guessed at. Until it has a
+  place again it counts in no figure and appears in no export, and both the
+  analysis and the appendix say how many are waiting.
+- **Your transcript, not a reformatted one** — drop what the recording produced
+  (WebVTT from Teams or Zoom, SRT, Whisper output, a text file whose lines begin
+  with a name) on the header; the tool reads it, shows you how it read it, and
+  writes the format it codes in. Cues by the same speaker are joined into turns,
+  because a cue is shorter than a thought. Which speaker is the interviewer is
+  asked, never guessed. The same conversion runs from the command line for a
+  batch.
+- **Requirements catalog, graphically worked up** — bundle codings across
+  interviews into requirements, prioritized MoSCoW-style; how many departments
+  name a requirement is counted from the material, never typed in. A MoSCoW band,
+  a prioritization field (naming departments × blocked operations) and a coverage
+  chart make the prioritization checkable at a glance, and at twenty requirements
+  the list cuts down to what is still unfinished.
+- **Production-grade analytics** — a stacked bar chart per category and
+  department, a category × guide-section heatmap, cross tables, per-interview
+  progress, and a saturation curve: how many categories turned up for the first
+  time in each interview, and how many were in play by then. It shows and stops —
+  whether the curve has flattened far enough is a judgement about the material,
+  not one any arithmetic makes. Twenty interviews and a thousand codings draw in
+  a quarter of a second.
+- **Figures that survive leaving the tool** — every chart saves as an SVG that
+  stands on its own: colours resolved, fonts carried, its key drawn in, nothing
+  fetched from anywhere. Cross tables come out as Pandoc grid tables set to 80
+  characters, and every export is written to be typeset rather than looked at.
+- **Intercoder reliability, without a second workflow** — the second coder runs
+  their own copy on the same transcripts and hands you their `coding.json`; put
+  it beside your own as `coding.<name>.json` and the analysis compares them.
+  Cohen's κ per category and overall, the raw agreement, the four cell counts it
+  came from, and the list of turns the two read differently — which is what a
+  consensus round actually works from. The unit is stated wherever the figure is:
+  per turn and category, so cutting a passage differently is agreement rather
+  than a difference. Their file is only ever read, because a second coding this
+  tool could edit would no longer be independent of it.
+- **Search that understands inflection** — `*` stands for any characters inside a
+  word, never across a space. A word that finds nothing is tried again without
+  its inflecting ending, and the search says which term it ran with; the same
+  semantics in the transcript search, the citation filter and the note search,
+  and the citation export runs the slice the screen ran.
+- **Keyboard-first, including the act of coding** — `s` takes up a sentence and
+  the arrows walk on from there, across the turn boundary and past the
+  interviewer; `⇧↓` takes one sentence more. Number keys assign categories,
+  typing filters, `j`/`k` walk the transcript, `/` jumps to search, `Enter`
+  drives the review pass. After assigning, the cursor already stands on the next
+  sentence. Press `?` for the whole list.
+- **Bilingual to the last file** — every export and every error message is
+  written in the language you work in, down to the quotation marks. `?lang=de` or
+  `?lang=en` on any export URL asks directly; a bare request follows
+  `Accept-Language`.
+- **Considered design** — an editorial, manuscript-like reading surface with
+  light and dark themes, visible focus states and reduced-motion support, held to
+  the WCAG contrast thresholds in both themes. Printing gives a document rather
+  than a screenshot: the controls drop away, what is folded shut is printed open,
+  and a page printed from the dark theme comes out on white paper.
+- **Nothing that needs a mouse, nothing that needs sight** — every chart carries
+  a summary in numbers and folds open into the figures it draws; the cross table
+  names the category and department of each figure, and an empty cell still says
+  nought.
+- **A history you can read** — codings live in the same folder, and the same git
+  history, as the transcripts. Adding a coding unit adds a coding unit; writing a
+  memo touches the memo and the moment it was written, and nothing else.
 
 ## Configuration
 
@@ -389,14 +359,27 @@ real data. It also reads the numbers back and compares them with what is stored
 headings, progress) and in the exports (the cross table cell by cell, the
 citations per category, each coding table against its own count) — because a
 count that quietly drifts is this tool's worst defect: nothing looks wrong, and
-the figure walks into the paper. The synthetic transcripts under `tests/fixtures/` are generated by
-`npm run fixtures` and committed, because the suite needs stable anchors.
+the figure walks into the paper. The synthetic transcripts under
+`tests/fixtures/` are generated by `npm run fixtures` and committed, because the
+suite needs stable anchors.
 
 ```sh
 npm run test:contrast             # measures the charts in both themes
 npm run test:docker               # needs Docker, builds the image
 npm run test:minimum              # the tool on Node 18, nothing installed
 ```
+
+Some of what the suite checks is worth naming, because it is what the feature
+list above rests on rather than asserts. Every saved SVG is opened as a document
+of its own and each drawn element compared against the page it came from, so a
+figure that leaves the tool is the picture that was on the screen. Every export
+is run through Pandoc, to HTML and to LaTeX, with warnings counted as failures —
+a table that parses is not yet a table that typesets. Every word of the
+interface is measured against the surface it really sits on in both themes, and
+the charts against the WCAG thresholds. The numbers on the screen are read back
+and compared with what is stored, and so are the numbers in the exports. A
+change to the codings is measured as a git diff, because a history is only worth
+having if a change in it can be read.
 
 `test:minimum` is the one that checks the two claims made about a machine with
 nothing on it: that the tool runs on the oldest Node it declares, and that it
