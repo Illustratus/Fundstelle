@@ -16,6 +16,7 @@ import { findInterviews, loadTranscript } from "./lib/transcript.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withoutCheckMarks } from "./lib/anchoring.js";
+import { negotiate, translator } from "./lib/texts.js";
 import {
   MOSCOW,
   analysis,
@@ -158,6 +159,13 @@ const server = createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
   const path = url.pathname;
 
+  // The language of this request: `?lang=` beats the browser preference, which
+  // beats the international default. The interface sends its own language along
+  // as `accept-language`, so exports come out in the language the tool is being
+  // operated in, and a bare `curl` still gets something readable.
+  const language = negotiate(url.searchParams.get("lang"), request.headers["accept-language"]);
+  const t = translator(language);
+
   try {
     if (!path.startsWith("/api/")) return await staticFile(response, path);
 
@@ -230,7 +238,7 @@ const server = createServer(async (request, response) => {
     if (path === "/api/categories" && request.method === "POST") {
       const data = await body(request);
       if (!data.name?.trim()) {
-        return send(response, 400, { error: "Die Kategorie braucht einen Namen" });
+        return send(response, 400, { error: t("errorCategoryName") });
       }
       return send(response, 201, await store.addCategory(data));
     }
@@ -275,11 +283,11 @@ const server = createServer(async (request, response) => {
       const data = await body(request);
       for (const field of ["turn", "start", "end", "category", "text"]) {
         if (data[field] === undefined) {
-          return send(response, 400, { error: `Feld ${field} fehlt` });
+          return send(response, 400, { error: t("errorFieldMissing", { field }) });
         }
       }
       if (data.end <= data.start) {
-        return send(response, 400, { error: "Leere Auswahl" });
+        return send(response, 400, { error: t("errorEmptySelection") });
       }
       return send(response, 201, await store.addCoding(id, data));
     }
@@ -363,7 +371,7 @@ const server = createServer(async (request, response) => {
     if (path === "/api/export/coding-guide.md") {
       const all = await allInterviews();
       const { categories } = await store.categories();
-      return send(response, 200, codingGuideMarkdown(all, categories), MARKDOWN);
+      return send(response, 200, codingGuideMarkdown(all, categories, language), MARKDOWN);
     }
     if (path === "/api/export/citations.md") {
       const all = await allInterviews();
@@ -377,12 +385,12 @@ const server = createServer(async (request, response) => {
         unreviewed: url.searchParams.get("unreviewed") === "1",
         word: url.searchParams.get("word") ?? "",
       };
-      return send(response, 200, citationsMarkdown(all, categories, slice), MARKDOWN);
+      return send(response, 200, citationsMarkdown(all, categories, slice, language), MARKDOWN);
     }
     if (path === "/api/export/notes.md") {
       const all = await allInterviews();
       const { categories } = await store.categories();
-      return send(response, 200, notesMarkdown(all, categories), MARKDOWN);
+      return send(response, 200, notesMarkdown(all, categories, language), MARKDOWN);
     }
     if (path === "/api/export/matrix.md") {
       const all = await allInterviews();
@@ -390,7 +398,7 @@ const server = createServer(async (request, response) => {
       return send(
         response,
         200,
-        matrixGridMarkdown(analysis(all, categories), categories),
+        matrixGridMarkdown(analysis(all, categories), categories, language),
         MARKDOWN,
       );
     }
@@ -401,7 +409,7 @@ const server = createServer(async (request, response) => {
       return send(
         response,
         200,
-        catalogMarkdown(catalog(all, requirements, categories)),
+        catalogMarkdown(catalog(all, requirements, categories), language),
         MARKDOWN,
       );
     }
@@ -410,14 +418,20 @@ const server = createServer(async (request, response) => {
       const id = decodeURIComponent(codingTable[1]);
       const { transcript, codings } = await loadChecked(id);
       const { categories } = await store.categories();
-      return send(response, 200, codingTableMarkdown(transcript, codings, categories), MARKDOWN);
+      return send(response, 200, codingTableMarkdown(transcript, codings, categories, language), MARKDOWN);
     }
 
-    send(response, 404, { error: "unbekannter Endpunkt" });
+    send(response, 404, { error: t("errorUnknownEndpoint") });
   } catch (error) {
     const status = error.status ?? 500;
     if (status === 500) console.error(error);
-    send(response, status, { error: error.message, conflict: error.conflict });
+    // The storage layer throws a key; the request knows the language. Anything
+    // without a key is an unforeseen error and keeps its own wording.
+    send(response, status, {
+      error: error.key ? t(error.key, error.params) : error.message,
+      code: error.key,
+      conflict: error.conflict,
+    });
   }
 });
 

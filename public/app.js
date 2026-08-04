@@ -102,7 +102,10 @@ const state = {
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
-    headers: { "content-type": "application/json" },
+    // The server answers in the language of the request, so an error message
+    // arrives in the language the interface is set to and not in the one the
+    // browser happens to prefer.
+    headers: { "content-type": "application/json", "accept-language": language() },
     ...options,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
@@ -1322,6 +1325,20 @@ function bar(share) {
   return `<span class="bar"><i style="width:${width.toFixed(1)}%"></i></span>`;
 }
 
+/**
+ * An export link in the language of the interface.
+ *
+ * A download is a plain navigation: the browser sends its own preference along,
+ * not the one set in the header. Whoever switched the interface to English has
+ * said what language they want their files in, so the wish travels with the
+ * link.
+ */
+function exportHref(path, query = "") {
+  const parameters = new URLSearchParams(query);
+  parameters.set("lang", language());
+  return `${path}?${parameters}`;
+}
+
 /** The set slice as a query, so that the export shows the same. */
 function sliceQuery(filter) {
   const query = new URLSearchParams();
@@ -1435,7 +1452,7 @@ function notesHTML(data) {
       )
       .join("") +
     `</select></label>` +
-    `<a class="button-quiet" href="/api/export/notes.md" download>${t("exportNotesButton")}</a></div>`;
+    `<a class="button-quiet" href="${exportHref("/api/export/notes.md")}" download>${t("exportNotesButton")}</a></div>`;
 
   return (
     `<h3>${t("notesTitle")}</h3>` +
@@ -1631,7 +1648,7 @@ function citationsHTML(data, color) {
     (active
       ? `<button type="button" class="button-quiet" id="filter-clear">${t("clearSlice", { shown, all: all.length })}</button>`
       : `<span class="filter-status">${all.length} ${plural(all.length, "citationOne", "citationMany")}</span>`) +
-    `<a class="button-quiet" id="slice-export" download href="/api/export/citations.md?${sliceQuery(filter)}">` +
+    `<a class="button-quiet" id="slice-export" download href="${exportHref("/api/export/citations.md", sliceQuery(filter))}">` +
     `${t("exportSlice")}</a>` +
     `</div>`;
 
@@ -2025,7 +2042,7 @@ async function drawAnalysis() {
   // list of exports two screens down is a detour.
   const matrix =
     `<div class="section-heading"><h3>${t("categoriesByDepartment")}</h3>` +
-    `<a class="button-quiet" id="matrix-export" href="/api/export/matrix.md" download` +
+    `<a class="button-quiet" id="matrix-export" href="${exportHref("/api/export/matrix.md")}" download` +
     ` title="${escapeHTML(t("exportMatrixTitle"))}">${t("exportMatrix")}</a></div>` +
     `<div class="table-frame"><table><thead><tr>` +
     `<th>${t("category")}</th>` +
@@ -2067,12 +2084,12 @@ async function drawAnalysis() {
 
   const exports =
     `<h3>${t("exports")}</h3><div class="exports">` +
-    `<a class="button-quiet" href="/api/export/coding-guide.md" download>${t("exportCodingGuide")}</a>` +
-    `<a class="button-quiet" href="/api/export/notes.md" download>${t("exportNotes")}</a>` +
+    `<a class="button-quiet" href="${exportHref("/api/export/coding-guide.md")}" download>${t("exportCodingGuide")}</a>` +
+    `<a class="button-quiet" href="${exportHref("/api/export/notes.md")}" download>${t("exportNotes")}</a>` +
     data.progress
       .map(
         (entry) =>
-          `<a class="button-quiet" href="/api/export/coding-table/${encodeURIComponent(entry.interview)}.md" download>` +
+          `<a class="button-quiet" href="${exportHref(`/api/export/coding-table/${encodeURIComponent(entry.interview)}.md`)}" download>` +
           `${t("exportCodingTable")} ${escapeHTML(entry.department)}</a>`,
       )
       .join("") +
@@ -2460,7 +2477,7 @@ async function drawCatalog() {
     head +
     `<div id="catalog-charts">${catalogChartsHTML(state.requirements, state.departments)}</div>` +
     `<div class="catalog-list">${cards}</div>` +
-    `<div class="exports"><a class="button-quiet" href="/api/export/requirements-catalog.md" download>` +
+    `<div class="exports"><a class="button-quiet" href="${exportHref("/api/export/requirements-catalog.md")}" download>` +
     `${t("catalogTitle")}</a></div>`;
 }
 

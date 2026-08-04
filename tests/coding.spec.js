@@ -554,7 +554,7 @@ test("a sharpened deductive definition names the wording before the field work",
   await expect(note).toContainText("Vor der Erhebung");
   await expect(note).toContainText("gescheiterte Absprachen");
 
-  const flat = flatGuide(await (await request.get("/api/export/coding-guide.md")).text());
+  const flat = flatGuide(await (await request.get("/api/export/coding-guide.md?lang=de")).text());
   expect(flat).toContain("Vor der Erhebung");
   expect(flat).toContain("am Material geschärft");
   expect(flat).toContain("Weiterleitungen eingeschlossen");
@@ -600,10 +600,10 @@ test("a sharpened inductive definition names the wording it was created with", a
   );
 
   // Both exports report the change, so it can be written up.
-  const flat = flatGuide(await (await request.get("/api/export/coding-guide.md")).text());
+  const flat = flatGuide(await (await request.get("/api/export/coding-guide.md?lang=de")).text());
   expect(flat).toContain("Beim Anlegen");
   expect(flat).toContain("Kontowechsel eingeschlossen");
-  const notes = await (await request.get("/api/export/notes.md")).text();
+  const notes = await (await request.get("/api/export/notes.md?lang=de")).text();
   expect(notes).toContain("Definition beim Anlegen: Aussagen über den Wechsel des Mediums.");
 
   // And the reset works the same way as for a deductive category.
@@ -774,7 +774,7 @@ test("notes on the interview and on the category flow into one export", async ({
   await page.locator("#detail-memo").fill("Steht stellvertretend für die Rückfrage im Team.");
   await page.locator("#detail-memo").blur();
 
-  const text = await (await request.get("/api/export/notes.md")).text();
+  const text = await (await request.get("/api/export/notes.md?lang=de")).text();
   expect(text).toContain("## Zu den Interviews");
   expect(text).toContain("Gespräch lief schleppend an");
   expect(text).toContain("## Zu den Kategorien");
@@ -942,9 +942,9 @@ test("the cross table carries its own export as a grid table", async ({ page, re
   await page.locator('.tab[data-view="analysis"]').click();
   const button = page.locator("#matrix-export");
   await expect(button).toBeVisible();
-  await expect(button).toHaveAttribute("href", "/api/export/matrix.md");
+  await expect(button).toHaveAttribute("href", "/api/export/matrix.md?lang=de");
 
-  const text = await (await request.get("/api/export/matrix.md")).text();
+  const text = await (await request.get("/api/export/matrix.md?lang=de")).text();
   expect(text).toContain("# Kategorien nach Bereich");
   // A Pandoc grid table: frame lines, a header rule, right-aligned numbers.
   expect(text).toContain("+===");
@@ -1091,15 +1091,15 @@ test("the exports flag what has not been reviewed", async ({ page, request }) =>
   await page.locator("#turn-4 .segment").click();
   await page.locator("#detail-anchor").check();
 
-  const table = await (await request.get(`/api/export/coding-table/${FIRST}.md`)).text();
+  const table = await (await request.get(`/api/export/coding-table/${FIRST}.md?lang=de`)).text();
   expect(table).toContain("0 geprüft");
   expect(table).toContain("**ungeprüft**");
   expect(table).toContain("Eine ungeprüfte Zuordnung ist ein Vorschlag und belegt nichts.");
 
-  const guide = await (await request.get("/api/export/coding-guide.md")).text();
+  const guide = await (await request.get("/api/export/coding-guide.md?lang=de")).text();
   expect(flatGuide(guide)).toContain("ungeprüft)");
 
-  const citations = await (await request.get("/api/export/citations.md?unreviewed=1")).text();
+  const citations = await (await request.get("/api/export/citations.md?unreviewed=1&lang=de")).text();
   expect(citations).toContain("Schnitt: nur ungeprüfte.");
   expect(citations).toContain("**[ungeprüft]**");
 });
@@ -1226,7 +1226,7 @@ test("the set slice can be exported", async ({ page, request }) => {
   expect(text).not.toContain("Marketing");
 
   // Without a slice everything comes.
-  const everything = await (await request.get("/api/export/citations.md")).text();
+  const everything = await (await request.get("/api/export/citations.md?lang=de")).text();
   expect(everything).toContain("Alle Kodiereinheiten, ohne Einschränkung.");
   expect(everything).toContain("Marketing");
 });
@@ -1293,7 +1293,7 @@ test("the coding guide carries definition, anchor example and coding rule", asyn
     page.locator('[data-detail="routine.disruption"] [data-rule-text]'),
   ).toHaveCount(1);
 
-  const flat = flatGuide(await (await request.get("/api/export/coding-guide.md")).text());
+  const flat = flatGuide(await (await request.get("/api/export/coding-guide.md?lang=de")).text());
   expect(flat).toContain("↳ Störungen [deduktiv]{.art}");
   expect(flat).toContain("Definition Aussagen über Unterbrechungen");
   expect(flat).toContain("Ankerbeispiel „");
@@ -1303,7 +1303,7 @@ test("the coding guide carries definition, anchor example and coding rule", asyn
 test("the coding table names location, section and citation", async ({ page, request }) => {
   await code(page, 22, 0, 40, "agreement");
 
-  const text = await (await request.get(`/api/export/coding-table/${FIRST}.md`)).text();
+  const text = await (await request.get(`/api/export/coding-table/${FIRST}.md?lang=de`)).text();
   expect(text).toContain("| Fundstelle | Block | Kategorie | Stand | Beleg |");
   expect(text).toMatch(/\| 22 \| Störungen \| Absprachen \|/);
 });
@@ -1403,7 +1403,7 @@ test("the catalog orders by level and names the citations", async ({ page, reque
 
   await expect(page.locator(".requirement .title").first()).toHaveValue("Vorrangig");
 
-  const text = await (await request.get("/api/export/requirements-catalog.md")).text();
+  const text = await (await request.get("/api/export/requirements-catalog.md?lang=de")).text();
   expect(text).toContain("| Anforderung | MoSCoW | Bereiche | Belege | blockiert |");
   expect(text.indexOf("Vorrangig")).toBeLessThan(text.indexOf("Zweitrangig"));
 });
@@ -1750,6 +1750,106 @@ test.describe("english browser", () => {
     await expect(page.locator('.tab[data-view="code"]')).toHaveText("Code");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
   });
+});
+
+test("the exports follow the language the tool is operated in", async ({ page, request }) => {
+  await code(page, 4, 0, 40, "routine");
+  await page.goto("/?lang=en");
+  await page.locator('.tab[data-view="analysis"]').click();
+
+  // The link carries the wish: a download is a plain navigation and would
+  // otherwise arrive in whatever language the browser prefers.
+  const guideLink = page.locator(".exports a", { hasText: "Coding guide" });
+  await expect(guideLink).toHaveAttribute("href", "/api/export/coding-guide.md?lang=en");
+
+  const guide = await (await request.get("/api/export/coding-guide.md?lang=en")).text();
+  expect(guide).toContain("# Coding guide");
+  expect(guide).toContain("[deductive]{.art}");
+  expect(guide).not.toContain("deduktiv");
+
+  const matrix = await (await request.get("/api/export/matrix.md?lang=en")).text();
+  expect(matrix).toContain("# Categories by department");
+  expect(matrix).toContain("Total");
+  // The grid table keeps its fixed width whatever the headings are called.
+  for (const line of matrix.split("\n").filter((l) => l.startsWith("+") || l.startsWith("|"))) {
+    expect(line.length).toBe(80);
+  }
+
+  const citations = await (await request.get("/api/export/citations.md?lang=en")).text();
+  expect(citations).toContain("# Citations");
+  expect(citations).toContain("All coding units, without restriction.");
+  // Quotation marks belong to the language too.
+  expect(citations).toContain("“");
+  expect(citations).not.toContain("„");
+
+  const table = await (await request.get(`/api/export/coding-table/${FIRST}.md?lang=en`)).text();
+  expect(table).toContain("| Passage | Section | Category | State | Citation |");
+  expect(table).toContain("reviewed");
+  expect(table).not.toContain("geprüft");
+
+  const catalogText = await (
+    await request.get("/api/export/requirements-catalog.md?lang=en")
+  ).text();
+  expect(catalogText).toContain("| Requirement | MoSCoW | Departments | Citations | blocks |");
+
+  const notes = await (await request.get("/api/export/notes.md?lang=en")).text();
+  expect(notes).toContain("# Notes on the coding process");
+});
+
+test("without a stated wish the exports follow the browser", async ({ request }) => {
+  const german = await (
+    await request.get("/api/export/matrix.md", { headers: { "accept-language": "de-DE,de;q=0.9" } })
+  ).text();
+  expect(german).toContain("# Kategorien nach Bereich");
+
+  // A preference order is read as one: the higher quality wins, not the first.
+  const english = await (
+    await request.get("/api/export/matrix.md", {
+      headers: { "accept-language": "de;q=0.4,en;q=0.9" },
+    })
+  ).text();
+  expect(english).toContain("# Categories by department");
+
+  // An explicit wish beats the browser.
+  const asked = await (
+    await request.get("/api/export/matrix.md?lang=de", {
+      headers: { "accept-language": "en-US" },
+    })
+  ).text();
+  expect(asked).toContain("# Kategorien nach Bereich");
+});
+
+test("a refusal from the server explains itself in the interface language", async ({
+  page,
+  request,
+}) => {
+  // The message travels from the server verbatim, so it has to be written in
+  // the language the interface is set to — not the browser's.
+  await addCategory(request, "Medienbruch");
+  await page.goto("/?lang=en");
+  await code(page, 18, 0, 30, "ind.medienbruch");
+
+  await page.locator('.category[data-category="ind.medienbruch"]').click();
+  await page.locator('[data-detail="ind.medienbruch"] [data-category-remove]').click();
+  await expect(page.locator("#message")).toContainText("carries 1 codings and cannot be dropped");
+
+  await page.goto("/?lang=de");
+  await page.locator('.category[data-category="ind.medienbruch"]').click();
+  await page.locator('[data-detail="ind.medienbruch"] [data-category-remove]').click();
+  await expect(page.locator("#message")).toContainText("trägt 1 Kodierungen");
+});
+
+test("the error language is negotiated like everything else", async ({ request }) => {
+  const missing = "/api/categories/does-not-exist";
+  const english = await request.delete(missing, { headers: { "accept-language": "en" } });
+  expect((await english.json()).error).toBe("Unknown category");
+
+  const german = await (
+    await request.delete(missing, { headers: { "accept-language": "de-DE" } })
+  ).json();
+  expect(german.error).toBe("Unbekannte Kategorie");
+  // The key travels along, so a caller can react to the case and not to wording.
+  expect(german.code).toBe("errorUnknownCategory");
 });
 
 test("the language switch in the header changes permanently and back", async ({ page }) => {

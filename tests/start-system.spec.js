@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { Store } from "../lib/store.js";
+import { translator } from "../lib/texts.js";
 
 /**
  * Seeding the category system on first start, checked without a browser: the
@@ -198,13 +199,36 @@ test("the bundled example file is a valid seed", async () => {
   ]);
 });
 
+/* The store names the case and leaves the wording to whoever caught it: it does
+   not know which language the request came in. The message is the key, and the
+   key is what a caller can rely on. */
+
 test("a missing start system file aborts loudly", async () => {
-  await expect(freshStore("/does/not/exist.json").categories()).rejects.toThrow("nicht lesbar");
+  await expect(freshStore("/does/not/exist.json").categories()).rejects.toThrow(
+    "errorStartSystemUnreadable",
+  );
 });
 
 test("a start category without a definition aborts loudly", async () => {
   const root = mkdtempSync(join(tmpdir(), "fundstelle-start-"));
   const file = join(root, "start-system.json");
   writeFileSync(file, JSON.stringify({ categories: [{ id: "routine", name: "Arbeitsalltag" }] }));
-  await expect(freshStore(file).categories()).rejects.toThrow("id, name und definition");
+  await expect(freshStore(file).categories()).rejects.toThrow("errorStartSystemFields");
+});
+
+test("the named case carries what it needs to be phrased in either language", async () => {
+  const root = mkdtempSync(join(tmpdir(), "fundstelle-start-"));
+  const file = join(root, "start-system.json");
+  writeFileSync(file, JSON.stringify({ categories: [{ id: "routine", name: "Arbeitsalltag" }] }));
+
+  const error = await freshStore(file)
+    .categories()
+    .catch((thrown) => thrown);
+  expect(error.key).toBe("errorStartSystemFields");
+  expect(translator("de")(error.key, error.params)).toContain("Jede Startkategorie braucht");
+  expect(translator("en")(error.key, error.params)).toContain("Every start category needs");
+  // The offending category is named in both, so the message stays actionable.
+  for (const language of ["de", "en"]) {
+    expect(translator(language)(error.key, error.params)).toContain("routine");
+  }
 });

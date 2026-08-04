@@ -6,11 +6,11 @@ machine, stores everything as plain files next to your transcripts, and has
 **zero runtime dependencies**, because a single Node.js process serves the
 whole application. Your data never leaves your disk.
 
-> The interface speaks **German and English**: it follows your browser
-> language, and the DE/EN toggle in the header switches it permanently.
-> Markdown exports remain German (they feed a German thesis); file formats and
-> configuration are language-neutral. The code, including its comments, is
-> English throughout.
+> The tool speaks **German and English**, all the way through: the interface
+> follows your browser language and the DE/EN toggle in the header switches it
+> permanently — and the Markdown exports and error messages follow the same
+> choice, down to the quotation marks. File formats and configuration are
+> language-neutral. The code, including its comments, is English throughout.
 
 ## Why another QDA tool
 
@@ -50,6 +50,11 @@ in one provenance chain.
   citation filters, and note search.
 - **Keyboard-first** — number keys assign categories, typing filters, `j`/`k`
   walk the transcript, `/` jumps to search, `Enter` drives the review pass.
+- **Bilingual to the last file** — every export and every error message is
+  written in the language you work in. The interface sends its choice along, so
+  a coding guide exported from the English interface reads as English prose with
+  English column headings; `?lang=de` or `?lang=en` on any export URL asks
+  directly, and a bare request follows `Accept-Language`.
 - **Considered design** — an editorial, manuscript-like reading surface with
   light and dark themes, visible focus states, and reduced-motion support.
 
