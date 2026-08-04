@@ -1890,29 +1890,52 @@ function heatmapHTML(data) {
 
   const LABEL = 200;
   const WIDTH = 720;
-  const HEAD = 16;
   const CELL = 22;
   const track = WIDTH - LABEL - 8;
   const width = track / sections.length;
-  const height = HEAD + data.rows.length * CELL + 4;
 
-  // The character budget of the headings follows the column width, otherwise
-  // long section names run into each other; the full name stays reachable as a
-  // hover title.
-  const maxCharacters = Math.max(4, Math.floor(width / 6.5));
+  /* Guide sections are named, not numbered, and the names are sentences: a
+     column barely wider than a thumbnail cannot hold "Zusammenarbeit über
+     Bereiche" horizontally. Set upright they were cut to eight characters and
+     eight of nine columns read as an ellipsis — legible only on hover, which is
+     no help at all in the exported SVG or on paper.
+
+     So the headings are set at an angle, ascending to the left into the space
+     above the row labels, which is empty anyway. That space is what bounds
+     them: a heading may reach as far left as the row labels start. */
+  const ANGLE = 45;
+  const RADIANS = (ANGLE * Math.PI) / 180;
+  const CHARACTER = 5.1; // 10px sans, measured across the section names
+  const TOP = 2;
+
+  /* An angled heading ends at its column and trails away behind it. Rising to
+     the right it would trail down-left; set below the grid that is exactly the
+     free space — under the row labels, where nothing else is. Rising labels
+     placed above would instead trail off the right edge of the widest ones. */
+  const room = LABEL + width / 2 - 6; // how far the first column may trail left
+  const maxCharacters = Math.max(8, Math.min(30, Math.floor(room / Math.cos(RADIANS) / CHARACTER)));
+  const headings = sections.map((section) => shorten(section.short, maxCharacters));
+  const longest = Math.max(...headings.map((heading) => heading.length));
+  const FOOT = Math.ceil(longest * CHARACTER * Math.sin(RADIANS)) + 12;
+
+  const grid = TOP + data.rows.length * CELL;
+  const height = grid + FOOT;
+
   const heads = sections
     .map((section, k) => {
       const x = LABEL + k * width + width / 2;
+      const y = grid + 10;
       return (
-        `<text class="axis" x="${x}" y="${HEAD - 5}" text-anchor="middle">` +
-        `<title>${escapeHTML(section.short)}</title>${escapeHTML(shorten(section.short, maxCharacters))}</text>`
+        `<text class="axis heading" x="${x}" y="${y}" text-anchor="end"` +
+        ` transform="rotate(-${ANGLE} ${x} ${y})">` +
+        `<title>${escapeHTML(section.short)}</title>${escapeHTML(headings[k])}</text>`
       );
     })
     .join("");
 
   const cells = data.rows
     .map((row, index) => {
-      const y = HEAD + index * CELL;
+      const y = TOP + index * CELL;
       const label = (row.parent ? "… " : "") + row.name;
       const line = sections
         .map((section, k) => {
@@ -1947,7 +1970,8 @@ function heatmapHTML(data) {
     `<button type="button" class="button-quiet" data-svg="heatmap" data-file="distribution-across-sections.svg">${t("saveAsSvg")}</button></div>` +
     ramp +
     `<figure class="chart" id="heatmap">` +
-    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="heatmap-title" preserveAspectRatio="xMinYMin meet">` +
+    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="heatmap-title"` +
+    ` data-angle="${ANGLE}" data-baseline="${grid + 10}" preserveAspectRatio="xMinYMin meet">` +
     heads +
     cells +
     `</svg>` +
@@ -2105,6 +2129,32 @@ async function drawAnalysis() {
     exports +
     `<section id="citations-part">${citationsHTML(data, color)}</section>` +
     `<section id="notes-part">${notesHTML(data)}</section>`;
+
+  fitAngledHeadings(root.querySelector("#heatmap svg"));
+}
+
+/**
+ * Grows the drawing until the angled headings fit inside it.
+ *
+ * How wide a heading actually is depends on the font, the language and the
+ * reader's settings, so guessing at it from a character count is guessing: the
+ * two longest section names ran straight through the caption. The text is
+ * therefore measured once it exists, and the drawing is given the depth the
+ * longest one needs. `getBBox` reports the untransformed box, which is what is
+ * wanted here — the rotation is ours to account for.
+ */
+function fitAngledHeadings(svg) {
+  const headings = svg ? [...svg.querySelectorAll("text.heading")] : [];
+  if (!headings.length) return;
+
+  const angle = (Number(svg.dataset.angle) * Math.PI) / 180;
+  const baseline = Number(svg.dataset.baseline);
+  const widest = Math.max(...headings.map((heading) => heading.getBBox().width));
+  const needed = Math.ceil(baseline + widest * Math.sin(angle)) + 6;
+
+  const [x, y, width, height] = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+  if (needed <= height) return;
+  svg.setAttribute("viewBox", `${x} ${y} ${width} ${needed}`);
 }
 
 /** Put a coding unit that lost its place onto the selected passage. */

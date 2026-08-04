@@ -75,6 +75,23 @@ test("a pinned seed language outranks what the request asks for", async () => {
   expect(categories.map((c) => c.name)).toEqual(["Arbeitsalltag", "Störungen", "Absprachen"]);
 });
 
+test("seeding through a side door follows the pinned language too", async () => {
+  // Half the store reaches the category system from the inside. Adding a
+  // category on a fresh installation seeds it on the way, and that seed has to
+  // obey the same pin as a plain read — otherwise the language of the start
+  // system depends on which button was pressed first.
+  const store = freshStore(null, "de");
+  await store.addCategory({ name: "Medienbruch", definition: "Am Material gebildet." });
+
+  const { categories } = await store.categories();
+  expect(categories.map((c) => c.name)).toEqual([
+    "Arbeitsalltag",
+    "Störungen",
+    "Absprachen",
+    "Medienbruch",
+  ]);
+});
+
 test("a language nobody wrote falls back instead of coming out empty", async () => {
   const { categories, propositions } = await freshStore().categories("fr");
   expect(categories[0].name).toBe("Everyday work");

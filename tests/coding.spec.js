@@ -1963,6 +1963,42 @@ test("the heatmap spreads the categories across the guide sections", async ({ pa
   expect((await download).suggestedFilename()).toBe("distribution-across-sections.svg");
 });
 
+test("the section headings are readable, not cut down to an ellipsis", async ({ page }) => {
+  await code(page, 4, 0, 40, "routine");
+  await page.locator('.tab[data-view="analysis"]').click();
+
+  const headings = page.locator("#heatmap text.heading");
+  await expect(headings).toHaveCount(9);
+
+  // Set upright, a column is about eight characters wide and every name but
+  // the shortest was an ellipsis — legible on hover, which the exported file
+  // and the printed page do not have.
+  const joined = (await headings.allTextContents()).join("|");
+  expect(joined).toContain("Zusammenarbeit über Bereiche");
+  expect(joined).toContain("Wünsche an ein Werkzeug");
+  expect(joined).not.toContain("…");
+});
+
+test("the drawing grows until the angled headings fit inside it", async ({ page }) => {
+  await code(page, 4, 0, 40, "routine");
+  await page.locator('.tab[data-view="analysis"]').click();
+
+  // How wide a heading really is depends on the font, so it is measured rather
+  // than guessed. Guessing let the two longest names run through the caption.
+  const fit = await page.locator("#heatmap svg").evaluate((svg) => {
+    const angle = (Number(svg.dataset.angle) * Math.PI) / 180;
+    const widest = Math.max(
+      ...[...svg.querySelectorAll("text.heading")].map((text) => text.getBBox().width),
+    );
+    return {
+      height: Number(svg.getAttribute("viewBox").split(/\s+/)[3]),
+      needed: Number(svg.dataset.baseline) + widest * Math.sin(angle),
+    };
+  });
+  expect(fit.needed).toBeGreaterThan(0);
+  expect(fit.height).toBeGreaterThanOrEqual(fit.needed);
+});
+
 test("the chart saves as a standalone SVG file", async ({ page }) => {
   await code(page, 4, 0, 40, "routine");
   await page.locator('.tab[data-view="analysis"]').click();

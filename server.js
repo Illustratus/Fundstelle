@@ -17,7 +17,7 @@ import { findInterviews, loadTranscript } from "./lib/transcript.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withoutCheckMarks } from "./lib/anchoring.js";
-import { LANGUAGES, negotiate, translator } from "./lib/texts.js";
+import { FALLBACK, LANGUAGES, negotiate, translator } from "./lib/texts.js";
 import {
   MOSCOW,
   analysis,
@@ -64,6 +64,7 @@ const store = new Store({
   startSystemFile: START_SYSTEM_FILE
     ? resolve(START_SYSTEM_FILE)
     : resolve(HERE, "example-start-system.json"),
+  seedLanguage: START_LANGUAGE ?? FALLBACK,
 });
 
 const CONTENT_TYPES = {
@@ -178,6 +179,13 @@ const server = createServer(async (request, response) => {
 
   try {
     if (!path.startsWith("/api/")) return await staticFile(response, path);
+
+    // The category system is seeded on first touch, and the language of that
+    // touch decides its wording. Settling it here means every route below can
+    // simply read — including the ones that reach the store from the inside,
+    // such as adding a category, which would otherwise seed in whatever the
+    // store was constructed with.
+    await store.ensureSeeded(seedLanguage);
 
     // Environment: the first start names the folder transcripts belong in.
     if (path === "/api/environment" && request.method === "GET") {
