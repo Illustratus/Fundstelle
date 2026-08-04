@@ -8,7 +8,7 @@
 */
 
 import { matchesSlice, occurrences, trimStem } from "./search.js";
-import { language, plural, setLanguage, t } from "./texts.js";
+import { language, plural, quoted, setLanguage, t } from "./texts.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -416,7 +416,7 @@ function showMatch(scroll) {
     ? ""
     : count
       ? t("searchPosition", { i: state.matchIndex + 1, n: count }) +
-        (state.instead ? ` · „${state.instead}“` : "")
+        (state.instead ? ` · ${quoted(state.instead)}` : "")
       : t("searchNoMatch");
   if (scroll && count) {
     state.matches[state.matchIndex].scrollIntoView({ behavior: "smooth", block: "center" });
@@ -469,7 +469,7 @@ function showElsewhere(data) {
   field.hidden = false;
   field.innerHTML =
     `<span class="field-label">${t("searchElsewhere")}` +
-    `${data.instead ? ` · „${escapeHTML(data.instead)}“` : ""}</span>` +
+    `${data.instead ? ` · ${quoted(escapeHTML(data.instead))}` : ""}</span>` +
     others
       .map(
         (interview) =>
@@ -538,7 +538,7 @@ function drawDrift() {
         (coding) =>
           `<li data-id="${coding.id}"><span class="source">${t("turn")} ${coding.turn} · ` +
           `${escapeHTML(categoryById(coding.category)?.name ?? coding.category)}</span>` +
-          `<blockquote>„${escapeHTML(withoutTimestamps(coding.text))}“</blockquote>` +
+          `<blockquote>${quoted(escapeHTML(withoutTimestamps(coding.text)))}</blockquote>` +
           `<span class="reason">${escapeHTML(coding.reason ?? "")}</span>` +
           `<span class="actions"><button type="button" class="button-quiet" data-reanchor="${coding.id}">` +
           `${t("reanchor")}</button>` +
@@ -695,7 +695,7 @@ function categoryDetail(category) {
     (category.initialDefinition
       ? `<p class="deviation"><b>${t("sharpenedOnMaterial")}</b> ` +
         `${inductive ? t("definitionAtCreation") : t("definitionBefore")} ` +
-        `„${escapeHTML(category.initialDefinition)}“ ` +
+        `${quoted(escapeHTML(category.initialDefinition))} ` +
         `<button type="button" class="button-quiet" data-definition-reset="${id}">${t("definitionReset")}</button></p>`
       : "") +
     `<span class="field-label rules-head">${t("codingRules")}</span>` +
@@ -1210,7 +1210,7 @@ function select(selection) {
   state.selection = selection;
   state.filter = "";
   const bar = $("#coding-bar");
-  $("#coding-bar-quote").textContent = "„" + withoutTimestamps(selection.text) + "“";
+  $("#coding-bar-quote").textContent = quoted(withoutTimestamps(selection.text));
   drawBarChoices();
 
   bar.hidden = false;
@@ -1676,7 +1676,7 @@ function citationsHTML(data, color) {
               `${citation.anchor ? `<span>${t("anchorExample")}</span>` : ""}` +
               `<button type="button" class="button-quiet goto" data-passage="${citation.id}"` +
               ` data-interview="${escapeHTML(citation.interview)}">${t("viewInTranscript")}</button></div>` +
-              `<blockquote>„${escapeHTML(citation.text)}“</blockquote>` +
+              `<blockquote>${quoted(escapeHTML(citation.text))}</blockquote>` +
               `${citation.memo ? `<p class="memo">${escapeHTML(citation.memo)}</p>` : ""}` +
               requirementRowHTML(citation) +
               `</div>`,
@@ -2713,7 +2713,7 @@ async function drawCatalog() {
             `<span>${t("turn")} ${citation.turn}</span><span>${escapeHTML(citation.categoryName)}</span>` +
             `<button type="button" class="button-quiet goto" data-passage="${citation.id}"` +
             ` data-interview="${escapeHTML(citation.interview)}">${t("viewInTranscript")}</button></span>` +
-            `<blockquote>„${escapeHTML(citation.text)}“</blockquote></li>`,
+            `<blockquote>${quoted(escapeHTML(citation.text))}</blockquote></li>`,
         )
         .join("");
 

@@ -35,6 +35,11 @@ export function t(key, values) {
   return text;
 }
 
+/** Quotation marks belong to the language, not to the template. */
+export function quoted(text) {
+  return `${t("quoteOpen")}${text}${t("quoteClose")}`;
+}
+
 /** Plural helper: one word for one, another for the rest. */
 export function plural(count, oneKey, manyKey) {
   return t(count === 1 ? oneKey : manyKey);
@@ -42,6 +47,9 @@ export function plural(count, oneKey, manyKey) {
 
 export const TEXTS = {
   de: {
+    quoteOpen: "„",
+    quoteClose: "“",
+
     headerSubtitle: "Qualitative Inhaltsanalyse",
     tabCode: "Kodieren",
     tabCatalog: "Katalog",
@@ -345,6 +353,9 @@ export const TEXTS = {
   },
 
   en: {
+    quoteOpen: "“",
+    quoteClose: "”",
+
     headerSubtitle: "Qualitative content analysis",
     tabCode: "Code",
     tabCatalog: "Catalog",

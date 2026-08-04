@@ -37,7 +37,9 @@ in one provenance chain.
   confirm each one; every export flags unconfirmed codings.
 - **Anchoring survives transcript edits** — codings hold their position by
   turn number and character range, are silently re-anchored when the text
-  shifts, and are loudly reported when they can't be.
+  shifts, and are loudly reported when they can't be. Only what is unambiguous
+  moves: a citation that now reads twice, or one that would come to rest on top
+  of a neighbour, is handed over for re-anchoring rather than guessed at.
 - **Requirements catalog, graphically worked up** — bundle codings across
   interviews into requirements, prioritized MoSCoW-style; how many departments
   name a requirement is counted from the material, never typed in. A MoSCoW

@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { findInterviews, loadTranscript } from "./lib/transcript.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
-import { checkAnchors, withoutCheckMarks } from "./lib/anchoring.js";
+import { checkAnchors, withReasons, withoutCheckMarks } from "./lib/anchoring.js";
 import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
 import {
   MOSCOW,
@@ -255,7 +255,9 @@ const server = createServer(async (request, response) => {
       const { transcript, codings, memo } = await loadChecked(id);
       return send(response, 200, {
         ...transcript,
-        codings,
+        // The reason a unit lost its place is named by the checker and worded
+        // here, where the language of the request is known.
+        codings: withReasons(codings, t),
         memo,
         moved: codings.filter((coding) => coding.state === "moved").length,
         lost: codings.filter((coding) => coding.state === "lost").length,
