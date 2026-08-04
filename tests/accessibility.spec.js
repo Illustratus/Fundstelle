@@ -227,3 +227,43 @@ test("every control carries a name", async ({ page }) => {
     expect(nameless, `unnamed controls in ${view}`).toEqual([]);
   }
 });
+
+test("a citation that is only a suggestion says so where it is read", async ({ page }) => {
+  /* The citation list is what a requirement gets built from, one citation at a
+     time — the dropdown for that sits on each card. Evidence nobody has
+     confirmed looked exactly like evidence here, which is the one decision it
+     must not be mistaken in. The export and the catalog cards already said it. */
+  await fill(page);
+  // `fill` confirms everything it codes, so a couple are put back to suggestions
+  // — otherwise there is nothing for the mark to be right or wrong about.
+  await page.evaluate(async (id) => {
+    const data = await (await fetch(`/api/interviews/${id}`)).json();
+    for (const coding of data.codings.slice(0, 2)) {
+      await fetch(`/api/interviews/${id}/codings/${coding.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ reviewed: false }),
+      });
+    }
+  }, FIRST);
+  await page.reload();
+  await page.locator('.tab[data-view="analysis"]').click();
+  await expect(page.locator(".citation").first()).toBeVisible();
+
+  const agreement = await page.evaluate(async () => {
+    const data = await (await fetch("/api/analysis")).json();
+    return {
+      unreviewed: Object.values(data.citations).flat().filter((one) => !one.reviewed).length,
+      marked: document.querySelectorAll(".citation .open-mark").length,
+      cards: document.querySelectorAll(".citation").length,
+    };
+  });
+  expect(agreement.cards).toBeGreaterThan(0);
+  expect(agreement.unreviewed).toBeGreaterThan(0);
+  // Exactly the ones that are, and no others.
+  expect(agreement.marked).toBe(agreement.unreviewed);
+
+  // The mark sits in the head row, beside where the passage is placed.
+  const marked = page.locator(".citation").filter({ has: page.locator(".open-mark") }).first();
+  await expect(marked.locator(".head-row .open-mark")).toHaveText("ungeprüft");
+});

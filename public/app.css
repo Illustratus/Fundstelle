@@ -1220,7 +1220,10 @@ tbody tr:hover { background: var(--paper); }
 .figures > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .figures .table-frame { margin-top: .5rem; }
 
-.citation-list .open-mark {
+/* Evidence nobody has confirmed, marked wherever it is read: in the citation
+   list of the analysis and on the requirement cards of the catalog. */
+.citation-list .open-mark,
+.citation .head-row .open-mark {
   color: var(--warning);
   font-weight: 600;
 }

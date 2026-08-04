@@ -1739,6 +1739,10 @@ function citationsHTML(data, color) {
               `<span>${t("turn")} ${citation.turn}${citation.time ? ` · ${citation.time}` : ""}</span>` +
               `${citation.sectionName ? `<span>${escapeHTML(citation.sectionName)}</span>` : ""}` +
               `${citation.anchor ? `<span>${t("anchorExample")}</span>` : ""}` +
+              // This is the list a requirement is built from, one citation at a
+              // time. A suggestion nobody has confirmed looked exactly like
+              // evidence here, which is the decision it must not be mistaken in.
+              `${citation.reviewed ? "" : `<span class="open-mark">${t("unreviewed")}</span>`}` +
               `<button type="button" class="button-quiet goto" data-passage="${citation.id}"` +
               ` data-interview="${escapeHTML(citation.interview)}">${t("viewInTranscript")}</button></div>` +
               `<blockquote>${quoted(escapeHTML(citation.text))}</blockquote>` +
