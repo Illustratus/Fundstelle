@@ -289,7 +289,15 @@ function drawOnboarding(root) {
     `<p class="onboarding-path"><code id="onboarding-path">…/my-interview/final.md</code></p>` +
     `<pre class="onboarding-sample">${escapeHTML(t("onboardingSample"))}</pre>` +
     `<p>${t("onboardingContract")}</p>` +
-    `<p><button type="button" class="button-quiet" id="onboarding-reload">${t("reload")}</button></p>` +
+    /* Everything above is a description of a file the reader now has to type
+       out by hand, in a folder they have to make, with the asterisks and the
+       middle dot in the right places — and that is where a tool gets put aside.
+       The one below writes it, since the tool knows the folder and is showing
+       the format already. */
+    `<p class="onboarding-actions">` +
+    `<button type="button" class="button" id="onboarding-example">${t("writeExample")}</button>` +
+    `<button type="button" class="button-quiet" id="onboarding-reload">${t("reload")}</button></p>` +
+    `<p class="column-note">${t("writeExampleNote")}</p>` +
     `<p class="column-note">${t("onboardingStartSystem")}</p>` +
     `</div>`;
   api("/api/environment")
@@ -299,6 +307,17 @@ function drawOnboarding(root) {
     })
     .catch(() => {});
   document.getElementById("onboarding-reload")?.addEventListener("click", () => location.reload());
+  document.getElementById("onboarding-example")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      await api("/api/example", { method: "POST" });
+      location.reload();
+    } catch (error) {
+      button.disabled = false;
+      notify(error.message, "error");
+    }
+  });
 }
 
 function drawTranscript() {

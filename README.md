@@ -86,6 +86,12 @@ node server.js          # http://127.0.0.1:4173
 No login, no build step, no runtime dependencies. `@playwright/test` is only
 needed for the test suite.
 
+With no transcripts yet, the first screen names the folder it reads from, shows
+the format, and offers to write an example interview into it so there is
+something to code straight away. It only does that on a folder that holds no
+interviews, and never over a file that is already there; the example folder can
+simply be deleted afterwards.
+
 ### Docker
 
 ```sh

@@ -1495,6 +1495,8 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 }
 .onboarding-path { overflow-wrap: anywhere; }
 .onboarding-path code { color: var(--accent); }
+.onboarding-actions { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+
 .onboarding-sample {
   font-family: var(--mono);
   font-size: .74rem;

@@ -138,3 +138,47 @@ test("what could not be read is put in front of the reader", async ({ page }) =>
   await expect(page.locator("#transcript-problems li")).toHaveCount(2);
   await expect(page.locator("#transcript-problems")).toContainText("Beitrag 5 kommt mehrfach vor");
 });
+
+/* The first screen ---------------------------------------------------------
+   The empty state explains the format exactly and then leaves the reader to
+   type it out: make a folder, make a file, get the asterisks and the middle dot
+   right. That is where a tool gets put aside, and the tool knows the folder and
+   is showing the format already. */
+
+test("the empty screen can write the example it is describing", async ({ page, request }) => {
+  await page.route("**/api/interviews", async (route) => {
+    if (route.request().method() !== "GET") return route.fallback();
+    await route.fulfill({ json: [] });
+  });
+  await page.goto("/?lang=de");
+  await expect(page.locator(".onboarding")).toBeVisible();
+
+  const write = page.locator("#onboarding-example");
+  await expect(write).toBeVisible();
+  // It says plainly what it will do before it does it.
+  await expect(page.locator(".onboarding")).toContainText("Vorhandene Dateien werden nicht angerührt");
+
+  // The suite's folder already holds interviews, so the tool declines rather
+  // than writing into a study that is under way.
+  const refused = await request.post("/api/example");
+  expect(refused.status()).toBe(409);
+  expect((await refused.json()).code).toBe("errorExampleNotEmpty");
+});
+
+test("the example that gets written is a transcript the tool can read", async () => {
+  const { exampleTranscript, EXAMPLE_FOLDER } = await import("../lib/example.js");
+  expect(EXAMPLE_FOLDER).toBe("example-interview");
+
+  for (const language of ["de", "en"]) {
+    const parsed = parseTranscript(exampleTranscript(language), EXAMPLE_FOLDER);
+    // Nothing it could not read, or the first screen would open on a complaint.
+    expect(parsed.problems, language).toEqual([]);
+    // Enough to code, to search and for the analysis to show something.
+    expect(parsed.turns.length, language).toBeGreaterThanOrEqual(6);
+    expect(parsed.sections.length, language).toBeGreaterThanOrEqual(2);
+    expect(parsed.turns.filter((turn) => !turn.interviewer).length, language).toBeGreaterThan(2);
+    expect(parsed.department, language).toBeTruthy();
+    // And it says of itself that it is invented.
+    expect(Object.values(parsed.meta).join(" "), language).toMatch(/Beispiel|example/);
+  }
+});

@@ -8,12 +8,13 @@
  */
 
 import { createServer } from "node:http";
-import { access, mkdir, readFile } from "node:fs/promises";
+import { access, mkdir, open, readFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findInterviews, loadTranscript, withProblemText } from "./lib/transcript.js";
+import { EXAMPLE_FOLDER, exampleTranscript } from "./lib/example.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withReasons, withoutCheckMarks } from "./lib/anchoring.js";
@@ -210,6 +211,25 @@ const server = createServer(async (request, response) => {
     // Environment: the first start names the folder transcripts belong in.
     if (path === "/api/environment" && request.method === "GET") {
       return send(response, 200, { transcripts: TRANSCRIPTS });
+    }
+
+    /* The empty screen explains the format and then leaves the reader to type
+       it out. This writes the example it is already showing — only on a folder
+       that holds no interviews, and never over a file that is there. */
+    if (path === "/api/example" && request.method === "POST") {
+      if ((await findInterviews(TRANSCRIPTS)).length) {
+        return send(response, 409, { error: t("errorExampleNotEmpty"), code: "errorExampleNotEmpty" });
+      }
+      const folder = join(TRANSCRIPTS, EXAMPLE_FOLDER);
+      await mkdir(folder, { recursive: true });
+      try {
+        const file = await open(join(folder, "final.md"), "wx");
+        await file.writeFile(exampleTranscript(language), "utf8");
+        await file.close();
+      } catch (error) {
+        if (error.code !== "EEXIST") throw error;
+      }
+      return send(response, 201, { interview: EXAMPLE_FOLDER });
     }
 
     // Interviews ------------------------------------------------------------
