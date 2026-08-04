@@ -187,8 +187,14 @@ async function loadRequirements() {
 async function loadInterviews() {
   state.interviews = await api("/api/interviews");
   const choice = $("#interview-choice");
+  // An interview that still holds suggestions says so in the list, so that the
+  // next one to work through can be picked without opening each in turn.
   choice.innerHTML = state.interviews
-    .map((i) => `<option value="${escapeHTML(i.id)}">${escapeHTML(i.title)}</option>`)
+    .map(
+      (i) =>
+        `<option value="${escapeHTML(i.id)}">${escapeHTML(i.title)}` +
+        `${i.unreviewed ? ` · ${t("openMark", { n: i.unreviewed })}` : ""}</option>`,
+    )
     .join("");
   if (!state.interviews.length) return;
   const remembered = localStorage.getItem(STORAGE.interview);
@@ -595,16 +601,31 @@ function drawSections() {
   const codable = state.transcript.turns.filter((turn) => !turn.interviewer);
   const touched = new Set(state.codings.map((coding) => coding.turn));
   const touchedCount = codable.filter((turn) => touched.has(turn.number)).length;
-  const open = state.codings.filter((coding) => coding.reviewed !== true).length;
+  const open = state.codings.filter(
+    (coding) => coding.reviewed !== true && coding.state !== "lost",
+  ).length;
+  // The list was counted when it was fetched; what happens here is newer than
+  // that, so the entry for the interview on screen is kept level with it.
+  const listed = state.interviews.find((interview) => interview.id === state.current);
+  if (listed) listed.unreviewed = open;
   $("#status").innerHTML =
     `<div>${t("statusUnits", { n: state.codings.length })}</div>` +
     `<div>${t("statusTouched", { n: touchedCount, m: codable.length })}</div>` +
     `<div>${t("statusSections", { n: state.transcript.sections.length })}</div>` +
+    /* "All reviewed" was said about the interview on screen while the study
+       still carried suggestions elsewhere — and that is the sentence somebody
+       reads just before they start writing up. It now says which of the two it
+       means, and points at the interview that is still open. */
     (open
       ? `<div class="open-status">${t("statusUnreviewed", { n: open })}</div>` +
         `<button type="button" class="button-quiet jump" id="review">${t("nextUnreviewed")}</button>`
       : state.codings.length
-        ? `<div class="open-status reviewed">${t("allReviewed")}</div>`
+        ? `<div class="open-status reviewed">${t("allReviewed")}</div>` +
+          (elsewhereUnreviewed()
+            ? `<div class="open-status">${t("openElsewhere", { n: elsewhereUnreviewed() })}</div>` +
+              `<button type="button" class="button-quiet jump" id="review-elsewhere">` +
+              `${t("toThatInterview")}</button>`
+            : "")
         : "") +
     `<button type="button" class="button-quiet jump" id="jump">${t("nextUntouched")}</button>`;
 
@@ -2878,6 +2899,24 @@ function watchSections() {
  * with Enter, on to the next. Whoever changes the assignment confirms it
  * anyway, because then the decision is theirs.
  */
+/** Suggestions still open in the other interviews of the study. */
+function elsewhereUnreviewed() {
+  return state.interviews
+    .filter((interview) => interview.id !== state.current)
+    .reduce((n, interview) => n + (interview.unreviewed ?? 0), 0);
+}
+
+/** The next interview that still holds suggestions, in the order of the list. */
+function nextOpenInterview() {
+  const order = state.interviews;
+  const from = order.findIndex((interview) => interview.id === state.current);
+  for (let step = 1; step <= order.length; step++) {
+    const candidate = order[(from + step) % order.length];
+    if (candidate.id !== state.current && candidate.unreviewed > 0) return candidate.id;
+  }
+  return null;
+}
+
 function unreviewedQueue() {
   return state.codings
     .filter((coding) => coding.reviewed !== true && coding.state !== "lost")
@@ -3172,8 +3211,18 @@ function connectEvents() {
     }
   });
 
-  $("#status").addEventListener("click", (event) => {
+  $("#status").addEventListener("click", async (event) => {
     if (event.target.id === "review") return jumpToUnreviewed();
+    if (event.target.id === "review-elsewhere") {
+      const next = nextOpenInterview();
+      if (!next) return drawAll();
+      state.current = next;
+      $("#interview-choice").value = next;
+      localStorage.setItem(STORAGE.interview, next);
+      await loadTranscript();
+      drawAll();
+      return jumpToUnreviewed();
+    }
     if (event.target.id !== "jump") return;
     const turn = nextUntouchedTurn();
     if (!turn) return notify(t("everyTurnCoded"));

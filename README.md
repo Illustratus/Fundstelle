@@ -34,7 +34,10 @@ in one provenance chain.
   examples as they emerge, merge categories that turn out to be one.
 - **Review workflow** — units created programmatically (e.g. from a machine
   pre-coding) are marked unreviewed and rendered as suggestions until you
-  confirm each one; every export flags unconfirmed codings.
+  confirm each one; every export flags unconfirmed codings. `Enter` walks the
+  pass and keeps up with the keyboard, and "all reviewed" says which it means:
+  the interview on screen, or the study — the interviews that still hold
+  suggestions are marked in the list and are one click away.
 - **Anchoring survives transcript edits** — codings hold their position by
   turn number and character range, are silently re-anchored when the text
   shifts, and are loudly reported when they can't be. Only what is unambiguous

@@ -226,6 +226,11 @@ const server = createServer(async (request, response) => {
           turns: transcript.turns.length,
           sections: transcript.sections.length,
           codings: codings.length,
+          // What is still only a suggestion here. The coding view knows its own
+          // interview; without this it cannot say whether the study is done.
+          unreviewed: codings.filter(
+            (coding) => coding.reviewed !== true && coding.state !== "lost",
+          ).length,
         })),
       );
     }

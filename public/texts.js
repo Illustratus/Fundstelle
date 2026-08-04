@@ -139,6 +139,9 @@ export const TEXTS = {
     statusUnreviewed: "<b>{n}</b> noch ungeprüft",
     nextUnreviewed: "Nächste ungeprüfte Stelle",
     allReviewed: "alle geprüft",
+    openMark: "{n} offen",
+    openElsewhere: "{n} noch ungeprüft in anderen Interviews.",
+    toThatInterview: "Dorthin wechseln",
     nextUntouched: "Nächster unberührter Beitrag",
 
     codingUnit: "Kodiereinheit",
@@ -440,6 +443,9 @@ export const TEXTS = {
     statusUnreviewed: "<b>{n}</b> still unreviewed",
     nextUnreviewed: "Next unreviewed unit",
     allReviewed: "all reviewed",
+    openMark: "{n} open",
+    openElsewhere: "{n} still unreviewed in other interviews.",
+    toThatInterview: "Go there",
     nextUntouched: "Next untouched turn",
 
     codingUnit: "Coding unit",

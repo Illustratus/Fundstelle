@@ -1688,6 +1688,83 @@ test("the cross table carries one column per department", async ({ page }) => {
   await expect(row.locator("td.num").last()).toHaveText("2");
 });
 
+/* "All reviewed" is the sentence somebody reads just before they start writing
+   up, so it has to say which of the two it means: this interview, or the study. */
+
+test("all reviewed here does not claim the study is done", async ({ page, request }) => {
+  // A suggestion in the other interview, the way a machine pre-coding leaves it.
+  // The wording is taken from the transcript: an invented citation counts as
+  // lost rather than open, and would never show up as something to review.
+  const other = await (await request.get(`/api/interviews/${SECOND}`)).json();
+  const turn = other.turns.find((one) => !one.interviewer && one.text.length > 40);
+  await suggest(request, 4, 0, 40, "routine", "Klar, ich bin seit dem Frühjahr im Team");
+  await request.post(`/api/interviews/${SECOND}/codings`, {
+    data: {
+      turn: turn.number,
+      start: 0,
+      end: 40,
+      category: "routine",
+      text: turn.text.slice(0, 40),
+    },
+  });
+  // Everything in the interview on screen is confirmed by hand.
+  await page.reload();
+  await page.locator("#review").click();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".open-status.reviewed")).toBeVisible();
+
+  // …but the study is not, and the status says so instead of stopping at
+  // "all reviewed".
+  await expect(page.locator("#status")).toContainText("alle geprüft");
+  await expect(page.locator("#status")).toContainText("in anderen Interviews");
+  // The interview that still holds them is marked in the list.
+  await expect(page.locator("#interview-choice")).toContainText("1 offen");
+
+  // And the way there is one click, landing on the suggestion itself.
+  await page.locator("#review-elsewhere").click();
+  await expect(page.locator("#interview-choice")).toHaveValue(SECOND);
+  await expect(page.locator(".segment[data-selected='true']")).toHaveCount(1);
+});
+
+test("with nothing open elsewhere the status keeps quiet", async ({ page }) => {
+  await code(page, 4, 0, 40, "routine");
+  await expect(page.locator(".open-status.reviewed")).toBeVisible();
+  await expect(page.locator("#status")).not.toContainText("in anderen Interviews");
+  await expect(page.locator("#review-elsewhere")).toHaveCount(0);
+  await expect(page.locator("#interview-choice")).not.toContainText("offen");
+});
+
+test("confirmations keep up with the keyboard", async ({ page, request }) => {
+  /* Reviewing a long pass, Enter is pressed faster than the save answers. The
+     confirmations are chained for that reason; without the chain the second
+     keystroke confirms the same unit again and one is skipped — unnoticed,
+     because the count drops either way. */
+  // The citation has to be the real wording: a suggestion whose text is not in
+  // the turn counts as lost, not as open, and would never enter the queue.
+  const transcript = await (await request.get(`/api/interviews/${FIRST}`)).json();
+  const turns = transcript.turns
+    .filter((turn) => !turn.interviewer && turn.text.length > 40)
+    .slice(0, 10);
+  for (const turn of turns) {
+    await suggest(request, turn.number, 0, 30, "routine", turn.text.slice(0, 30));
+  }
+  await page.reload();
+  const open = () =>
+    page.evaluate(async (id) => {
+      const data = await (await fetch(`/api/interviews/${id}`)).json();
+      return data.codings.filter((coding) => coding.reviewed !== true).length;
+    }, FIRST);
+  expect(await open()).toBe(turns.length);
+
+  await page.locator("#review").click();
+  for (let press = 0; press < turns.length + 3; press++) {
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(10);
+  }
+  await expect.poll(open, { timeout: 10000 }).toBe(0);
+  await expect(page.locator(".open-status.reviewed")).toBeVisible();
+});
+
 test("a requirement counts departments across interviews", async ({ page }) => {
   await code(page, 6, 0, 40, "agreement");
   await page.locator("#detail-new-requirement input").fill("Auffindbarkeit ohne Rückfrage");
