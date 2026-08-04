@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -294,4 +294,103 @@ test("a unit that only moved still counts, and counts once", async ({ request })
   expect(after.total).toBe(1);
   expect(after.displaced).toBe(0);
   expect(Object.values(after.citations).flat()).toHaveLength(1);
+});
+
+/**
+ * And nowhere means nowhere.
+ *
+ * The last one of these was found one surface at a time — the cross table, then
+ * the citations, then the appendix. That is a poor way to find them, because
+ * the next surface added inherits the same hole in silence. So the rule is
+ * asserted once, across everything that reads a coding: a unit with no place is
+ * not evidence, wherever the question is asked.
+ */
+test("a unit with no place is evidence on no surface at all", async ({ request }) => {
+  const phrase = "Eigentlich will ich alles sofort ablegen";
+  const at = await place(request, 10, phrase);
+  const made = await (await codeIt(request, at, phrase)).json();
+
+  // It stands for a requirement, too — the catalog counts departments from it.
+  const wanted = await (
+    await request.post("/api/requirements", { data: { title: "Ablage beschreiben" } })
+  ).json();
+  await request.patch(`/api/interviews/interview-01/codings/${made.id}`, {
+    data: { requirements: [wanted.id] },
+  });
+
+  // A second coding of the same interview, so the agreement panel has something
+  // to compare — it reads the first coder's units just like everything else.
+  writeFileSync(
+    join(SANDBOX, "interview-01", "coding.zweit.json"),
+    JSON.stringify({
+      version: 3,
+      interview: "interview-01",
+      codings: [{ id: "z1", turn: 10, start: at.start, end: at.end, category: "routine", text: phrase }],
+    }),
+  );
+
+  const before = await (await request.get("/api/agreement")).json();
+  expect(before.comparisons[0].cells.both, "they agree while the passage is there").toBe(1);
+
+  // The passage is edited away.
+  const text = readFileSync(FILE, "utf8");
+  writeFileSync(FILE, text.replace(phrase, "Ich lege es später ab"), "utf8");
+  expect((await (await request.get("/api/interviews/interview-01?lang=de")).json()).lost).toBe(1);
+
+  const analysis = await (await request.get("/api/analysis")).json();
+  expect(analysis.total, "the cross table").toBe(0);
+  expect(Object.values(analysis.citations).flat(), "the citations").toHaveLength(0);
+  expect(analysis.saturation.at(-1).total, "the saturation curve").toBe(0);
+  expect(analysis.rows.every((row) => row.sum === 0), "every category row").toBe(true);
+
+  const catalog = await (await request.get("/api/requirements")).json();
+  const entry = catalog.requirements.find((one) => one.id === wanted.id);
+  expect(entry.citations, "the requirements catalog").toHaveLength(0);
+  expect(entry.departments, "and the departments it counts from them").toHaveLength(0);
+
+  const agreement = await (await request.get("/api/agreement")).json();
+  /* The comparison rests on "did this coder use this category in this turn".
+     A unit with no place answers that question about a place that is gone. */
+  expect(agreement.comparisons[0].cells.both, "the intercoder comparison").toBe(0);
+
+  for (const [what, url] of [
+    ["the coding guide", "/api/export/coding-guide.md?lang=de"],
+    ["the citations", "/api/export/citations.md?lang=de"],
+    ["the coding table", "/api/export/coding-table/interview-01.md?lang=de"],
+    ["the cross table", "/api/export/matrix.md?lang=de"],
+    ["the requirements catalog", "/api/export/requirements-catalog.md?lang=de"],
+    ["the reliability report", "/api/export/agreement.md?lang=de"],
+  ]) {
+    const written = await (await request.get(url)).text();
+    expect(written, `${what} does not quote it`).not.toContain(phrase);
+  }
+});
+
+test.afterEach(() => {
+  rmSync(join(SANDBOX, "interview-01", "coding.zweit.json"), { force: true });
+});
+
+test("a deleted passage does not become a disagreement between two coders", async ({ request }) => {
+  /* The second coding is read from a file and never had its anchors checked
+     against the transcript. Dropping only the first coder's unit would leave
+     the second one standing alone — turning a passage nobody can point to into
+     a difference between two people who never disagreed about anything. */
+  const phrase = "Eigentlich will ich alles sofort ablegen";
+  const at = await place(request, 10, phrase);
+  await codeIt(request, at, phrase);
+  writeFileSync(
+    join(SANDBOX, "interview-01", "coding.zweit.json"),
+    JSON.stringify({
+      version: 3,
+      interview: "interview-01",
+      codings: [{ id: "z1", turn: 10, start: at.start, end: at.end, category: "routine", text: phrase }],
+    }),
+  );
+
+  const text = readFileSync(FILE, "utf8");
+  writeFileSync(FILE, text.replace(phrase, "Ich lege es später ab"), "utf8");
+
+  const { comparisons } = await (await request.get("/api/agreement")).json();
+  expect(comparisons[0].cells).toMatchObject({ both: 0, onlyFirst: 0, onlySecond: 0 });
+  expect(comparisons[0].disagreements).toEqual([]);
 });

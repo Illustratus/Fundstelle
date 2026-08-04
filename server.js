@@ -213,7 +213,16 @@ async function allAgreement() {
   for (const one of all) {
     const { found, problems: broken } = await store.otherCodings(one.transcript.id);
     problems.push(...broken);
-    withOthers.push({ ...one, others: found });
+    /* The second coding is checked against the same transcript as the first,
+       so that a passage edited away falls out of both sides. Checked, never
+       written: their file stays theirs, which is the whole point of it. */
+    const checked = Object.fromEntries(
+      Object.entries(found).map(([coder, codings]) => [
+        coder,
+        checkAnchors(one.transcript, codings).codings,
+      ]),
+    );
+    withOthers.push({ ...one, others: checked });
   }
   return { compared: agreement(withOthers, categories), problems };
 }

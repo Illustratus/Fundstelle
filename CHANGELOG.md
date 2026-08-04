@@ -39,6 +39,14 @@ where it lies.
 
 ### Fixed
 
+- **The intercoder comparison drops a unit with no place, on both sides.** The
+  same hole as below, one layer over: the comparison rests on "did this coder
+  use this category in this turn", and a unit whose passage was edited away
+  answers that about a place that is gone. The second coder's file is now
+  anchor-checked against the same transcript before comparing — read, never
+  written — because dropping only the first coder's unit would turn a passage
+  nobody can point to into a disagreement between two people who never
+  disagreed.
 - **A coding unit that lost its place no longer counts as evidence.** When a
   transcript is edited so a coded passage can no longer be found unambiguously,
   the tool hands the unit over for re-anchoring rather than guessing — and then
