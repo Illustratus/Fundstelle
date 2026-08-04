@@ -57,7 +57,10 @@ in one provenance chain.
 - **Production-grade analytics** — stacked bar chart per category and
   department, a category × guide-section heatmap, cross tables, per-interview
   progress; every chart exports as a standalone SVG with computed colors, and
-  the cross table as a Pandoc grid table set to 80 characters.
+  the cross table as a Pandoc grid table set to 80 characters. Twenty interviews
+  and a thousand codings draw in a quarter of a second; a category holding
+  hundreds of citations shows its first few and offers the rest, while its count
+  and every export stay the whole number.
 - **Search that understands inflection** — `*` stands for any characters inside
   a word, never across a space. A word that finds nothing at all is tried again
   without its inflecting ending, and the search then says which term it actually

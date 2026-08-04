@@ -2315,3 +2315,62 @@ test("the catalog can be cut down to what is still unfinished", async ({ page, r
   await expect(page.locator(".requirement")).toHaveCount(0);
   await expect(page.locator("#view-catalog .empty-state")).toContainText("Keine Anforderung");
 });
+
+/* A study of twenty interviews reaches a thousand citations, and drawn in full
+   that list is a hundred and thirty metres of scrolling with a select on every
+   card. Each category shows its first few — but the count in its heading, and
+   everything the export writes, must stay the whole truth. */
+
+test("a long citation list shows its first few and says how many there are", async ({
+  page,
+  request,
+}) => {
+  const transcript = await (await request.get(`/api/interviews/${FIRST}`)).json();
+  const codable = transcript.turns
+    .filter((turn) => !turn.interviewer && turn.text.length > 60)
+    .slice(0, 20);
+  expect(codable.length).toBe(20);
+  for (const turn of codable) {
+    await request.post(`/api/interviews/${FIRST}/codings`, {
+      data: {
+        turn: turn.number,
+        start: 0,
+        end: 45,
+        category: "routine",
+        text: turn.text.slice(0, 45),
+        reviewed: true,
+      },
+    });
+  }
+
+  await page.reload();
+  await page.locator('.tab[data-view="analysis"]').click();
+
+  const group = page.locator(".citations").first();
+  await expect(group.locator(".citation")).toHaveCount(12);
+  // The heading counts them all, whatever is drawn.
+  await expect(page.locator(".citation-head").first()).toContainText("· 20");
+  await expect(page.locator(".show-rest").first()).toContainText("alle 20 Belege zeigen");
+
+  // The export writes the slice, not what happens to be on screen.
+  const markdown = await (
+    await request.get("/api/export/citations.md?lang=de")
+  ).text();
+  expect((markdown.match(/^- /gm) ?? []).length).toBe(20);
+
+  // Opening the category shows the whole of it, and it stays open.
+  await page.locator(".show-rest").first().click();
+  await expect(group.locator(".citation")).toHaveCount(20);
+  await expect(page.locator(".show-rest")).toHaveCount(0);
+  await expect(page.locator(".citation-head").first()).toContainText("· 20");
+});
+
+test("a short citation list is simply shown", async ({ page }) => {
+  await code(page, 4, 0, 40, "routine");
+  await code(page, 6, 0, 40, "routine");
+  await page.locator('.tab[data-view="analysis"]').click();
+
+  await expect(page.locator(".citation")).toHaveCount(2);
+  // Nothing is held back, so nothing offers to show more.
+  await expect(page.locator(".show-rest")).toHaveCount(0);
+});

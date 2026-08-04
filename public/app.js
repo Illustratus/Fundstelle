@@ -90,6 +90,8 @@ const state = {
   // Last computed analysis, so that the citation slices work without a refetch.
   analysis: null,
   citationFilter: { ...EMPTY_SLICE },
+  // Categories whose citations are shown in full rather than the first few.
+  citationsShown: new Set(),
   // Which requirements the catalog is showing. At twenty of them the list runs
   // to several screens, and the counts above it say how many are still
   // undecided without offering any way to reach them.
@@ -1750,15 +1752,23 @@ function citationsHTML(data, color) {
     `${t("exportSlice")}</a>` +
     `</div>`;
 
+  /* A study of twenty interviews reaches a thousand citations, and the list
+     drawn in full is a hundred and thirty metres of scrolling with a select on
+     every card. So each category shows its first few and says how many it is
+     holding back; the count in the heading is always the true one, and the
+     filter above still cuts the whole set. Opening a category keeps it open. */
+  const FIRST_FEW = 12;
   const lists = data.rows
     .map((row) => {
       const own = (data.citations[row.category] ?? []).filter(fits);
       if (!own.length) return "";
+      const whole = state.citationsShown.has(row.category) || own.length <= FIRST_FEW;
+      const shownHere = whole ? own : own.slice(0, FIRST_FEW);
       return (
         `<h4 class="citation-head">${escapeHTML(row.name)} · ${own.length}` +
         (own.length !== row.sum ? ` <span class="of">${t("ofCount", { n: row.sum })}</span>` : "") +
         `</h4><div class="citations">` +
-        own
+        shownHere
           .map(
             (citation) =>
               `<div class="citation" style="--mark-color:${color(row.category)}">` +
@@ -1778,6 +1788,10 @@ function citationsHTML(data, color) {
               `</div>`,
           )
           .join("") +
+        (whole
+          ? ""
+          : `<button type="button" class="button-quiet show-rest" data-show="${escapeHTML(row.category)}">` +
+            `${t("showAllCitations", { n: own.length })}</button>`) +
         `</div>`
       );
     })
@@ -3630,6 +3644,11 @@ function connectEvents() {
   }
 
   $("#analysis").addEventListener("click", async (event) => {
+    const rest = event.target.closest("[data-show]");
+    if (rest) {
+      state.citationsShown.add(rest.dataset.show);
+      return drawCitations();
+    }
     const unlink = event.target.closest("[data-unlink]");
     if (unlink) {
       const { unlink: id, citation, interview } = unlink.dataset;
