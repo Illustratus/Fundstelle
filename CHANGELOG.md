@@ -39,6 +39,19 @@ where it lies.
 
 ### Fixed
 
+### Added
+
+- **What is still open, said where somebody thinks they are finished.** The
+  export block now carries a short list: how many suggestions are still
+  unreviewed, which categories have no anchor example, and which interviews have
+  not been coded at all — each with what follows from it for the documents about
+  to be written. Every one of those signals existed already, in three different
+  views; the question they answer is asked once, with a hand on the button that
+  writes the appendix. The list is silent when there is nothing to say, and does
+  not repeat what is already named at the top of the same page.
+
+### Fixed
+
 - **The end of a review pass says which end it is.** Confirming the last
   suggestion in an interview announced "Every coding unit is reviewed" while the
   study still carried suggestions in another one — the sentence somebody reads

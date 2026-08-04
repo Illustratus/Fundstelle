@@ -189,6 +189,10 @@ quietly dropping the other's work.
   a summary in numbers and folds open into the figures it draws; the cross table
   names the category and department of each figure, and an empty cell still says
   nought.
+- **It says what is still open where you are standing** — with a hand on the
+  export button: suggestions not yet reviewed, categories without an anchor
+  example, interviews nobody has coded, and what each of those means for the
+  documents about to be written. Silent when there is nothing to say.
 - **A history you can read** — codings live in the same folder, and the same git
   history, as the transcripts. Adding a coding unit adds a coding unit; writing a
   memo touches the memo and the moment it was written, and nothing else.

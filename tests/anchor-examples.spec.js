@@ -98,10 +98,10 @@ test("the analysis says it before the guide is exported, not after", async ({ pa
   await expect(page.locator("#matrix-table")).toBeVisible();
 
   /* Beside the export button, because the gap is far cheaper to close before
-     the appendix is written than after a reviewer finds it. */
-  const said = page.locator(".exports-part .drift-line");
+     the appendix is written than after a reviewer finds it — one line among
+     whatever else is still open at that moment. */
+  const said = page.locator(".exports-part .still-open li", { hasText: "Ankerbeispiel" });
   await expect(said).toBeVisible();
-  await expect(said).toContainText("Ankerbeispiel");
   // Named, so it can be acted on without hunting.
   await expect(said).toContainText("Arbeitsalltag");
 
@@ -110,15 +110,18 @@ test("the analysis says it before the guide is exported, not after", async ({ pa
     const data = await (await fetch("/api/analysis")).json();
     return data.rows.filter((row) => row.sum > 0 && !row.anchors).map((row) => row.name);
   });
+  /* The figure comes from the analysis and not from a count kept elsewhere; at
+     one it is the word rather than the digit, which the line names instead. */
   expect(rows).toEqual(["Arbeitsalltag"]);
-  await expect(said).toContainText(String(rows.length));
+  await expect(said).toContainText("Eine Kategorie");
 });
 
 test("marking one takes the notice away", async ({ page, request }) => {
   const made = await codeSomething(request);
+  const line = page.locator(".exports-part .still-open li", { hasText: "Ankerbeispiel" });
   await page.goto("/?lang=de");
   await page.locator('.tab[data-view="analysis"]').click();
-  await expect(page.locator(".exports-part .drift-line")).toBeVisible();
+  await expect(line).toBeVisible();
 
   await request.patch(`/api/interviews/interview-01/codings/${made.id}`, {
     data: { anchor: true },
@@ -126,5 +129,6 @@ test("marking one takes the notice away", async ({ page, request }) => {
   await page.reload();
   await page.locator('.tab[data-view="analysis"]').click();
   await expect(page.locator("#matrix-table")).toBeVisible();
-  await expect(page.locator(".exports-part .drift-line")).toHaveCount(0);
+  // That line goes; whatever else is still open is somebody else's business.
+  await expect(line).toHaveCount(0);
 });

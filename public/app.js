@@ -2965,13 +2965,43 @@ async function drawAnalysis() {
      nothing has been coded with yet is not counted: there is nothing it could
      have been anchored in. */
   const unanchored = data.rows.filter((row) => row.sum > 0 && !row.anchors);
-  const missing = unanchored.length
-    ? `<p class="drift-line">${escapeHTML(
-        t("anchorsMissing", {
-          n: unanchored.length,
-          names: unanchored.map((row) => row.name).join(", "),
-        }),
-      )}</p>`
+
+  /* What would make the documents about to be written incomplete, said where
+     somebody is standing when they think they are finished. Each of these is
+     already visible somewhere — in the status bar, in the category panel — but
+     scattered across three views, and the question "am I done" is asked once,
+     here, with a hand on the export button. Nothing is repeated from the top of
+     this page: what lost its place is named there and does not need saying
+     twice on the same screen. */
+  const open = [];
+  const unreviewed = Object.values(data.citations)
+    .flat()
+    .filter((citation) => citation.reviewed !== true).length;
+  // One of a thing is not "1 things"; the tool speaks two languages and a
+  // number glued to a plural is the first place that shows.
+  if (unreviewed) {
+    open.push(t(unreviewed === 1 ? "openUnreviewedOne" : "openUnreviewed", { n: unreviewed }));
+  }
+  if (unanchored.length) {
+    const names = unanchored.map((row) => row.name).join(", ");
+    open.push(
+      t(unanchored.length === 1 ? "anchorsMissingOne" : "anchorsMissing", {
+        n: unanchored.length,
+        names,
+      }),
+    );
+  }
+  const silent = data.progress.filter((entry) => !entry.codings);
+  if (silent.length) {
+    open.push(
+      t(silent.length === 1 ? "openUncodedOne" : "openUncoded", {
+        n: silent.length,
+        names: silent.map((entry) => entry.title).join(", "),
+      }),
+    );
+  }
+  const missing = open.length
+    ? `<ul class="still-open">${open.map((line) => `<li>${escapeHTML(line)}</li>`).join("")}</ul>`
     : "";
 
   const exports =

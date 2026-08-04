@@ -137,6 +137,22 @@ export const TEXTS = {
       "Fundstelle antwortet nicht. Nichts von diesem Schritt wurde gespeichert; " +
       "was vorher in den Dateien stand, steht unverändert dort. Läuft das Fenster " +
       "mit „node server.js“ noch? Danach diese Seite neu laden.",
+    openUnreviewedOne:
+      "Eine Kodiereinheit ist noch nicht geprüft. Die Ausgaben weisen sie als " +
+      "solche aus; im Kodieren führt Enter durch die offenen Stellen.",
+    openUncodedOne:
+      "Ein Interview ist noch gar nicht kodiert: {names}. In Leitfaden und " +
+      "Kodiertabellen kommt es deshalb nicht vor.",
+    anchorsMissingOne:
+      "Eine Kategorie hat noch kein Ankerbeispiel: {names}. Der Kodierleitfaden " +
+      "weist die Lücke aus. Eine Fundstelle wird zum Anker, indem man sie " +
+      "auswählt und „Ankerbeispiel“ ankreuzt.",
+    openUnreviewed:
+      "{n} Kodiereinheiten sind noch nicht geprüft. Die Ausgaben weisen sie als " +
+      "solche aus; im Kodieren führt Enter durch die offenen Stellen.",
+    openUncoded:
+      "{n} Interviews sind noch gar nicht kodiert: {names}. In Leitfaden und " +
+      "Kodiertabellen kommen sie deshalb nicht vor.",
     anchorsMissing:
       "{n} Kategorien haben noch kein Ankerbeispiel: {names}. Der Kodierleitfaden " +
       "weist die Lücke aus. Eine Fundstelle wird zum Anker, indem man sie " +
@@ -607,6 +623,22 @@ export const TEXTS = {
       "Fundstelle is not answering. Nothing of this step was saved; what stood " +
       "in the files before stands there unchanged. Is the window running " +
       "“node server.js” still open? Reload this page afterwards.",
+    openUnreviewedOne:
+      "One coding unit is not reviewed yet. The exports mark it as such; in the " +
+      "coding view Enter walks the open ones.",
+    openUncodedOne:
+      "One interview has not been coded at all: {names}. It therefore does not " +
+      "appear in the guide or in the coding tables.",
+    anchorsMissingOne:
+      "One category has no anchor example yet: {names}. The coding guide shows " +
+      "the gap. A citation becomes an anchor by selecting it and ticking " +
+      "“anchor example”.",
+    openUnreviewed:
+      "{n} coding units are not reviewed yet. The exports mark them as such; in " +
+      "the coding view Enter walks the open ones.",
+    openUncoded:
+      "{n} interviews have not been coded at all: {names}. They therefore do not " +
+      "appear in the guide or in the coding tables.",
     anchorsMissing:
       "{n} categories have no anchor example yet: {names}. The coding guide " +
       "shows the gap. A citation becomes an anchor by selecting it and ticking " +
