@@ -134,6 +134,13 @@ whatever else lives next to it. The tool only ever adds files, namely
 `coding.json` beside each `final.md` and the two JSON files at the configured
 location. Nothing that was already there is touched.
 
+While a change is being written there is briefly a `.lock` file beside the one
+being changed, and a `.tmp` file for the moment the write takes. Both are gone
+again immediately; a lock left behind by a process that was killed is broken by
+the next change rather than waited on. They are what lets two servers share one
+folder — a container and a local start, or a mounted drive — without either
+quietly dropping the other's work.
+
 ## Configuration
 
 | Variable | Meaning | Default |
