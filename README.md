@@ -80,7 +80,10 @@ in one provenance chain.
 - **Considered design** — an editorial, manuscript-like reading surface with
   light and dark themes, visible focus states, and reduced-motion support. The
   chart palettes are held to the WCAG contrast thresholds in both themes by a
-  test that measures them, not by eye.
+  test that measures them, not by eye. Printing gives a document rather than a
+  screenshot: the controls drop away, what is folded shut is printed open, and a
+  page printed from the dark theme comes out on white paper with its heatmap
+  reading the right way round.
 - **The analysis reads aloud** — every chart carries a summary in numbers, not
   just a title, so what it shows arrives without seeing it; the cross table
   names the category and the department of each figure, and a cell that stands

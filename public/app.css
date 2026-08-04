@@ -1519,3 +1519,87 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   margin: 1rem 0;
   overflow-x: auto;
 }
+
+/* On paper --------------------------------------------------------------
+   Printing works without any of this — the browser expands the scrolling
+   column and the analysis flows across pages. What it prints, though, is the
+   application: a navigation bar, a Save-as-SVG button beside every chart, the
+   whole citation filter with its dropdowns, a "view in transcript" button on
+   every card. None of that can be pressed on paper.
+
+   So the controls go and the document stays. The light palette is forced,
+   because a dark background is a page of ink; and what is folded away is
+   folded open, because a disclosure nobody can click is a number that did not
+   get printed. */
+@media print {
+  /* Named as specifically as the theme sets them, or a page saved from the dark
+     theme prints as a sheet of ink. */
+  :root,
+  :root[data-theme="light"],
+  :root[data-theme="dark"] {
+    color-scheme: light;
+    --paper: #ffffff;
+    --sheet: #ffffff;
+    --ink: #16191a;
+    --ink-soft: #454d4f;
+    --ink-faint: #6b7376;
+    --line: #d5d8d3;
+    --line-strong: #b4b9b2;
+    --accent: #1f4f4a;
+    --selection: transparent;
+
+    /* The chart palettes too, and the ramp above all: its dark steps run the
+       other way, so a heatmap printed from the dark theme showed the largest
+       cell as the palest one. On paper that is the wrong reading, not a
+       different look. */
+    --series-1: #2a78d6; --series-2: #ea632d; --series-3: #19a06f; --series-4: #bd8000;
+    --series-5: #e35f91; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+    --level-1: #dcebe7; --level-2: #b0d4cb; --level-3: #7bb5a8;
+    --level-4: #407f72; --level-5: #1f4f4a;
+  }
+
+  html, body { height: auto; overflow: visible; }
+  body { font-size: 11pt; }
+
+  .header,
+  .views,
+  .tab,
+  .button,
+  .button-quiet,
+  .citation-filter,
+  .note-search,
+  .new-requirement,
+  .coding-bar,
+  .chart-tip,
+  .requirement-choice,
+  .requirement-target,
+  .category-choice,
+  #interview-choice,
+  [data-svg],
+  [data-passage],
+  [data-remove],
+  [data-catalog-filter],
+  [data-unlink],
+  .exports-part { display: none !important; }
+
+  .view,
+  #view-analysis,
+  #view-catalog { display: block; overflow: visible; height: auto; }
+  .column { overflow: visible; }
+
+  /* A disclosure cannot be opened on paper, so it is printed open. */
+  details { display: block; }
+  details > summary { display: none; }
+  details > *:not(summary) { display: revert; }
+
+  /* Nothing that is read as one thing should be split across two pages. */
+  .citation,
+  .requirement,
+  .metric,
+  figure.chart,
+  tr { break-inside: avoid; }
+  h2, h3, h4 { break-after: avoid; }
+
+  .table-frame { overflow: visible; border-color: var(--line); }
+  a[href]::after { content: ""; }
+}

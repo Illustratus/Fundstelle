@@ -2459,7 +2459,9 @@ async function drawAnalysis() {
     `</tbody></table></div>`;
 
   const exports =
-    `<h3>${t("exports")}</h3><div class="exports">` +
+    // Marked as one block so that printing can drop the heading with the links;
+    // a heading whose only content is buttons is not a section on paper.
+    `<div class="exports-part"><h3>${t("exports")}</h3><div class="exports">` +
     `<a class="button-quiet" href="${exportHref("/api/export/coding-guide.md")}" download>${t("exportCodingGuide")}</a>` +
     `<a class="button-quiet" href="${exportHref("/api/export/notes.md")}" download>${t("exportNotes")}</a>` +
     data.progress
@@ -2469,7 +2471,7 @@ async function drawAnalysis() {
           `${t("exportCodingTable")} ${escapeHTML(entry.department)}</a>`,
       )
       .join("") +
-    `</div>`;
+    `</div></div>`;
 
   root.innerHTML =
     heading +
