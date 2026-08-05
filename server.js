@@ -22,7 +22,7 @@ import { agreement, agreementMarkdown } from "./lib/agreement.js";
 import { codebookFrom, projectFile, readCodebook } from "./lib/refi.js";
 import { convert, folderName, readTranscript } from "./lib/import.js";
 import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
-import { SVG, drawFigure, figureIndex, viewOf } from "./lib/figures.js";
+import { SVG, drawFigure, figureIndex, needsOf } from "./lib/figures.js";
 import { openapiDocument } from "./lib/openapi.js";
 import { THEME_NAMES } from "./public/charts.js";
 import {
@@ -819,15 +819,18 @@ const server = createServer(async (request, response) => {
       const name = oneFigure[1];
       // Only what this figure is drawn from: fetching the catalog to answer a
       // question about the saturation curve is work nobody asked for.
-      const view = viewOf(name);
-      const all = view ? await allInterviews() : [];
-      const { categories } = view ? await store.categories(seedLanguage) : { categories: [] };
-      const requirements =
-        view === "catalog" ? (await store.requirements()).requirements : [];
+      const needs = needsOf(name);
+      const all = needs.length ? await allInterviews() : [];
+      const { categories } = needs.length
+        ? await store.categories(seedLanguage)
+        : { categories: [] };
+      const requirements = needs.includes("catalog")
+        ? (await store.requirements()).requirements
+        : [];
       const { svg } = drawFigure(name, {
-        analysis: view === "analysis" ? analysis(all, categories) : null,
+        analysis: needs.includes("analysis") ? analysis(all, categories) : null,
         catalog:
-          view === "catalog"
+          needs.includes("catalog")
             ? {
                 requirements: catalog(all, requirements, categories),
                 moscow: MOSCOW,

@@ -15,6 +15,7 @@ import {
   heatmapChart,
   moscowBand,
   priorityField,
+  reachChart,
   saturationChart,
   standalone,
 } from "./charts.js";
@@ -94,6 +95,7 @@ const state = {
   ruleDraft: new Map(),
   requirements: [],
   moscow: [],
+  categoryRows: [],
   departments: [],
   // The specification behind each figure on screen, so the save button has the
   // picture to write out rather than the picture to read back off the page.
@@ -232,6 +234,18 @@ async function loadRequirements() {
   state.requirements = data.requirements;
   state.moscow = data.moscow;
   state.departments = data.departments;
+}
+
+/**
+ * The categories of the study, in the order the category system has them.
+ *
+ * The catalog needs them for the figure that says which categories a
+ * requirement reaches, and needs *all* of the coded ones rather than only those
+ * some requirement already touches — a category no requirement reaches is the
+ * finding, and a list built from the requirements alone could never contain it.
+ */
+async function loadCategoryRows() {
+  state.categoryRows = (await api("/api/analysis")).rows;
 }
 
 /**
@@ -3216,7 +3230,11 @@ function catalogFiguresHTML(rows, departments) {
           priorityField(rows, t, { ...shared, departmentCount: departments.length }),
         )
       : "") +
-    chartHTML(coverageChart(rows, departments, t));
+    chartHTML(coverageChart(rows, departments, t)) +
+    /* This one needs no judgment either — it is made of citations, which exist
+       from the first requirement onwards — so it keeps the coverage chart
+       company below rather than waiting with the two above. */
+    chartHTML(reachChart(rows, state.categoryRows ?? [], t, shared));
 
   return (
     (charts || `<p class="empty-state">${t("catalogChartsEmpty")}</p>`) +
@@ -3228,7 +3246,7 @@ function catalogFiguresHTML(rows, departments) {
 
 /** Only the graphic part; the cards stay as they are, focus included. */
 async function drawCatalogCharts() {
-  await loadRequirements();
+  await Promise.all([loadRequirements(), loadCategoryRows()]);
   const part = document.getElementById("catalog-charts");
   if (!part) return;
   part.innerHTML = catalogFiguresHTML(state.requirements, state.departments);
@@ -3237,7 +3255,7 @@ async function drawCatalogCharts() {
 }
 
 async function drawCatalog() {
-  await loadRequirements();
+  await Promise.all([loadRequirements(), loadCategoryRows()]);
   const root = $("#catalog");
 
   const head =

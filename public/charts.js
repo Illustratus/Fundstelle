@@ -108,6 +108,61 @@ export function escape(text) {
   );
 }
 
+/**
+ * A column of row labels: one type size for all of them, each wrapped to fit.
+ *
+ * Shared, because three charts have a column of names down their left side and
+ * a name is what a category or a requirement *is*. Cut at thirty characters,
+ * two names that begin alike are two rows told apart only by hovering — and not
+ * at all on paper.
+ *
+ * The largest size at which every name fits in `wanted` lines, tried in order.
+ * All of them together and not each on its own: labels of a chart are a column,
+ * and a column set in four sizes is not read as a column. So the longest name
+ * decides and the rest are set to match, which is also why a chart whose names
+ * are all short still gets the size it was drawn for.
+ *
+ * `wanted` and not `max`, because the size and the height are one decision seen
+ * twice: a long name kept at full size takes three lines, and three lines make
+ * every row of the chart taller, including the ones whose name is one word. A
+ * step smaller costs a little legibility in the label and buys back the shape
+ * of the whole figure. `max` is the floor under that, at the smallest size,
+ * before anything is given up to an ellipsis.
+ */
+export function labelColumn(names, { room, sizes = [11.5, 10.5, 9.5, 8.5, 7.5], wanted = 2, max = 3 } = {}) {
+  let size = sizes.at(-1);
+  let labels = names.map((name) => wrapLabel(name, { room, size, maxLines: max }));
+  for (const candidate of sizes) {
+    const tried = names.map((name) => wrapLabel(name, { room, size: candidate, maxLines: wanted }));
+    if (!tried.some((one) => one.truncated)) {
+      size = candidate;
+      labels = tried;
+      break;
+    }
+  }
+  const line = Math.round(size * 1.2 * 10) / 10;
+  return { size, line, labels, tallest: Math.max(1, ...labels.map((one) => one.lines.length)) };
+}
+
+/**
+ * That column drawn: the lines of one label, centred on what they name.
+ *
+ * Centred rather than sitting on a baseline — one line looks the same either
+ * way, and three lines hung from a baseline have the name climbing away from
+ * the row it belongs to.
+ */
+export function labelText(label, { x, middle, size, line, className = "row-label" }) {
+  const first = middle - ((label.lines.length - 1) * line) / 2 + size * 0.35;
+  return (
+    `<text class="${className}" x="${x}" y="${first}" text-anchor="end"` +
+    ` style="font-size:${size}px">` +
+    label.lines
+      .map((one, k) => `<tspan x="${x}"${k ? ` dy="${line}"` : ""}>${escape(one)}</tspan>`)
+      .join("") +
+    `</text>`
+  );
+}
+
 /* Geometry helpers --------------------------------------------------------- */
 
 const SERIES_COUNT = 8;
@@ -398,41 +453,8 @@ export function stackedBars({
   const track = WIDTH - LABEL - VALUE - 8;
   const scale = (value) => (value / end) * track;
 
-  /**
-   * One type size for every row label, chosen from the longest of them.
-   *
-   * The largest size at which every name fits in two lines, tried in order. All
-   * of them together and not each on its own: labels of a chart are a column,
-   * and a column set in four sizes is not read as a column. So the longest name
-   * decides, and the rest are set to match — which is also why a study whose
-   * categories are all short still gets the size the chart was drawn for.
-   *
-   * Two lines and not three, because the size and the height are the same
-   * decision seen twice: a long name kept at full size takes three lines, and
-   * three lines make a row twice as tall in every row of the chart, including
-   * the ones whose name is one word. A step smaller costs a little legibility
-   * in the label and buys it back in the shape of the whole figure. The third
-   * line is the floor under that, at the smallest size, before an ellipsis.
-   */
-  const SIZES = [11.5, 10.5, 9.5, 8.5, 7.5];
-  const WANTED_LINES = 2;
-  const MAX_LINES = 3;
-  const room = LABEL - 12;
   const names = rows.map((row) => (row.child ? "… " : "") + row.name);
-  let size = SIZES.at(-1);
-  let labels = names.map((name) => wrapLabel(name, { room, size, maxLines: MAX_LINES }));
-  for (const candidate of SIZES) {
-    const tried = names.map((name) =>
-      wrapLabel(name, { room, size: candidate, maxLines: WANTED_LINES }),
-    );
-    if (!tried.some((one) => one.truncated)) {
-      size = candidate;
-      labels = tried;
-      break;
-    }
-  }
-  const LINE = Math.round(size * 1.2 * 10) / 10;
-  const tallest = Math.max(1, ...labels.map((one) => one.lines.length));
+  const { size, line: LINE, labels, tallest } = labelColumn(names, { room: LABEL - 12 });
   // The row grows to hold the tallest label; a bar is still a bar, centred in it.
   const ROW = Math.max(26, Math.ceil(tallest * LINE) + 10);
   const height = TOP + rows.length * ROW + 22;
@@ -488,21 +510,13 @@ export function stackedBars({
         )
         .join("");
 
-      /* Centred on the bar, not sitting on its baseline: one line looks the
-         same either way, and three lines hung from the baseline would have the
-         name climbing away from the row it belongs to. */
-      const { lines } = labels[index];
-      const first = y + BAR / 2 - ((lines.length - 1) * LINE) / 2 + size * 0.35;
-      const label =
-        `<text class="row-label${row.child ? " child" : ""}" x="${LABEL - 8}" y="${first}"` +
-        ` text-anchor="end" style="font-size:${size}px">` +
-        lines
-          .map(
-            (line, k) =>
-              `<tspan x="${LABEL - 8}"${k ? ` dy="${LINE}"` : ""}>${escape(line)}</tspan>`,
-          )
-          .join("") +
-        `</text>`;
+      const label = labelText(labels[index], {
+        x: LABEL - 8,
+        middle: y + BAR / 2,
+        size,
+        line: LINE,
+        className: `row-label${row.child ? " child" : ""}`,
+      });
 
       const baseline = y + BAR / 2 + 3.5;
       let after = barEnd + 6 + numberWidth(row.sum) + AFTER_TOTAL;
@@ -713,9 +727,15 @@ export function heatmapChart(data, t, { measure } = {}) {
   const levelOf = (n) => Math.max(1, Math.ceil((n / max) * 5));
 
   const LABEL = 200;
-  const CELL = 22;
   const track = WIDTH - LABEL - 8;
   const width = track / sections.length;
+
+  /* The same column of names the bar chart above it has. It cut them at thirty
+     characters while the chart directly above wrapped them — the same category
+     names, in the same view, treated two ways. */
+  const names = data.rows.map((row) => (row.parent ? "… " : "") + row.name);
+  const { size, line: LINE, labels, tallest } = labelColumn(names, { room: LABEL - 12 });
+  const CELL = Math.max(22, Math.ceil(tallest * LINE) + 8);
 
   /* Guide sections are named, not numbered, and the names are sentences: a
      column barely wider than a thumbnail cannot hold "Zusammenarbeit über
@@ -767,7 +787,6 @@ export function heatmapChart(data, t, { measure } = {}) {
   const cells = data.rows
     .map((row, index) => {
       const y = TOP + index * CELL;
-      const label = (row.parent ? "… " : "") + row.name;
       const line = sections
         .map((section, k) => {
           const x = LABEL + k * width;
@@ -785,8 +804,13 @@ export function heatmapChart(data, t, { measure } = {}) {
         })
         .join("");
       return (
-        `<text class="row-label${row.parent ? " child" : ""}" x="${LABEL - 8}" y="${y + CELL / 2 + 4}" text-anchor="end">${escape(shorten(label))}</text>` +
-        line
+        labelText(labels[index], {
+          x: LABEL - 8,
+          middle: y + CELL / 2,
+          size,
+          line: LINE,
+          className: `row-label${row.parent ? " child" : ""}`,
+        }) + line
       );
     })
     .join("");
@@ -1055,6 +1079,175 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
 }
 
 /** Citations per requirement, split by department. */
+/**
+ * Which categories a requirement reaches.
+ *
+ * The catalog could say how *many* categories a requirement rests on and never
+ * which ones, and the number is the less useful half: „touches four categories"
+ * does not tell anybody what changes if the requirement is met. That is the
+ * question a catalog is written to answer — build this one thing, and which
+ * parts of what people said does it speak to?
+ *
+ * Drawn as a grid of dots rather than a grid of cells. A requirement rests on a
+ * handful of a study's categories, so the honest picture is mostly empty, and a
+ * heatmap of mostly-empty boxes reads as a wall with something wrong in it. Dots
+ * on white make the emptiness quiet and the links loud — the same figure, told
+ * the way round the data actually is.
+ *
+ * It reads in both directions, which is why the axes are this way round rather
+ * than either being "the" answer:
+ *
+ *   across a row — meet this requirement, and these categories are what it
+ *   speaks to;
+ *   down a column — this is what people said, and these are the requirements
+ *   that would answer it. A column with nothing in it is a category the catalog
+ *   has not turned into anything yet, and that is the finding worth having. The
+ *   count under each column says so in a number, and its name is set quietly so
+ *   the eye finds the empty ones without hunting.
+ *
+ * A dot carries the MoSCoW level of its requirement, so the two questions fold
+ * together: a category answered only by pale dots is one the catalog has
+ * noticed and postponed.
+ */
+export function reachChart(rows, categories, t, { moscow = [] } = {}) {
+  const columns = categories.filter((one) => one.sum > 0);
+  const withCitations = rows.filter((row) => row.citations.length);
+  if (!withCitations.length || !columns.length) return null;
+
+  const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
+  const counts = new Map();
+  for (const row of withCitations) {
+    for (const citation of row.citations) {
+      const key = `${row.id}|${citation.category}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  const max = Math.max(1, ...counts.values());
+
+  const LABEL = 200;
+  const REACH = 30;
+  const TOP = 4;
+  const TALLY = 14;
+  const track = WIDTH - LABEL - REACH - 8;
+  const width = track / columns.length;
+
+  const names = withCitations.map((row) => row.title);
+  const { size, line: LINE, labels, tallest } = labelColumn(names, { room: LABEL - 12 });
+  const CELL = Math.max(24, Math.ceil(tallest * LINE) + 8);
+
+  // A dot says how many citations tie the two together, by area rather than by
+  // width: area is what the eye compares when it compares circles.
+  const radius = (n) => 3.2 + Math.sqrt(n / max) * 4.3;
+
+  /* The headings run at an angle into the space under the row labels, as the
+     heatmap's do — a column the width of a thumbnail holds no category name
+     upright, and a name cut to eight characters is legible only on hover, which
+     is no help on paper or in the saved file. */
+  const ANGLE = 45;
+  const RADIANS = (ANGLE * Math.PI) / 180;
+  const grid = TOP + withCitations.length * CELL;
+  const room = LABEL + width / 2 - 6;
+  const maxCharacters = Math.max(8, Math.min(34, Math.floor(room / Math.cos(RADIANS) / 5.1)));
+  const headings = columns.map((one) => shorten(one.name, maxCharacters));
+  const reach = Math.max(...headings.map((one) => estimateWidth(one, { size: 10 })));
+  const FOOT = Math.ceil(reach * Math.sin(RADIANS)) + 12;
+  const height = grid + TALLY + FOOT;
+
+  const perCategory = columns.map(
+    (one) => withCitations.filter((row) => counts.has(`${row.id}|${one.category}`)).length,
+  );
+
+  const heads = columns
+    .map((one, k) => {
+      const x = LABEL + k * width + width / 2;
+      const y = grid + TALLY + 8;
+      return (
+        `<text class="axis heading${perCategory[k] ? "" : " unmet"}" x="${x}" y="${y}"` +
+        ` text-anchor="end" transform="rotate(-${ANGLE} ${x} ${y})">` +
+        `<title>${escape(one.name)}</title>${escape(headings[k])}</text>`
+      );
+    })
+    .join("");
+
+  /* How many requirements answer this category. A zero is the point of the
+     figure and is written rather than left to be noticed as an absence. */
+  const tally = columns
+    .map(
+      (one, k) =>
+        `<text class="value${perCategory[k] ? "" : " empty"}" x="${LABEL + k * width + width / 2}"` +
+        ` y="${grid + 10}" text-anchor="middle">${perCategory[k]}</text>`,
+    )
+    .join("");
+
+  const dots = withCitations
+    .map((row, index) => {
+      const y = TOP + index * CELL;
+      const middle = y + CELL / 2;
+      const level = moscowClass(row.moscow);
+      const marks = columns
+        .map((one, k) => {
+          const n = counts.get(`${row.id}|${one.category}`) ?? 0;
+          if (!n) return "";
+          const tip = t("reachTip", { title: row.title, category: one.name, n });
+          return (
+            `<circle class="reach ${level}" cx="${LABEL + k * width + width / 2}" cy="${middle}"` +
+            ` r="${radius(n).toFixed(2)}" data-row="${escape(row.title)}"` +
+            ` data-category="${escape(one.name)}" data-value="${n}"` +
+            ` data-tip="${escape(tip)}"></circle>`
+          );
+        })
+        .join("");
+      const touched = columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length;
+      return (
+        labelText(labels[index], { x: LABEL - 8, middle, size, line: LINE }) +
+        marks +
+        `<text class="value" x="${WIDTH - 6}" y="${middle + 3.5}" text-anchor="end">${touched}</text>`
+      );
+    })
+    .join("");
+
+  const unmet = perCategory.filter((n) => !n).length;
+  const widest = withCitations
+    .map((row) => ({
+      title: row.title,
+      touched: columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length,
+    }))
+    .reduce((best, one) => (one.touched > (best?.touched ?? -1) ? one : best), null);
+
+  return {
+    id: "reach",
+    file: "requirement-reach.svg",
+    title: t("chartReachTitle"),
+    caption: t("chartReachCaption"),
+    width: WIDTH,
+    height,
+    body: tally + heads + dots,
+    legend: {
+      kind: "moscow",
+      entries: [...MOSCOW_ORDER, "open"].map((id) => ({
+        paint: moscowClass(id),
+        label: id === "open" ? t("open") : nameOf(id),
+      })),
+    },
+    summary: t("summaryReach", {
+      rows: withCitations.length,
+      categories: columns.length,
+      top: widest?.title ?? "—",
+      touched: widest?.touched ?? 0,
+      unmet,
+    }),
+    figures: {
+      caption: t("reachFiguresCaption"),
+      columns: [t("columnRequirement"), ...columns.map((one) => one.name), t("columnReaches")],
+      rows: withCitations.map((row) => [
+        row.title,
+        ...columns.map((one) => counts.get(`${row.id}|${one.category}`) ?? 0),
+        columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length,
+      ]),
+    },
+  };
+}
+
 export function coverageChart(rows, departments, t) {
   const withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !departments.length) return null;
@@ -1130,6 +1323,20 @@ export const FIGURES = {
     emptyKey: "figureNeedsCitations",
     draw: ({ catalog, t }) => coverageChart(catalog.requirements, catalog.departments, t),
   },
+  "requirement-reach": {
+    view: "catalog",
+    /* The one figure drawn from both. It is a catalog figure — it belongs in
+       that view and is about requirements — but its columns are the categories
+       of the study, and it needs *all* the coded ones rather than only those
+       some requirement already touches: a category no requirement reaches is
+       the finding, and a column list built from the requirements alone could
+       never contain it. */
+    needs: ["catalog", "analysis"],
+    titleKey: "chartReachTitle",
+    emptyKey: "figureNeedsCitations",
+    draw: ({ analysis, catalog, t }) =>
+      reachChart(catalog.requirements, analysis.rows, t, { moscow: catalog.moscow }),
+  },
 };
 
 export const FIGURE_NAMES = Object.keys(FIGURES);
@@ -1161,7 +1368,12 @@ export function stylesheet(theme = "light") {
     .join("");
   const level = c.level.map((colour, index) => `.cell.level-${index + 1}{fill:${colour}}`).join("");
   const bands = Object.entries(c.moscow)
-    .map(([id, colour]) => `.moscow-band.moscow-${id}{fill:${colour}}.point.moscow-${id}{fill:${colour}}`)
+    .map(
+      ([id, colour]) =>
+        `.moscow-band.moscow-${id}{fill:${colour}}` +
+        `.point.moscow-${id}{fill:${colour}}` +
+        `.reach.moscow-${id}{fill:${colour}}`,
+    )
     .join("");
   const swatches = [
     ...c.series.map((colour, index) => `.key-series-s${index + 1}{fill:${colour}}`),
@@ -1179,6 +1391,8 @@ export function stylesheet(theme = "light") {
     `.grid{stroke:${c.line}}` +
     `.baseline{stroke:${c.lineStrong}}` +
     `.axis{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans}}` +
+    `.axis.unmet{fill:${c.inkFaint}}` +
+    `.reach{stroke:${c.sheet};stroke-width:1}` +
     `.axis-title{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
     `.row-label{fill:${c.ink};font-size:11.5px;font-family:${FONTS.sans}}` +
     `.row-label.child{fill:${c.inkSoft}}` +

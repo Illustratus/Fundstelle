@@ -591,6 +591,19 @@ export const TEXTS = {
     chartMoscowTitle: "Verteilung der MoSCoW-Stufen",
     chartMoscowCaption:
       "Eine Anforderung ohne Stufe ist noch nicht entschieden; sie steht als „offen“ am Ende.",
+    chartReachTitle: "Welche Kategorien eine Anforderung berührt",
+    chartReachCaption:
+      "Eine Zeile lesen: erfüllst du diese Anforderung, spricht sie diese Kategorien an. " +
+      "Eine Spalte lesen: das wurde gesagt, und das sind die Anforderungen, die es beantworten. " +
+      "Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. Die Zahl rechts sagt, wie viele Kategorien " +
+      "eine Anforderung berührt; die Zahl über einem Kategorienamen, wie viele Anforderungen sie " +
+      "berühren. Eine Null dort ist eine Kategorie, aus der noch nichts geworden ist.",
+    reachTip: "{title} — {category}: {n} Belege",
+    reachFiguresCaption: "Belege je Anforderung und Kategorie",
+    columnReaches: "Kategorien",
+    summaryReach:
+      "{rows} Anforderungen über {categories} Kategorien. Am weitesten reicht „{top}“ mit " +
+      "{touched} Kategorien; {unmet} Kategorien berührt bisher keine Anforderung.",
     chartCoverageTitle: "Belege je Anforderung und Bereich",
     chartCoverageCaption:
       "Segmentfarbe = Bereich, Reihenfolge wie im Katalog. Eine Anforderung, die nur ein Bereich nennt, trägt einen einfarbigen Balken.",
@@ -1180,6 +1193,19 @@ export const TEXTS = {
     chartMoscowTitle: "Distribution of MoSCoW levels",
     chartMoscowCaption:
       "A requirement without a level has not been decided yet; it sits at the end as “open”.",
+    chartReachTitle: "Which categories a requirement reaches",
+    chartReachCaption:
+      "Read across a row: meet this requirement, and these are the categories it speaks to. " +
+      "Read down a column: this is what people said, and these are the requirements that would " +
+      "answer it. Dot size = citations, dot colour = MoSCoW level. The number on the right is how " +
+      "many categories a requirement reaches; the number above a category name is how many " +
+      "requirements reach it. A zero there is a category nothing has been made of yet.",
+    reachTip: "{title} — {category}: {n} citations",
+    reachFiguresCaption: "Citations per requirement and category",
+    columnReaches: "Categories",
+    summaryReach:
+      "{rows} requirements across {categories} categories. “{top}” reaches furthest with " +
+      "{touched} categories; {unmet} categories no requirement reaches yet.",
     chartCoverageTitle: "Citations per requirement and department",
     chartCoverageCaption:
       "Segment color = department, order as in the catalog. A requirement named by one department only carries a single-color bar.",

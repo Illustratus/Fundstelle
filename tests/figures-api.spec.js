@@ -35,6 +35,7 @@ const NAMES = [
   "moscow-distribution",
   "prioritization",
   "citations-per-requirement",
+  "requirement-reach",
 ];
 
 const TITLES = [

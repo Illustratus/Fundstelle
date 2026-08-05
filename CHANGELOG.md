@@ -6,6 +6,36 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **A new figure in the catalog: which categories a requirement reaches.** The
+  catalog could say how *many* categories a requirement rests on and never which
+  ones, and the number is the less useful half — "touches four categories" does
+  not tell anybody what changes if the requirement is met.
+
+  A grid of dots rather than of cells: a requirement rests on a handful of a
+  study's categories, so the honest picture is mostly empty, and a heatmap of
+  mostly-empty boxes reads as a wall with something wrong in it. It is meant to
+  be read both ways. Across a row: meet this requirement, and these are the
+  categories it speaks to. Down a column: this is what people said, and these
+  are the requirements that would answer it — and **a column with nothing in it
+  is a category the catalog has not turned into anything yet**, which is the
+  finding worth having. The count under each column says so as a number, and the
+  name of an unreached category is set quietly so the eye finds it.
+
+  Dot size is citations, dot colour is the requirement's MoSCoW level, so a
+  category answered only by pale dots is one the catalog has noticed and
+  postponed. Fetchable like the others, at `GET /api/figures/requirement-reach.svg`.
+
+### Changed
+
+- **The heatmap wraps its row labels** instead of cutting them at thirty
+  characters. It was the last chart doing that, directly under one that wraps
+  the same category names in the same view. The column of labels is now one
+  shared piece of drawing, so a fourth chart gets it for free.
+
 ## 0.7.0 — 2026-08-05
 
 ### Upgrading

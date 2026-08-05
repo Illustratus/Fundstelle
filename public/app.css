@@ -1988,6 +1988,18 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 }
 .chart .point:hover { stroke: var(--ink); }
 
+/* A link between a requirement and a category, in the requirement's MoSCoW
+   colour. Dots and not cells: a requirement rests on a handful of a study's
+   categories, so the honest picture is mostly empty, and a grid of empty boxes
+   reads as a wall with something wrong in it. The thin ring is the sheet
+   colour, so two dots that land beside each other stay two dots. */
+.chart .reach { fill: var(--moscow); stroke: var(--sheet); stroke-width: 1; }
+.chart .reach:hover { stroke: var(--ink); }
+/* A category no requirement reaches. Quieter, not hidden — it is the finding,
+   and --ink-faint is the tool's word for "a zero that means nothing is here".
+   It clears 4.5:1 in both themes; `npm run test:contrast` keeps it there. */
+.chart .heading.unmet { fill: var(--ink-faint); }
+
 /* One line, not a comparison between several, so it takes the accent rather
    than a place in the series palette. */
 .chart .saturation-line {
