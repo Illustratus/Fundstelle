@@ -6,7 +6,17 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.3.0 — 2026-08-05
+
+### Upgrading
+
+Figures can change on first run, and it is worth knowing why. A coding unit
+whose passage was edited out of the transcript used to be counted as evidence
+everywhere; it no longer is, so a study that holds such units will show smaller
+totals than it did under 0.2.0. Both the analysis and the appendix say how many
+are waiting to be given a place again, and the coding view can still re-anchor
+or discard each one. Nothing is deleted, and no file has to be migrated.
+
 
 ### Added
 
