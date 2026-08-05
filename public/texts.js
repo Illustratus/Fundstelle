@@ -330,6 +330,14 @@ export const TEXTS = {
       "Aus MAXQDA, ATLAS.ti, NVivo oder QualCoder: eine .qdc oder .qdpx. Übernommen werden Namen, " +
       "Definitionen und was unter was hängt — das Material bleibt dort, wo es ist.",
     codebookChoose: "Datei wählen",
+    handoverNote:
+      "Statt die Dateien von Hand zu kopieren: Die zweitkodierende Person gibt ihre Kodierung hier aus, " +
+      "die Datei kommt hierher zurück und landet als coding.NAME.json in jedem Interviewordner. Gelesen " +
+      "wird sie danach nur noch.",
+    handoverExport: "Eigene Kodierung ausgeben",
+    handoverImport: "Zweitkodierung einlesen",
+    handoverDone: "Zweitkodierung für {n} Interviews übernommen.",
+    handoverSome: "Für {n} Interviews übernommen; {missing} kennt diese Studie nicht.",
     codebookRead: "{n} Kategorien übernommen.",
     codebookReadSome: "{n} übernommen, {skipped} übersprungen (schon vorhanden).",
     codebookNothingNew: "Nichts übernommen: alle {skipped} Codes gibt es hier schon.",
@@ -890,6 +898,14 @@ export const TEXTS = {
       "From MAXQDA, ATLAS.ti, NVivo or QualCoder: a .qdc or .qdpx. Names, definitions and what sits " +
       "under what are taken over — the material stays where it is.",
     codebookChoose: "Choose a file",
+    handoverNote:
+      "Instead of copying the files by hand: the second coder exports their coding here, the file comes " +
+      "back to this side and lands as coding.NAME.json in every interview folder. After that it is only " +
+      "ever read.",
+    handoverExport: "Export my own coding",
+    handoverImport: "Read in a second coding",
+    handoverDone: "Second coding taken over for {n} interviews.",
+    handoverSome: "Taken over for {n} interviews; {missing} are not in this study.",
     codebookRead: "{n} categories taken over.",
     codebookReadSome: "{n} taken over, {skipped} skipped (already here).",
     codebookNothingNew: "Nothing taken over: all {skipped} codes are already here.",

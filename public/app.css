@@ -776,6 +776,9 @@ button, select, input, textarea {
 }
 .keys-version:empty { display: none; }
 
+.handover { margin-top: 1.6rem; }
+.handover-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 0; }
+
 /* A tool that could not start ---------------------------------------------
    The same lesson the empty first screen taught: nothing on the screen may be
    a control over nothing. If the category system could not be read, then the

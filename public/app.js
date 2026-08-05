@@ -3340,7 +3340,9 @@ async function drawAgreement() {
     // dropping one file in the folder is all it takes.
     root.innerHTML =
       `<h3>${t("agreementTitle")}</h3>` +
-      `<p class="lead">${t("agreementNone")}</p>`;
+      `<p class="lead">${t("agreementNone")}</p>` +
+      handoverHTML();
+    connectHandover();
     return;
   }
 
@@ -3348,8 +3350,59 @@ async function drawAgreement() {
     `<h3>${t("agreementTitle")}</h3>` +
     `<p class="lead">${t("agreementUnit")}</p>` +
     data.problems.map((problem) => `<p class="drift-line">${escapeHTML(problem.text)}</p>`).join("") +
-    data.comparisons.map(comparisonHTML).join("");
+    data.comparisons.map(comparisonHTML).join("") +
+    handoverHTML();
+  connectHandover();
   markScrollableTables(root);
+}
+
+/**
+ * Handing a coding over, and taking one in.
+ *
+ * The comparison reads `coding.<name>.json` beside `coding.json`, and getting
+ * one there was a copy per interview folder with an exact name: eighteen of them
+ * for a study of eighteen, and one typed wrong is silently "no second coding".
+ * Nothing about where the files live changes — this only does the copying.
+ */
+function handoverHTML() {
+  return (
+    `<div class="handover">` +
+    `<p class="column-note">${t("handoverNote")}</p>` +
+    // Its own class: `exports` belongs to the documents block above, and
+    // borrowing it here put these two buttons into that block's counts.
+    `<p class="handover-actions">` +
+    `<a class="button-quiet" id="handover-out" download href="${exportHref("/api/export/coding.json")}">` +
+    `${t("handoverExport")}</a>` +
+    `<button type="button" class="button-quiet" id="handover-choose">${t("handoverImport")}</button>` +
+    `</p>` +
+    `<input type="file" id="handover-file" accept=".json,application/json" hidden>` +
+    `</div>`
+  );
+}
+
+function connectHandover() {
+  $("#handover-choose")?.addEventListener("click", () => $("#handover-file").click());
+  $("#handover-file")?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const bundle = JSON.parse(await file.text());
+      /* The name comes from the file it was handed over in, or from the file
+         name it arrived as — `coding.anna.json` from a mail attachment still
+         says who it was. */
+      const name = bundle.coder || file.name.replace(/^coding\.?/i, "").replace(/\.json$/i, "");
+      const answer = await api("/api/codings/second", { method: "POST", body: { bundle, name } });
+      await drawAgreement();
+      notify(
+        answer.missing.length
+          ? t("handoverSome", { n: answer.written.length, missing: answer.missing.length })
+          : t("handoverDone", { n: answer.written.length }),
+      );
+    } catch (error) {
+      complain(error.key ? error : Object.assign(error, { message: t("errorBundleUnreadable") }));
+    }
+  });
 }
 
 /** A number that may not exist, said as such rather than as a nought. */

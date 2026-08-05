@@ -36,13 +36,28 @@ const send = (request, xml) =>
     data: { file: Buffer.from(xml, "utf8").toString("base64") },
   });
 
+/* Everything this file adds has to go again, and by identifier rather than by
+   origin: with nothing coded yet, a system read in is the deductive one — which
+   is the whole point of the feature and exactly why "delete the inductive ones"
+   left them standing for the next spec to trip over. */
+let before = null;
+
 async function clean(request) {
-  // Whatever an earlier check left behind, so the counts here are this one's.
   const { categories } = await (await request.get("/api/categories")).json();
-  for (const one of categories.filter((each) => each.origin !== "deductive").reverse()) {
+  if (!before) before = new Set(categories.map((one) => one.id));
+  for (const one of categories.filter((each) => !before.has(each.id)).reverse()) {
     await request.delete(`/api/categories/${encodeURIComponent(one.id)}`);
   }
 }
+
+test.beforeAll(async ({ request }) => {
+  const { categories } = await (await request.get("/api/categories")).json();
+  before = new Set(categories.map((one) => one.id));
+});
+
+test.afterAll(async ({ request }) => {
+  await clean(request);
+});
 
 test("the codes are read with their nesting and their descriptions", () => {
   const codes = readCodebook(QDC);

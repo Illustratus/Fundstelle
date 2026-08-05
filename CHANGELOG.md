@@ -10,6 +10,15 @@ where it lies.
 
 ### Added
 
+- **A second coding can be handed over as one file.** Intercoder reliability has
+  worked from the beginning, and getting the other person's work onto this
+  machine was one copy per interview folder with an exact name: eighteen careful
+  copies for a study of eighteen, and a name typed wrong is not an error but
+  silence — the comparison just reports that they did not do that interview. The
+  second coder exports their coding as one file now, and this side reads it in
+  and puts `coding.NAME.json` where the comparison has always looked. Nothing
+  about the format or the read-only rule changes, and an interview this study
+  does not hold is named rather than written somewhere it does not belong.
 - **A category system can come in from another program.** The REFI-QDA export
   had no counterpart, so the category panel now reads a `.qdc` or a `.qdpx` from
   MAXQDA, ATLAS.ti, NVivo or QualCoder: names, definitions and what sits under

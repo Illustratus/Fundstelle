@@ -412,6 +412,55 @@ const server = createServer(async (request, response) => {
        on would produce a transcript nobody said — so the codes come and the
        material does not, and the answer says so by only ever mentioning
        categories. */
+    /* Handing a coding over, and taking one in.
+       The comparison has always read `coding.<name>.json` beside `coding.json`.
+       Getting one there meant a manual copy per interview folder with an exact
+       name — eighteen for a study of eighteen, and a name typed wrong is
+       silently "no second coding". These two turn that into one file out and
+       one file in. Where the files live does not change, and a second coding is
+       still only ever read by the comparison itself. */
+    if (path === "/api/export/coding.json" && request.method === "GET") {
+      const all = await allInterviews();
+      return send(response, 200, {
+        fundstelle: "coding",
+        version: 1,
+        coder: (url.searchParams.get("name") ?? "").trim(),
+        interviews: Object.fromEntries(
+          all.map(({ transcript, codings, memo }) => [
+            transcript.id,
+            { codings: withoutCheckMarks(codings), memo },
+          ]),
+        ),
+      });
+    }
+
+    if (path === "/api/codings/second" && request.method === "POST") {
+      const wanted = await body(request);
+      const bundle = wanted.bundle;
+      if (!bundle || bundle.fundstelle !== "coding" || typeof bundle.interviews !== "object") {
+        return send(response, 422, {
+          error: t("errorBundleUnreadable"),
+          code: "errorBundleUnreadable",
+        });
+      }
+      const here = new Set((await findInterviews(TRANSCRIPTS)).map((one) => one.id));
+      const written = [];
+      const missing = [];
+      for (const [id, data] of Object.entries(bundle.interviews)) {
+        // An interview the other person coded and this study does not hold is
+        // named rather than written somewhere it does not belong.
+        if (!here.has(id)) {
+          missing.push(id);
+          continue;
+        }
+        written.push(await store.putSecondCoding(id, wanted.name || bundle.coder, data));
+      }
+      if (!written.length && !missing.length) {
+        return send(response, 422, { error: t("errorBundleUnreadable"), code: "errorBundleUnreadable" });
+      }
+      return send(response, 201, { written, missing });
+    }
+
     if (path === "/api/categories/codebook" && request.method === "POST") {
       const wanted = await body(request);
       if (typeof wanted.file !== "string" || !wanted.file) {

@@ -90,6 +90,10 @@ whatever else lives next to it. The tool only ever adds files, namely
 `coding.json` beside each `final.md` and the two JSON files at the configured
 location. Nothing that was already there is touched.
 
+The analysis screen does that copying for you: the second coder exports their
+coding as one file and this side reads it in. The files still end up exactly
+where they always did, and the manual route below still works.
+
 A `coding.<name>.json` beside a `coding.json` is read as a second coder's work
 and appears in the intercoder-reliability panel under that name — so
 `coding.anna.json` becomes "anna". Several are allowed and are compared one by
