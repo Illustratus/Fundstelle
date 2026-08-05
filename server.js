@@ -19,7 +19,7 @@ import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withReasons, withoutCheckMarks } from "./lib/anchoring.js";
 import { agreement, agreementMarkdown } from "./lib/agreement.js";
-import { projectFile } from "./lib/refi.js";
+import { codebookFrom, projectFile, readCodebook } from "./lib/refi.js";
 import { convert, folderName, readTranscript } from "./lib/import.js";
 import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
 import {
@@ -403,6 +403,53 @@ const server = createServer(async (request, response) => {
           text: turn.text.slice(0, 220),
         })),
       });
+    }
+
+    /* A category system can come from another program too.
+       The export sends a whole study out; this brings the one part of a study
+       that can honestly come back. Their plain text is not this format's turns
+       and guide prompts, and inventing speakers to hang their character offsets
+       on would produce a transcript nobody said — so the codes come and the
+       material does not, and the answer says so by only ever mentioning
+       categories. */
+    if (path === "/api/categories/codebook" && request.method === "POST") {
+      const wanted = await body(request);
+      if (typeof wanted.file !== "string" || !wanted.file) {
+        return send(response, 400, { error: t("errorFieldMissing", { field: "file" }) });
+      }
+      const codes = readCodebook(codebookFrom(Buffer.from(wanted.file, "base64")));
+      if (!codes.length) {
+        return send(response, 422, { error: t("errorCodebookEmpty"), code: "errorCodebookEmpty" });
+      }
+      /* Before anything is coded the system being read in is the deductive one,
+         which is what "fixed before the material is worked" means; afterwards
+         everything new is inductive. The store already knows that rule, so this
+         only tells it which of the two situations it is in. */
+      const early = { beforeCoding: await nothingCoded() };
+      const madeFor = new Map();
+      const added = [];
+      const skipped = [];
+      for (const code of codes) {
+        // Two levels, as everywhere here: anything deeper hangs on the top of
+        // its own branch rather than being dropped.
+        const above = madeFor.get(code.parent);
+        const parent = above ? (above.parent ?? above.id) : null;
+        try {
+          const made = await store.addCategory(
+            { name: code.name, definition: code.definition, parent, origin: "deductive" },
+            early,
+          );
+          madeFor.set(code.name, made);
+          added.push(made.name);
+        } catch (error) {
+          if (!error.key) throw error;
+          // A name already in the system is not a failure of the import; it is
+          // the reason somebody would run it twice.
+          skipped.push({ name: code.name, why: t(error.key, error.params) });
+        }
+      }
+      const { categories, propositions } = await store.categories(seedLanguage);
+      return send(response, 201, { added, skipped, categories, propositions });
     }
 
     if (path === "/api/import" && request.method === "POST") {

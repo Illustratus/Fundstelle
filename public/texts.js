@@ -325,6 +325,14 @@ export const TEXTS = {
     tryAgain: "Erneut versuchen",
     versionLine: "Fundstelle {version} · Node {node} · MIT",
     exportProject: "Projekt (REFI-QDA)",
+    codebookSummary: "Codesystem aus einem anderen Programm",
+    codebookNote:
+      "Aus MAXQDA, ATLAS.ti, NVivo oder QualCoder: eine .qdc oder .qdpx. Übernommen werden Namen, " +
+      "Definitionen und was unter was hängt — das Material bleibt dort, wo es ist.",
+    codebookChoose: "Datei wählen",
+    codebookRead: "{n} Kategorien übernommen.",
+    codebookReadSome: "{n} übernommen, {skipped} übersprungen (schon vorhanden).",
+    codebookNothingNew: "Nichts übernommen: alle {skipped} Codes gibt es hier schon.",
     exportsForElsewhere:
       "Für ein anderes Programm: die Studie als Ganzes im Austauschformat REFI-QDA, das MAXQDA, ATLAS.ti, " +
       "NVivo und QualCoder lesen — Kategoriensystem mit Definitionen, alle Transkripte als Text, jede " +
@@ -877,6 +885,14 @@ export const TEXTS = {
     tryAgain: "Try again",
     versionLine: "Fundstelle {version} · Node {node} · MIT",
     exportProject: "Project (REFI-QDA)",
+    codebookSummary: "A code system from another program",
+    codebookNote:
+      "From MAXQDA, ATLAS.ti, NVivo or QualCoder: a .qdc or .qdpx. Names, definitions and what sits " +
+      "under what are taken over — the material stays where it is.",
+    codebookChoose: "Choose a file",
+    codebookRead: "{n} categories taken over.",
+    codebookReadSome: "{n} taken over, {skipped} skipped (already here).",
+    codebookNothingNew: "Nothing taken over: all {skipped} codes are already here.",
     exportsForElsewhere:
       "For another program: the whole study in the REFI-QDA interchange format, which MAXQDA, ATLAS.ti, " +
       "NVivo and QualCoder read — the category system with its definitions, every transcript as text, and " +

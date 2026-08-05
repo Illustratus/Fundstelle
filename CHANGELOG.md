@@ -6,6 +6,26 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **A category system can come in from another program.** The REFI-QDA export
+  had no counterpart, so the category panel now reads a `.qdc` or a `.qdpx` from
+  MAXQDA, ATLAS.ti, NVivo or QualCoder: names, definitions and what sits under
+  what. Anything nested deeper than this tool's two levels hangs on the top of
+  its own branch rather than being dropped, entities written by another program
+  arrive as letters, and a code already here is skipped and said to be skipped.
+  The material stays where it is — another program's plain text is not this
+  format's turns and guide prompts, and inventing speakers to hang their
+  character offsets on would produce a transcript nobody said.
+
+### Changed
+
+- **The example study says why its third interview skips a guide prompt.** It
+  covers prompts 1 and 3, which is what happens when a prompt comes up on its
+  own — but with nothing saying so it read as a gap in the bundled example.
+
 ## 0.5.0 — 2026-08-05
 
 ### Upgrading

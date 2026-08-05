@@ -381,6 +381,13 @@ Codings whose passage no longer has a place are left out rather than exported as
 a range that points at the wrong sentence — the same rule every other surface
 here keeps.
 
+A category system can come the other way too: the category panel reads a `.qdc`
+or a `.qdpx` and takes over the names, the definitions and the hierarchy, so a
+codebook built in another program can be the start system here. The material
+stays where it is — another program's plain text is not this format's turns and
+guide prompts, and a transcript invented to carry their offsets would be a
+transcript nobody said.
+
 ## Upgrading from an earlier version
 
 Version 0.1 renamed the files and the keys inside them from German to English.

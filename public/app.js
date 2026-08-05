@@ -4292,6 +4292,43 @@ function connectEvents() {
     event.preventDefault();
     readImport(event.dataTransfer?.files?.[0]);
   });
+  /* A category system from another program. The export sends a study out; this
+     brings back the one part of a study that can honestly come back, so the
+     answer only ever mentions categories. */
+  $("#codebook-choose").addEventListener("click", () => $("#codebook-file").click());
+  $("#codebook-file").addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let binary = "";
+      // In chunks: a whole .qdpx spread over the argument list of one call is
+      // how you find the stack limit of somebody else's browser.
+      for (let at = 0; at < bytes.length; at += 8192) {
+        binary += String.fromCharCode(...bytes.subarray(at, at + 8192));
+      }
+      const answer = await api("/api/categories/codebook", {
+        method: "POST",
+        body: { file: btoa(binary) },
+      });
+      state.categories = answer.categories;
+      state.propositions = answer.propositions;
+      $("#codebook-shell").open = false;
+      drawAll();
+      const skipped = answer.skipped.length;
+      notify(
+        answer.added.length === 0
+          ? t("codebookNothingNew", { skipped })
+          : skipped
+            ? t("codebookReadSome", { n: answer.added.length, skipped })
+            : t("codebookRead", { n: answer.added.length }),
+      );
+    } catch (error) {
+      complain(error);
+    }
+  });
+
   $("#keys-close").addEventListener("click", () => $("#keys-sheet").close());
 
   $("#theme").addEventListener("click", () => {
