@@ -334,6 +334,10 @@ export const TEXTS = {
       "Statt die Dateien von Hand zu kopieren: Die zweitkodierende Person gibt ihre Kodierung hier aus, " +
       "die Datei kommt hierher zurück und landet als coding.NAME.json in jedem Interviewordner. Gelesen " +
       "wird sie danach nur noch.",
+    catalogNotJudgedYet:
+      "Zwei Abbildungen fehlen hier noch: die Verteilung der MoSCoW-Stufen und das Prioritätsfeld. Beide " +
+      "brauchen eine Einschätzung, die an der einzelnen Anforderung getroffen wird — Stufe und blockierte " +
+      "Operationen stehen unten auf jeder Karte. Sobald die erste eingetragen ist, stehen sie hier.",
     handoverExport: "Eigene Kodierung ausgeben",
     handoverImport: "Zweitkodierung einlesen",
     handoverDone: "Zweitkodierung für {n} Interviews übernommen.",
@@ -902,6 +906,10 @@ export const TEXTS = {
       "Instead of copying the files by hand: the second coder exports their coding here, the file comes " +
       "back to this side and lands as coding.NAME.json in every interview folder. After that it is only " +
       "ever read.",
+    catalogNotJudgedYet:
+      "Two figures are still missing here: the spread of MoSCoW levels and the priority field. Both need a " +
+      "judgment that is made on the single requirement — the level and the blocked operations sit at the " +
+      "foot of every card below. As soon as the first one is entered, they appear here.",
     handoverExport: "Export my own coding",
     handoverImport: "Read in a second coding",
     handoverDone: "Second coding taken over for {n} interviews.",

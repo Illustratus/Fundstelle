@@ -3892,8 +3892,16 @@ function coverageChartHTML(rows, departments) {
   });
 }
 
-/** The catalog, worked up graphically before it is worked through row by row. */
-function catalogChartsHTML(rows, departments) {
+/**
+ * The counts, which belong at the top, and the figures, which do not.
+ *
+ * The catalog is a list of things to work through, and the figures are a review
+ * of that work. Drawn above the list they put the first requirement card at
+ * 1438px on a 1000px screen: after making six requirements you could not see
+ * one of them. The counts are one compact row and answer "how far along is
+ * this", so they stay; the figures go under the list they are about.
+ */
+function catalogMetricsHTML(rows) {
   const cited = rows.filter((row) => row.citations.length).length;
   const prioritized = rows.filter((row) => MOSCOW_ORDER.includes(row.moscow)).length;
   const metrics =
@@ -3905,12 +3913,30 @@ function catalogChartsHTML(rows, departments) {
     `<span class="label">${t("citationMany")}</span></div>` +
     `</div>`;
 
+  return metrics;
+}
+
+function catalogFiguresHTML(rows, departments) {
+  /* Two of these three can only show something after a judgment nobody has made
+     yet — the MoSCoW level and the blocked operations are entered on each card
+     below. Drawn anyway they are not empty but misleading: six requirements
+     with no level at all came out as one grey bar labelled 6, which reads as a
+     finding. And they pushed the first card to 1438px on a 1000px screen, so
+     the answer to "I just made six requirements, where are they" was: below
+     three figures about work you have not done.
+
+     The third counts citations, which exist from the first one, so it stays. */
+  const judged = rows.some((row) => row.moscow || (row.blockedOperations ?? []).length);
   const charts =
-    moscowBandHTML(rows) +
-    priorityFieldHTML(rows, departments.length) +
+    (judged ? moscowBandHTML(rows) + priorityFieldHTML(rows, departments.length) : "") +
     coverageChartHTML(rows, departments);
 
-  return metrics + (charts || `<p class="empty-state">${t("catalogChartsEmpty")}</p>`);
+  return (
+    (charts || `<p class="empty-state">${t("catalogChartsEmpty")}</p>`) +
+    // Said once, where the figures would have been, rather than left as an
+    // absence somebody has to interpret.
+    (judged || !rows.length ? "" : `<p class="column-note">${t("catalogNotJudgedYet")}</p>`)
+  );
 }
 
 /** Only the graphic part; the cards stay as they are, focus included. */
@@ -3918,7 +3944,9 @@ async function drawCatalogCharts() {
   await loadRequirements();
   const part = document.getElementById("catalog-charts");
   if (!part) return;
-  part.innerHTML = catalogChartsHTML(state.requirements, state.departments);
+  part.innerHTML = catalogFiguresHTML(state.requirements, state.departments);
+  const counts = document.getElementById("catalog-metrics");
+  if (counts) counts.innerHTML = catalogMetricsHTML(state.requirements);
 }
 
 async function drawCatalog() {
@@ -4050,9 +4078,12 @@ async function drawCatalog() {
 
   root.innerHTML =
     head +
-    `<div id="catalog-charts">${catalogChartsHTML(state.requirements, state.departments)}</div>` +
+    `<div id="catalog-metrics">${catalogMetricsHTML(state.requirements)}</div>` +
     filter +
     `<div class="catalog-list">${cards || `<p class="empty-state">${t("noRequirementInSlice")}</p>`}</div>` +
+    // The figures come after the list they are about: this view's subject is the
+    // requirements, and a review of work belongs after the work.
+    `<div id="catalog-charts">${catalogFiguresHTML(state.requirements, state.departments)}</div>` +
     `<div class="exports"><a class="button-quiet" href="${exportHref("/api/export/requirements-catalog.md")}" download>` +
     `${t("catalogTitle")}</a></div>`;
 

@@ -1709,19 +1709,24 @@ test("the catalog works the requirements up graphically", async ({ page, request
   await page.locator('.tab[data-view="catalog"]').click();
 
   // Four numbers up front: requirements, cited, prioritized, citations.
-  await expect(page.locator("#catalog-charts .metric")).toHaveCount(4);
-  await expect(page.locator("#catalog-charts .metric .value").first()).toHaveText("2");
+  await expect(page.locator("#catalog-metrics .metric")).toHaveCount(4);
+  await expect(page.locator("#catalog-metrics .metric .value").first()).toHaveText("2");
 
-  // The MoSCoW band: everything still open, so exactly one band.
-  await expect(page.locator("#moscow .moscow-band")).toHaveCount(1);
-  await expect(page.locator("#moscow .moscow-band")).toHaveClass(/moscow-open/);
+  /* Nothing has a level yet, so the two figures that are about levels are not
+     drawn — a band labelled "2 open" and a field with both points on the floor
+     say nothing and read like a finding. What stands there instead says what
+     they need. */
+  await expect(page.locator("#moscow")).toHaveCount(0);
+  await expect(page.locator("#priority")).toHaveCount(0);
+  await expect(page.locator("#catalog-charts .column-note", { hasText: "fehlen hier noch" })).toBeVisible();
 
-  // The prioritization field carries one point per requirement, colored by
-  // level and placed by departments and blocked operations.
-  await expect(page.locator("#priority .point")).toHaveCount(2);
+  // The judgment, on the card where it is made, brings them both.
   const card = page.locator('.requirement[data-title="Auffindbarkeit ohne Rückfrage"]');
   await card.locator(".level").selectOption("must");
   await card.locator('[data-blocked="retrieval"]').check();
+  // One point per requirement, coloured by level and placed by departments and
+  // blocked operations; one band per level in use, the other still open.
+  await expect(page.locator("#priority .point")).toHaveCount(2);
   await expect(page.locator("#priority .point.moscow-must")).toHaveCount(1);
   await expect(page.locator("#moscow .moscow-band")).toHaveCount(2);
 
@@ -1880,6 +1885,12 @@ test("a requirement counts departments across interviews", async ({ page }) => {
   await expect(card.locator(".numbers")).toContainText("2 Bereiche");
   await expect(card.locator(".numbers")).toContainText("2 Belege");
   await expect(card.locator(".numbers")).toContainText("Marketing, Vertrieb");
+
+  /* The priority field waits for a judgment to draw — a field where everything
+     sits at zero because nobody has decided anything yet is not a picture of a
+     study. So this makes the decision the figure is about. */
+  await card.locator("select.level").selectOption({ index: 1 });
+  await expect(page.locator("#priority")).toBeVisible();
 
   /* A requirement every department named sits on the last gridline — the
      ordinary case for anything important, not an edge case. It has to be drawn

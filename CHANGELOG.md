@@ -31,6 +31,17 @@ where it lies.
 
 ### Changed
 
+- **The catalog opens on the requirements, not on figures about them.** It is a
+  whole view that only exists once somebody has built requirements, which is why
+  it had never been looked at with anything in it. Built out, it opened on three
+  figures and put the first requirement card at 1438px on a 1000px screen — so
+  the answer to "I have just made six requirements, where are they" was: below
+  three figures about work you have not done. Two of the three need a judgment
+  made on the single requirement, and drawn without one they were not empty but
+  misleading: six requirements with no level came out as a single grey bar
+  labelled 6. Those two now wait for the first judgment and say what would fill
+  them; the counts stay at the top, and the figures sit under the list they are
+  about.
 - **A whole study is walked end to end by the tests.** Every part had its own
   checks and the first five minutes had been walked once; the rest never had. The
   new walk starts on an empty folder and runs a recording in, codes it from the
