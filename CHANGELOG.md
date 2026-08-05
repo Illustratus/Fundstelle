@@ -6,7 +6,19 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.7.0 — 2026-08-05
+
+### Upgrading
+
+Nothing to do. No file changes shape, no setting changes meaning, no route that
+answered before answers differently — this release only adds routes and changes
+how the figures are drawn. Every study written by 0.1.0 onwards is read where it
+lies.
+
+The figures look different: the parts of a bar carry their numbers, the labels
+wrap instead of being cut, and both views draw their charts to the width of the
+column. An SVG saved from an earlier version is a file on your disk and is not
+touched; saving it again gives you the new drawing.
 
 ### Added
 
