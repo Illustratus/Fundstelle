@@ -1643,6 +1643,11 @@ tbody tr:hover { background: var(--paper); }
 .requirement .blocked { gap: .9rem; margin-top: .6rem; align-items: center; }
 .requirement .blocked label { font-size: .78rem; display: flex; align-items: center; gap: .3rem; }
 .requirement .row { display: flex; flex-wrap: wrap; gap: .5rem; }
+/* Definition and working note, each said to be what it is. A placeholder is
+   gone the moment either is written in, and the difference between the two is
+   the whole reason there are two. */
+.field-block { display: grid; gap: .2rem; margin-top: .7rem; }
+.field-block .field-label { color: var(--ink-soft); }
 
 .requirement .description {
   width: 100%;
@@ -1999,6 +2004,21 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
    dot rather than in it, because it says something about the column and the dot
    already says something about the row. */
 .chart .reach-sole { fill: none; stroke: var(--ink-soft); stroke-width: 1; }
+
+/* The map. A requirement is a filled dot in its MoSCoW colour; a category is a
+   small open square, because it is a landmark rather than a thing being placed
+   — the map is read against the categories. */
+.chart .map-point { fill: var(--moscow); stroke: var(--sheet); stroke-width: 1; }
+.chart .map-point:hover { stroke: var(--ink); }
+.chart .map-category { fill: none; stroke: var(--ink-soft); stroke-width: 1.4; }
+.chart .map-category:hover { stroke: var(--ink); }
+.chart .map-label {
+  fill: var(--ink);
+  font-size: 9.5px;
+  font-family: var(--sans);
+  pointer-events: none;
+}
+.chart .map-label.category { fill: var(--ink-soft); font-style: italic; }
 /* A category no requirement reaches. Quieter, not hidden — it is the finding,
    and --ink-faint is the tool's word for "a zero that means nothing is here".
    It clears 4.5:1 in both themes; `npm run test:contrast` keeps it there. */

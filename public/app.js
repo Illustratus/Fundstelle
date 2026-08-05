@@ -10,6 +10,7 @@
 import {
   FONTS,
   categoryChart,
+  clusterMap,
   coverageChart,
   estimateWidth,
   heatmapChart,
@@ -3234,7 +3235,8 @@ function catalogFiguresHTML(rows, departments) {
     /* This one needs no judgment either — it is made of citations, which exist
        from the first requirement onwards — so it keeps the coverage chart
        company below rather than waiting with the two above. */
-    chartHTML(reachChart(rows, state.categoryRows ?? [], t, shared));
+    chartHTML(reachChart(rows, state.categoryRows ?? [], t, shared)) +
+    chartHTML(clusterMap(rows, state.categoryRows ?? [], t, shared));
 
   return (
     (charts || `<p class="empty-state">${t("catalogChartsEmpty")}</p>`) +
@@ -3349,7 +3351,19 @@ async function drawCatalog() {
         `</p>` +
         (categories ? `<p class="category-tags">${categories}</p>` : "") +
         `<div class="row blocked"><span class="field-label">${t("blocks")}</span>${operations}</div>` +
+        /* Two fields, because they are two audiences. The definition is what
+           leaves this tool for the written work; the note beside it is the desk
+           it was worked out on. As one field it was neither: either a working
+           thought ended up in the thesis, or the wording had nowhere to live
+           while it was still being found. Labelled rather than left to a
+           placeholder, since a placeholder is gone the moment either is
+           written in and the difference between them is the whole point. */
+        `<label class="field-block"><span class="field-label">${t("requirementDefinitionLabel")}</span>` +
+        `<textarea class="definition" rows="2" placeholder="${escapeHTML(t("requirementDefinitionPlaceholder"))}">${escapeHTML(requirement.definition ?? "")}</textarea>` +
+        `</label>` +
+        `<label class="field-block"><span class="field-label">${t("requirementNoteLabel")}</span>` +
         `<textarea class="description" rows="2" placeholder="${escapeHTML(t("descriptionPlaceholder"))}">${escapeHTML(requirement.description ?? "")}</textarea>` +
+        `</label>` +
         /* Last on the card, after what the requirement is: an action reads as
            an action there, and between the title and the figures it read as
            part of the description of the thing. */
@@ -4156,6 +4170,7 @@ function connectEvents() {
     const fields = {};
     if (event.target.classList.contains("level")) fields.moscow = event.target.value || null;
     if (event.target.classList.contains("title")) fields.title = event.target.value.trim();
+    if (event.target.classList.contains("definition")) fields.definition = event.target.value;
     if (event.target.classList.contains("description")) fields.description = event.target.value;
     if (event.target.dataset.blocked) {
       fields.blockedOperations = [...card.querySelectorAll("[data-blocked]")]

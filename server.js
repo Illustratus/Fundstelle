@@ -984,4 +984,14 @@ server.listen(PORT, HOST, async () => {
   console.log(`Fundstelle on http://${HOST}:${PORT}`);
   console.log(`Transcripts from ${TRANSCRIPTS}`);
   await checkDataFolder();
+  /* A study written by an earlier version is brought up to this shape once,
+     here, rather than the first time somebody happens to edit it — so that
+     anything else reading the file sees what the interface sees. It says so
+     when it did something and stays quiet when there was nothing to do. */
+  try {
+    const { upgraded } = await store.upgradeRequirements();
+    if (upgraded) console.log(`Requirements file brought up to date (${upgraded}).`);
+  } catch (error) {
+    console.warn(`! The requirements file could not be brought up to date: ${error.message}`);
+  }
 });

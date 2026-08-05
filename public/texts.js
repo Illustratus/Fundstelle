@@ -580,7 +580,11 @@ export const TEXTS = {
     operationFiling: "Ablage",
     operationRetrieval: "Abruf",
     operationTransfer: "Transfer",
-    descriptionPlaceholder: "Was genau verlangt wird",
+    requirementDefinitionLabel: "Definition",
+    requirementDefinitionPlaceholder:
+      "Was diese Anforderung bedeutet — so, wie es in der Arbeit stehen soll",
+    requirementNoteLabel: "Arbeitsnotiz",
+    descriptionPlaceholder: "Was beim Ausarbeiten auffällt; bleibt in diesem Werkzeug",
     noCitationYet: "Noch ohne Beleg. Ordne beim Kodieren eine Stelle zu.",
     departmentOne: "Bereich",
     departmentMany: "Bereiche",
@@ -591,6 +595,21 @@ export const TEXTS = {
     chartMoscowTitle: "Verteilung der MoSCoW-Stufen",
     chartMoscowCaption:
       "Eine Anforderung ohne Stufe ist noch nicht entschieden; sie steht als „offen“ am Ende.",
+    chartMapTitle: "Karte: Anforderungen und Kategorien in einer Ebene",
+    chartMapCaption:
+      "Jede Anforderung ist ein Vektor über die Kategorien — wie viele ihrer Belege in welcher " +
+      "Kategorie liegen. Die beiden Achsen sind nicht gesetzt, sondern die Richtungen, in denen " +
+      "diese Zahlen am stärksten streuen (Korrespondenzanalyse); in Klammern steht, wie viel der " +
+      "Streuung jede trägt. Nähe bedeutet etwas: zwei Anforderungen stehen genau so nah " +
+      "beieinander, wie sie sich Material teilen, und jede steht bei den Kategorien, aus denen " +
+      "sie lebt. Die Mitte ist das Durchschnittsprofil — was weit außen steht, hängt an einer " +
+      "Ecke der Studie. Kreis = Anforderung (Größe = Belege, Farbe = MoSCoW), Quadrat = Kategorie.",
+    mapAxis: "Achse {n} · {share} % der Streuung",
+    mapTipRequirement: "{title} · {n} Belege",
+    mapTipCategory: "Kategorie {category} · {n} Kodiereinheiten",
+    summaryMap:
+      "{rows} Anforderungen und {categories} Kategorien in einer Ebene; die erste Achse trägt " +
+      "{first} %, die zweite {second} % der Streuung.",
     chartReachTitle: "Welche Kategorien eine Anforderung berührt",
     chartReachCaption:
       "Nach Reichweite sortiert: oben die Anforderungen, die viel von der Studie tragen, unten " +
@@ -1191,7 +1210,11 @@ export const TEXTS = {
     operationFiling: "Filing",
     operationRetrieval: "Retrieval",
     operationTransfer: "Transfer",
-    descriptionPlaceholder: "What exactly is demanded",
+    requirementDefinitionLabel: "Definition",
+    requirementDefinitionPlaceholder:
+      "What this requirement means — as it should read in the written work",
+    requirementNoteLabel: "Working note",
+    descriptionPlaceholder: "What comes up while working it out; stays in this tool",
     noCitationYet: "No citation yet. Assign a passage while coding.",
     departmentOne: "department",
     departmentMany: "departments",
@@ -1202,6 +1225,21 @@ export const TEXTS = {
     chartMoscowTitle: "Distribution of MoSCoW levels",
     chartMoscowCaption:
       "A requirement without a level has not been decided yet; it sits at the end as “open”.",
+    chartMapTitle: "Map: requirements and categories in one plane",
+    chartMapCaption:
+      "Every requirement is a vector over the categories — how many of its citations fall in " +
+      "which one. The two axes are not chosen but are the directions those numbers vary most " +
+      "along (correspondence analysis); in brackets, how much of the variation each carries. " +
+      "Distance means something: two requirements stand as close together as they share " +
+      "material, and each stands among the categories it lives on. The centre is the average " +
+      "profile — what sits far out hangs on one corner of the study. Circle = requirement (size " +
+      "= citations, colour = MoSCoW), square = category.",
+    mapAxis: "Axis {n} · {share} % of the variation",
+    mapTipRequirement: "{title} · {n} citations",
+    mapTipCategory: "Category {category} · {n} coding units",
+    summaryMap:
+      "{rows} requirements and {categories} categories in one plane; the first axis carries " +
+      "{first} %, the second {second} % of the variation.",
     chartReachTitle: "Which categories a requirement reaches",
     chartReachCaption:
       "Sorted by reach: at the top the requirements that carry much of the study, at the bottom " +

@@ -1312,6 +1312,257 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
   };
 }
 
+/**
+ * The catalog as a map: requirements and categories in one plane.
+ *
+ * An experiment, and an answer to a question the matrix could not settle. A
+ * sorted matrix shows *that* some requirements keep company; it cannot show how
+ * close, or put a name on what they have in common, because everything in it is
+ * on a lattice and distance in it means nothing.
+ *
+ * Each requirement is already a vector: how many of its citations fall in each
+ * category. That is an embedding, in the ordinary sense — the same shape a
+ * language model's weights have, a point in a space with one axis per category
+ * — and the question "where do the other two axes come from" has an answer that
+ * does not need inventing. They come out of the table. Correspondence analysis
+ * takes the axes along which the counts vary most and projects onto the first
+ * two, which is the flat picture that loses the least.
+ *
+ * What it buys, and why it is worth the arithmetic: rows and columns land in
+ * the *same* plane. A requirement sits among the categories it draws on, and
+ * two requirements are near each other exactly to the degree that they draw on
+ * the same material. So a cluster is a cluster you can point at, and it comes
+ * labelled with the categories inside it.
+ *
+ * Three notes on reading it. Distance means something and direction from the
+ * centre means something; the axes themselves have no names, and the share of
+ * variation each accounts for is written on them so nobody reads more into a
+ * short axis than it carries. The centre is the average profile: a requirement
+ * near it draws on the study the way the study is, an outlier draws on one
+ * corner of it. And it wants three of each to exist at all — two points always
+ * lie on a line and would make a picture that says nothing.
+ *
+ * No random numbers anywhere: the axes come from power iteration on a fixed
+ * start vector, so the browser and the endpoint draw the same map. A projection
+ * that moved every time it was drawn would be a figure nobody could cite.
+ */
+export function clusterMap(rows, categories, t, { moscow = [] } = {}) {
+  const columns = categories.filter((one) => one.sum > 0);
+  const withCitations = rows.filter((row) => row.citations.length);
+  if (withCitations.length < 3 || columns.length < 3) return null;
+
+  const table = withCitations.map((row) =>
+    columns.map(
+      (one) => row.citations.filter((citation) => citation.category === one.category).length,
+    ),
+  );
+  // A row or column of nothing has no profile to place, and would divide by zero.
+  const usableRow = table.map((line) => line.some(Boolean));
+  const usableColumn = columns.map((one, j) => table.some((line) => line[j]));
+  const places = axesOf(
+    table.filter((line, i) => usableRow[i]).map((line) => line.filter((v, j) => usableColumn[j])),
+  );
+  if (!places) return null;
+
+  const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
+  const shownRows = withCitations.filter((row, i) => usableRow[i]);
+  const shownColumns = columns.filter((one, j) => usableColumn[j]);
+
+  const points = [
+    ...shownRows.map((row, i) => ({
+      kind: "requirement",
+      label: row.title,
+      x: places[0].rows[i],
+      y: places[1].rows[i],
+      weight: row.citations.length,
+      level: moscowClass(row.moscow),
+      tip: t("mapTipRequirement", { title: row.title, n: row.citations.length }),
+    })),
+    ...shownColumns.map((one, j) => ({
+      kind: "category",
+      label: one.name,
+      x: places[0].cols[j],
+      y: places[1].cols[j],
+      weight: one.sum,
+      tip: t("mapTipCategory", { category: one.name, n: one.sum }),
+    })),
+  ];
+
+  const PAD = 58;
+  const HEIGHT = 460;
+  const spanX = Math.max(...points.map((one) => Math.abs(one.x))) || 1;
+  const spanY = Math.max(...points.map((one) => Math.abs(one.y))) || 1;
+  /* One scale for both axes. A map whose axes are stretched differently is a
+     map in which distance no longer means what it looks like it means, which is
+     the only thing this figure has to offer. */
+  const span = Math.max(spanX, spanY) * 1.08;
+  const room = Math.min(WIDTH - 2 * PAD, HEIGHT - 2 * PAD) / 2;
+  const midX = WIDTH / 2;
+  const midY = HEIGHT / 2 - 6;
+  const at = (one) => ({ x: midX + (one.x / span) * room, y: midY - (one.y / span) * room });
+
+  const biggest = Math.max(1, ...points.map((one) => one.weight));
+  const radius = (weight) => 3.4 + Math.sqrt(weight / biggest) * 5.2;
+
+  const cross =
+    `<line class="grid" x1="${midX - room - 14}" y1="${midY}" x2="${midX + room + 14}" y2="${midY}"></line>` +
+    `<line class="grid" x1="${midX}" y1="${midY - room - 14}" x2="${midX}" y2="${midY + room + 14}"></line>`;
+
+  /* Labels are the hard part of any map. Placed to the right of their mark and
+     pushed down past whatever is already there — greedy, in the order the
+     points are drawn, categories first because they are what the map is read
+     against. Crude, and better than a pile of overlapping words. */
+  const taken = [];
+  const laid = [...points]
+    .sort((a, b) => (a.kind === b.kind ? b.weight - a.weight : a.kind === "category" ? -1 : 1))
+    .map((one) => {
+      const spot = at(one);
+      const text = shorten(one.label, 26);
+      const wide = estimateWidth(text, { size: 9.5 });
+      let x = spot.x + radius(one.weight) + 4;
+      let y = spot.y + 3;
+      for (let tries = 0; tries < 14; tries += 1) {
+        const clash = taken.some(
+          (box) => Math.abs(box.y - y) < 11 && x < box.x + box.wide + 4 && box.x < x + wide + 4,
+        );
+        if (!clash) break;
+        y += 11;
+      }
+      taken.push({ x, y, wide });
+      return { one, spot, text, x, y };
+    });
+
+  /* Requirements first and categories over them. A requirement that lives on
+     one category lands on top of it — which is the method working, not a fault
+     — and whichever is drawn second is the one you can see. The category is the
+     landmark, so it wins; and it is drawn wider than the widest dot, so it
+     reads as a ring around the pile rather than as something hidden under it. */
+  const mark = ({ one, spot, text, x, y }) =>
+    one.kind === "requirement"
+      ? `<circle class="map-point ${one.level}" cx="${spot.x.toFixed(2)}" cy="${spot.y.toFixed(2)}"` +
+        ` r="${radius(one.weight).toFixed(2)}" data-row="${escape(one.label)}"` +
+        ` data-value="${one.weight}" data-tip="${escape(one.tip)}"></circle>`
+      : `<rect class="map-category" x="${(spot.x - 6.5).toFixed(2)}" y="${(spot.y - 6.5).toFixed(2)}"` +
+        ` width="13" height="13" data-category="${escape(one.label)}"` +
+        ` data-value="${one.weight}" data-tip="${escape(one.tip)}"></rect>`;
+  const label = ({ one, text, x, y }) =>
+    `<text class="map-label${one.kind === "category" ? " category" : ""}"` +
+    ` x="${x.toFixed(2)}" y="${y.toFixed(2)}">${escape(text)}</text>`;
+
+  const marks =
+    laid.filter(({ one }) => one.kind === "requirement").map(mark).join("") +
+    laid.filter(({ one }) => one.kind === "category").map(mark).join("") +
+    laid.map(label).join("");
+
+  const share = (k) => Math.round(places[k].share * 100);
+  /* Both titles outside the field, at the far end of their own axis. Rotated
+     text swaps its coordinates, which is how the second one ended up standing
+     in the middle of the map across the vertical line. */
+  const axisLabels =
+    `<text class="axis-title" x="${WIDTH - 6}" y="${HEIGHT - 6}" text-anchor="end">` +
+    `${escape(t("mapAxis", { n: 1, share: share(0) }))}</text>` +
+    `<text class="axis-title" x="-6" y="11" text-anchor="end" transform="rotate(-90)">` +
+    `${escape(t("mapAxis", { n: 2, share: share(1) }))}</text>`;
+
+  return {
+    id: "map",
+    file: "catalog-map.svg",
+    title: t("chartMapTitle"),
+    caption: t("chartMapCaption"),
+    width: WIDTH,
+    height: HEIGHT,
+    body: cross + axisLabels + marks,
+    legend: {
+      kind: "moscow",
+      entries: [...MOSCOW_ORDER, "open"].map((id) => ({
+        paint: moscowClass(id),
+        label: id === "open" ? t("open") : nameOf(id),
+      })),
+    },
+    summary: t("summaryMap", {
+      rows: shownRows.length,
+      categories: shownColumns.length,
+      first: share(0),
+      second: share(1),
+    }),
+  };
+}
+
+/**
+ * The two axes a table varies most along, by correspondence analysis.
+ *
+ * Standardized residuals, then the two leading singular triplets by power
+ * iteration with deflation — small tables, so an exact method would be
+ * overkill and this converges in a few hundred passes. The start vector is
+ * fixed, and every sign is settled by a rule rather than by whatever the
+ * arithmetic happened to produce, so the same table always gives the same map.
+ *
+ * Returns the principal coordinates of the rows and of the columns on each
+ * axis, in the same units — which is what puts both in one plane — with the
+ * share of the table's total variation that axis accounts for.
+ */
+function axesOf(table, { wanted = 2, passes = 300 } = {}) {
+  const R = table.length;
+  const C = table[0]?.length ?? 0;
+  if (R < 3 || C < 3) return null;
+  const n = table.reduce((sum, line) => sum + line.reduce((a, b) => a + b, 0), 0);
+  if (!n) return null;
+
+  const P = table.map((line) => line.map((value) => value / n));
+  const mass = P.map((line) => line.reduce((a, b) => a + b, 0));
+  const weight = Array.from({ length: C }, (_, j) => P.reduce((sum, line) => sum + line[j], 0));
+  if (mass.some((one) => !one) || weight.some((one) => !one)) return null;
+
+  const S = P.map((line, i) =>
+    line.map((p, j) => (p - mass[i] * weight[j]) / Math.sqrt(mass[i] * weight[j])),
+  );
+  const inertia = S.flat().reduce((sum, x) => sum + x * x, 0);
+  if (inertia < 1e-12) return null;
+
+  let A = S.map((a) => S.map((b) => a.reduce((sum, x, j) => sum + x * b[j], 0)));
+  const times = (M, v) => M.map((line) => line.reduce((sum, x, j) => sum + x * v[j], 0));
+  const length = (v) => Math.sqrt(v.reduce((sum, x) => sum + x * x, 0));
+
+  const found = [];
+  for (let k = 0; k < wanted; k += 1) {
+    // Fixed and not uniform: a uniform start is orthogonal to some eigenvectors
+    // of a symmetric matrix, and would find the wrong one or nothing at all.
+    let v = Array.from({ length: R }, (_, i) => 1 / (i + 2));
+    for (let pass = 0; pass < passes; pass += 1) {
+      const next = times(A, v);
+      const len = length(next);
+      if (len < 1e-12) break;
+      v = next.map((x) => x / len);
+    }
+    const Av = times(A, v);
+    const eigen = v.reduce((sum, x, i) => sum + x * Av[i], 0);
+    if (eigen <= 1e-10) break;
+    found.push({ u: v, sigma: Math.sqrt(eigen) });
+    A = A.map((line, i) => line.map((x, j) => x - eigen * v[i] * v[j]));
+  }
+  if (found.length < wanted) return null;
+
+  return found.map(({ u, sigma }) => {
+    const v = Array.from(
+      { length: C },
+      (_, j) => S.reduce((sum, line, i) => sum + line[j] * u[i], 0) / sigma,
+    );
+    const rows = u.map((x, i) => (sigma * x) / Math.sqrt(mass[i]));
+    const cols = v.map((x, j) => (sigma * x) / Math.sqrt(weight[j]));
+    /* A singular vector is only defined up to its sign, so an axis could come
+       out mirrored from one run to the next with nothing wrong. Pinned: the
+       point furthest from the centre sits on the positive side. */
+    const far = rows.reduce((best, x, i) => (Math.abs(x) > Math.abs(rows[best]) ? i : best), 0);
+    const flip = rows[far] < 0 ? -1 : 1;
+    return {
+      sigma,
+      share: (sigma * sigma) / inertia,
+      rows: rows.map((x) => x * flip),
+      cols: cols.map((x) => x * flip),
+    };
+  });
+}
+
 export function coverageChart(rows, departments, t) {
   const withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !departments.length) return null;
@@ -1436,7 +1687,8 @@ export function stylesheet(theme = "light") {
       ([id, colour]) =>
         `.moscow-band.moscow-${id}{fill:${colour}}` +
         `.point.moscow-${id}{fill:${colour}}` +
-        `.reach.moscow-${id}{fill:${colour}}`,
+        `.reach.moscow-${id}{fill:${colour}}` +
+        `.map-point.moscow-${id}{fill:${colour}}`,
     )
     .join("");
   const swatches = [
@@ -1458,6 +1710,10 @@ export function stylesheet(theme = "light") {
     `.axis.unmet{fill:${c.inkFaint}}` +
     `.reach{stroke:${c.sheet};stroke-width:1}` +
     `.reach-sole{fill:none;stroke:${c.inkSoft};stroke-width:1}` +
+    `.map-point{stroke:${c.sheet};stroke-width:1}` +
+    `.map-category{fill:none;stroke:${c.inkSoft};stroke-width:1.4}` +
+    `.map-label{fill:${c.ink};font-size:9.5px;font-family:${FONTS.sans}}` +
+    `.map-label.category{fill:${c.inkSoft};font-style:italic}` +
     `.axis-title{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
     `.row-label{fill:${c.ink};font-size:11.5px;font-family:${FONTS.sans}}` +
     `.row-label.child{fill:${c.inkSoft}}` +
