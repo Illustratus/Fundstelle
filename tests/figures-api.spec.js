@@ -244,12 +244,13 @@ test("the dark figure is dark, and its writing still stands off it", async ({ pa
        dark ground that number is near-invisible and also nowhere near it. Such a
        label always follows the shape it belongs to, so the shape is one step
        back. */
+    const ON_A_SHAPE = new Set(["bar-value", "cell-value", "band-value"]);
     const behind = (text) => {
+      // Keyed off the writing, not off what happens to precede it: a row total
+      // follows the last part of its bar and sits beside the bar, not on it.
+      const kind = (text.getAttribute("class") ?? "").split(/\s+/)[0];
       const shape = text.previousElementSibling;
-      const painted = /segment|cell |cell$|moscow-band/.test(
-        shape?.getAttribute("class") ?? "",
-      );
-      return painted ? getComputedStyle(shape).fill : ground;
+      return ON_A_SHAPE.has(kind) && shape ? getComputedStyle(shape).fill : ground;
     };
     const pairs = [...document.querySelectorAll("text")].map((one) => [
       getComputedStyle(one).fill,

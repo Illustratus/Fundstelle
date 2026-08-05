@@ -53,18 +53,29 @@ const measure = () => {
     });
   }
 
-  /* A number written into a bar is read against that bar. Which is why it is
-     black or white and not the page's ink: on the blue of the first series the
-     near-black this tool writes in reaches 4.00, and 4.5 is the threshold. */
+  /* A number on a bar is read against its badge, which is why it has one: set
+     straight onto the blue of the first series, the near-black this tool writes
+     in reaches 4.00 and the threshold is 4.5. And the badge itself has to be
+     told apart from the colour it lies on, or it is not a badge. */
   for (const value of document.querySelectorAll("#chart text.bar-value")) {
-    const segment = value.previousElementSibling;
-    if (!segment?.classList.contains("segment")) continue;
-    const series = [...segment.classList].find((name) => name.startsWith("series-"));
+    const badge = value.previousElementSibling;
+    if (!badge?.classList.contains("bar-badge")) continue;
     found.push({
-      what: `bar value on ${series}`,
-      ratio: ratio(parse(getComputedStyle(value).fill), parse(getComputedStyle(segment).fill)),
+      what: "bar value on its badge",
+      ratio: ratio(parse(getComputedStyle(value).fill), parse(getComputedStyle(badge).fill)),
       need: 4.5,
     });
+    const under = document.elementFromPoint(
+      badge.getBoundingClientRect().left - 2,
+      badge.getBoundingClientRect().top + badge.getBoundingClientRect().height / 2,
+    );
+    if (under?.classList.contains("segment")) {
+      found.push({
+        what: "badge against the bar it lies on",
+        ratio: ratio(parse(getComputedStyle(badge).fill), parse(getComputedStyle(under).fill)),
+        need: 3,
+      });
+    }
   }
 
   for (const selector of [

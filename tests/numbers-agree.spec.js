@@ -221,7 +221,7 @@ test("every number inside a bar is the value of that part", async ({ page }) => 
         value: one.textContent,
         row: one.previousElementSibling?.dataset.row,
         department: one.previousElementSibling?.dataset.department,
-        // What the segment itself says it is, which is what the tooltip says.
+        // What the badge itself says it is, which is what the tooltip says.
         onSegment: one.previousElementSibling?.dataset.value,
       })),
     };
@@ -236,14 +236,30 @@ test("every number inside a bar is the value of that part", async ({ page }) => 
     expect(String(row.values[at]), `${label.row} · ${label.department}`).toBe(label.value);
   }
 
-  /* And nothing was written where it could not be read: a part too narrow for
-     its own number carries none rather than one hanging over its neighbour. */
-  const overflow = await page.evaluate(() =>
-    [...document.querySelectorAll("#chart text.bar-value")].filter((one) => {
-      const text = one.getBoundingClientRect();
-      const segment = one.previousElementSibling.getBoundingClientRect();
-      return text.left < segment.left - 0.5 || text.right > segment.right + 0.5;
-    }).length,
+  /* A badge may reach over the part beside it — that is what lets a part too
+     narrow for its number keep one — but it may not reach off the bar, and the
+     number may not reach off its badge. */
+  const escaped = await page.evaluate(() =>
+    [...document.querySelectorAll("#chart rect.bar-badge")]
+      .map((badge) => {
+        const box = badge.getBoundingClientRect();
+        const text = badge.nextElementSibling.getBoundingClientRect();
+        const parts = [...document.querySelectorAll("#chart path.segment")].filter(
+          (one) => one.dataset.row === badge.dataset.row,
+        );
+        const bar = {
+          left: Math.min(...parts.map((one) => one.getBoundingClientRect().left)),
+          right: Math.max(...parts.map((one) => one.getBoundingClientRect().right)),
+        };
+        if (box.left < bar.left - 1 || box.right > bar.right + 1) {
+          return `${badge.dataset.row} · ${badge.dataset.department} left its bar`;
+        }
+        if (text.left < box.left - 0.5 || text.right > box.right + 0.5) {
+          return `${badge.dataset.row} · ${badge.dataset.department} left its badge`;
+        }
+        return null;
+      })
+      .filter(Boolean),
   );
-  expect(overflow, "no number reaches out of the part it belongs to").toBe(0);
+  expect(escaped, "every badge stays on its bar, every number on its badge").toEqual([]);
 });

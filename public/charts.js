@@ -96,30 +96,6 @@ export const FONTS = {
   mono: 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
 };
 
-/**
- * What a number written on a colour has to be, to be readable on it.
- *
- * Derived from the palette rather than written down beside it, because a table
- * of eight colours next to a table of eight colours is a table that goes wrong
- * the first time one of them is adjusted. Black or white and nothing between:
- * the tool's own ink and paper are near-black and white but not quite, and on
- * the blue of the first series that near-miss costs 4.00 against a threshold of
- * 4.5 — the whole difference between passing and failing. On the eight series
- * colours, in both themes, the better of the two always clears 4.5.
- *
- * The same values are written into `app.css` as `--on-1 … --on-8`, and
- * `tests/svg-export.spec.js` compares the page against the saved file element
- * by element, so the two cannot part company quietly.
- */
-const luminance = (hex) => {
-  const [r, g, b] = [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16) / 255);
-  const channel = (value) =>
-    value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
-};
-
-export const readableOn = (colour) => (luminance(colour) > 0.179 ? "#000000" : "#ffffff");
-
 const MOSCOW_ORDER = ["must", "should", "could", "wont"];
 
 export const moscowClass = (level) =>
@@ -294,9 +270,131 @@ export function stackedBars({
   const end = Math.ceil(max / step) * step;
 
   const LABEL = 200;
-  const VALUE = 34;
-  const BAR = 14;
+  /* Taller than it was. The bar carried nothing but its own colour at 14 units
+     and the row was already 26, so the height was free — and it buys the room
+     the badge below needs to sit *on* the bar with the colour still showing
+     above and below it. */
+  const BAR = 20;
   const TOP = 6;
+
+  /**
+   * A number on a bar, as a badge.
+   *
+   * Set straight onto the colour it was hard to read: black on the blue of the
+   * first series clears the threshold by a hair and looks it. On its own small
+   * ground it is ordinary reading colour on ordinary paper, and the eye stops
+   * having to work at all.
+   *
+   * The badge also answers the part that is too narrow for its number. It is a
+   * shape of its own, so it may be *wider* than the part it belongs to and
+   * still be shorter than the bar — it lies across its neighbour without
+   * hiding the bar, and stays centred on the part it names. Which is the whole
+   * trick: a part of one against a scale of forty is four units wide, and no
+   * arrangement of type fits a digit into four units.
+   */
+  const DIGIT = 6.2;
+  const numberWidth = (value) => String(value).length * DIGIT;
+  const BADGE_PAD = 5;
+  const BADGE_HEIGHT = 13;
+  const BADGE_GAP = 2;
+  const badgeWidth = (value) => numberWidth(value) + 2 * BADGE_PAD;
+
+  /**
+   * What is left when even the badges will not fit.
+   *
+   * A badge may overflow its part but not the bar, and two narrow parts beside
+   * each other cannot both have one. Those numbers go after the row's total, as
+   * a swatch in the part's colour and the number beside it — the same pairing
+   * as the key above the chart, which is where a reader has already learnt
+   * which colour is which department.
+   *
+   * The swatch carries the colour and the number does not. Written in the
+   * series colour it would be the colour doing two jobs: the palette is built
+   * to stand 3:1 off the page, which is the threshold for a shape, and text
+   * needs 4.5 — five of the eight do not reach it. A square and a number in the
+   * ordinary reading colour is the same information without that argument.
+   */
+  const SWATCH = 6;
+  const AFTER_TOTAL = 8;
+  const ENTRY_GAP = 7;
+  const entryWidth = (value) => SWATCH + 3 + numberWidth(value) + ENTRY_GAP;
+  /* A row of eight crowded parts would take a quarter of the chart for its
+     tail. Past this it stops, and the cross table underneath carries the rest —
+     which the caption already sends the reader to. */
+  const TAIL_LIMIT = 150;
+
+  /**
+   * Where every number of one row goes: on the bar, or after it.
+   *
+   * Left to right, each badge centred on its part and pushed right only as far
+   * as the badge before it makes necessary — so the order on the bar is the
+   * order of the parts, always. A badge that would then reach past the end of
+   * the bar is not drawn there; its number joins the tail instead. A badge
+   * wider than the whole bar never happens on the bar at all: a row of one is
+   * a row whose total already stands beside it.
+   */
+  function layoutRow(line, room) {
+    const scale = (value) => (value / end) * room;
+    const sum = line.reduce((n, value) => n + value, 0);
+    const barEnd = LABEL + scale(sum);
+    const parts = line.filter(Boolean).length;
+    let last = -1;
+    line.forEach((value, k) => {
+      if (value > 0) last = k;
+    });
+
+    const badges = [];
+    const tail = [];
+    let x = LABEL;
+    let cursor = LABEL;
+    line.forEach((value, k) => {
+      if (!value) return;
+      /* A row made of one part has already said its number: the total beside
+         the bar is that part. A badge would be the same figure twice. */
+      if (parts < 2) return;
+      const full = scale(value);
+      const width = Math.max(1, full - (k === last ? 0 : 2));
+      const badge = badgeWidth(value);
+      const centre = x + width / 2;
+      x += full;
+
+      // Wider than the whole bar: it cannot lie on it at all.
+      if (badge > barEnd - LABEL) {
+        tail.push({ value, at: k });
+        return;
+      }
+      const left = Math.max(cursor, Math.min(centre - badge / 2, barEnd - badge));
+      if (left + badge > barEnd + 0.5) {
+        tail.push({ value, at: k });
+        return;
+      }
+      badges.push({ left, width: badge, value, at: k });
+      cursor = left + badge + BADGE_GAP;
+    });
+    return { badges, tail, barEnd, scale, sum };
+  }
+
+  /**
+   * How wide the right-hand gutter has to be, which depends on the scale, which
+   * depends on the gutter. Settled by running it twice, as the prioritisation
+   * field settles its own margin: a narrower track can only crowd more parts
+   * out of the bar, so the second answer is the stable one.
+   */
+  const BASE = 34;
+  function tailFor(gutter) {
+    const room = WIDTH - LABEL - gutter - 8;
+    let widest = 0;
+    for (const line of values) {
+      const need = layoutRow(line, room).tail.reduce(
+        (n, one) => n + entryWidth(one.value),
+        0,
+      );
+      widest = Math.max(widest, Math.min(need, TAIL_LIMIT));
+    }
+    return widest ? widest + AFTER_TOTAL : 0;
+  }
+  const VALUE = BASE + Math.max(tailFor(BASE), tailFor(BASE + tailFor(BASE)));
+
   const track = WIDTH - LABEL - VALUE - 8;
   const scale = (value) => (value / end) * track;
 
@@ -351,40 +449,45 @@ export function stackedBars({
   const bars = rows
     .map((row, index) => {
       const y = TOP + index * ROW + (ROW - BAR) / 2;
+      const { badges, tail, barEnd } = layoutRow(values[index], track);
       let x = LABEL;
       let last = -1;
       values[index].forEach((value, k) => {
         if (value > 0) last = k;
       });
+
       const segments = values[index]
         .map((value, k) => {
           if (!value) return "";
           const full = scale(value);
           // 2px of air between the segments; the last one ends rounded.
           const width = Math.max(1, full - (k === last ? 0 : 2));
-          const part =
-            `<path class="segment ${series[k].className}" d="${segmentPath(x, y, width, BAR, k === last)}"` +
-            ` data-department="${escape(series[k].name)}" data-row="${escape(row.name)}"` +
-            ` data-value="${value}" data-tip="${escape(`${row.name} — ${series[k].name}: ${value}`)}"></path>` +
-            /* The part's own number, in the part. Which department contributed
-               how much was only readable by hovering, and a hover answers one
-               person with a mouse — not the reader of a printed figure, not a
-               screen reader, not the saved file.
-
-               Only where it fits. A segment narrower than its own number would
-               either have the digits hang over the neighbouring colour or be
-               cut in half, and both are worse than the tooltip that is still
-               there. The room is reckoned in the units the drawing counts in,
-               against the mono face the number is set in — no measuring, so
-               the same figure comes out of the browser and out of the API. */
-            (width >= String(value).length * 6.2 + 8
-              ? `<text class="bar-value ${series[k].className}" x="${x + width / 2}"` +
-                ` y="${y + BAR / 2 + 3.5}" text-anchor="middle">${value}</text>`
-              : "");
           x += full;
-          return part;
+          return (
+            `<path class="segment ${series[k].className}" d="${segmentPath(x - full, y, width, BAR, k === last)}"` +
+            ` data-department="${escape(series[k].name)}" data-row="${escape(row.name)}"` +
+            ` data-value="${value}" data-tip="${escape(`${row.name} — ${series[k].name}: ${value}`)}"></path>`
+          );
         })
         .join("");
+
+      /* The badges after every part, not each one after its own: a badge that
+         overflows a narrow part lies across the part beside it, and drawn in
+         turn it would end up under the colour it was supposed to sit on. */
+      const written = badges
+        .map(
+          (badge) =>
+            `<rect class="bar-badge ${series[badge.at].className}" x="${badge.left}"` +
+            ` y="${y + (BAR - BADGE_HEIGHT) / 2}"` +
+            ` width="${badge.width}" height="${BADGE_HEIGHT}" rx="3.5"` +
+            ` data-department="${escape(series[badge.at].name)}" data-row="${escape(row.name)}"` +
+            ` data-value="${badge.value}"` +
+            ` data-tip="${escape(`${row.name} — ${series[badge.at].name}: ${badge.value}`)}"></rect>` +
+            `<text class="bar-value" x="${badge.left + badge.width / 2}"` +
+            ` y="${y + BAR / 2 + 3.5}" text-anchor="middle">${badge.value}</text>`,
+        )
+        .join("");
+
       /* Centred on the bar, not sitting on its baseline: one line looks the
          same either way, and three lines hung from the baseline would have the
          name climbing away from the row it belongs to. */
@@ -401,10 +504,27 @@ export function stackedBars({
           .join("") +
         `</text>`;
 
+      const baseline = y + BAR / 2 + 3.5;
+      let after = barEnd + 6 + numberWidth(row.sum) + AFTER_TOTAL;
+      let tailed = "";
+      for (const one of tail) {
+        if (after + entryWidth(one.value) - ENTRY_GAP > WIDTH - 4) break;
+        tailed +=
+          `<rect class="part-swatch ${series[one.at].className}" x="${after}"` +
+          ` y="${baseline - SWATCH + 0.5}" width="${SWATCH}" height="${SWATCH}" rx="1.5"` +
+          ` data-department="${escape(series[one.at].name)}" data-row="${escape(row.name)}"` +
+          ` data-value="${one.value}"` +
+          ` data-tip="${escape(`${row.name} — ${series[one.at].name}: ${one.value}`)}"></rect>` +
+          `<text class="value" x="${after + SWATCH + 3}" y="${baseline}">${one.value}</text>`;
+        after += entryWidth(one.value);
+      }
+
       return (
         label +
         segments +
-        `<text class="value${row.sum ? "" : " empty"}" x="${x + 6}" y="${y + BAR - 3}">${row.sum}</text>`
+        written +
+        `<text class="value${row.sum ? "" : " empty"}" x="${barEnd + 6}" y="${baseline}">${row.sum}</text>` +
+        tailed
       );
     })
     .join("");
@@ -1035,7 +1155,8 @@ export function stylesheet(theme = "light") {
     .map(
       (colour, index) =>
         `.segment.series-s${index + 1}{fill:${colour}}` +
-        `.bar-value.series-s${index + 1}{fill:${readableOn(colour)}}`,
+        `.part-swatch.series-s${index + 1}{fill:${colour}}` +
+        `.bar-badge.series-s${index + 1}{stroke:${colour}}`,
     )
     .join("");
   const level = c.level.map((colour, index) => `.cell.level-${index + 1}{fill:${colour}}`).join("");
@@ -1063,7 +1184,8 @@ export function stylesheet(theme = "light") {
     `.row-label.child{fill:${c.inkSoft}}` +
     `.value{fill:${c.inkSoft};font-size:10.5px;font-family:${FONTS.mono}}` +
     `.value.empty{fill:${c.inkFaint}}` +
-    `.bar-value{font-size:10px;font-family:${FONTS.mono}}` +
+    `.bar-badge{fill:${c.sheet};stroke-width:1.5}` +
+    `.bar-value{fill:${c.ink};font-size:10px;font-family:${FONTS.mono}}` +
     series +
     level +
     `.cell-empty{fill:none;stroke:${c.line}}` +

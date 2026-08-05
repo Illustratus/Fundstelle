@@ -4238,7 +4238,7 @@ function connectEvents() {
   }
 
   // Tooltips of the charts: follow the mouse over anything that carries one.
-  const HOVERABLE = ".segment, .cell, .point, .moscow-band";
+  const HOVERABLE = ".segment, .cell, .point, .moscow-band, .part-swatch, .bar-badge";
   for (const view of [$("#analysis"), catalog]) {
     view.addEventListener("mousemove", (event) => {
       const mark = event.target.closest?.(HOVERABLE);

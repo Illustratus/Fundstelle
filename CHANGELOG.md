@@ -34,14 +34,21 @@ where it lies.
 
 ### Changed
 
-- **Every part of a stacked bar carries its own number**, centred in the part.
-  How much of a category came from which department was only readable by
-  hovering — and a hover answers one person with a mouse, not a printed figure,
-  not the saved SVG, not a screen reader. A part too narrow for its number
-  carries none rather than one hanging over its neighbour, and the number is
-  black or white by measurement against the colour it sits on: the tool's own
-  near-black reaches 4.00 on the blue of the first series, against a threshold
-  of 4.5.
+- **Every part of a stacked bar carries its own number**, as a badge lying on
+  the bar. How much of a category came from which department was only readable
+  by hovering — and a hover answers one person with a mouse, not a printed
+  figure, not the saved SVG, not a screen reader.
+
+  The badge is what makes it work for a part of one against a scale of forty,
+  which is four units wide and holds no digit: a badge is a shape of its own, so
+  it may be wider than its part while staying shorter than the bar. It lies
+  across its neighbour without hiding the bar, and is rimmed in the colour of
+  the part it names so that whose number it is stays plain. Where two crowded
+  parts cannot both have one, the numbers left over stand after the row total,
+  each with a swatch in its colour.
+
+  The bar is taller for it — it carried nothing but its own colour before, so
+  the height was free.
 - **A row label that is too long wraps instead of being cut**, and the whole
   column of labels steps down a size when the longest of them needs it. Cut at
   thirty characters, two categories whose names begin alike were two rows told

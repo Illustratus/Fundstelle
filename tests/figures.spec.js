@@ -141,7 +141,10 @@ test("the button that saves a figure sits over the figure it saves", async ({ pa
  * hovered to read.
  */
 async function tipFor(page, mark) {
-  await mark.hover();
+  /* Forced, because the badges lie on the segments and take the pointer for
+     them. Both carry the same sentence, so which of the two the mouse lands on
+     changes nothing about what this checks — where the tip ends up. */
+  await mark.hover({ force: true });
   const tip = page.locator(".chart-tip:not([hidden])").first();
   await expect(tip).toBeVisible();
   return {
