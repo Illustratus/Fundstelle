@@ -100,6 +100,13 @@ now needs to be served from the same origin.
 
 ### Fixed
 
+- **Two checks no longer depend on the machine they run on.** The REFI checks
+  shelled out to `unzip` to get an outside opinion on the archive, and fell over
+  where `unzip` is not installed; they now take `python3` instead where they must,
+  which also verifies every entry's checksum. And the import checks set `LANG` to
+  ask for German while the tool reads `LC_ALL` first, exactly as a locale is meant
+  to be read — so a build machine setting `LC_ALL=C.UTF-8` handed them English.
+  They pass `--lang de` now: a check should not inherit the thing it checks.
 - **A field no longer depends on how wide a font happens to be.** The box for a
   new requirement took whatever the button beside it left: 227 pixels for a
   placeholder needing 213 in one machine's fonts and 235 in another's. The same

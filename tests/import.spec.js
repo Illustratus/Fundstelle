@@ -166,12 +166,20 @@ test("a folder name is made of what a file system likes", () => {
 
 /* And the command line around it, which is what anyone will actually run. */
 
+/* Said with the flag rather than with the environment. Setting `LANG` looked
+   like it named the language, and on this machine it did — but the tool reads
+   `LC_ALL` first, exactly as a locale is meant to be read, and a build machine
+   that sets `LC_ALL=C.UTF-8` handed these checks English while they asserted
+   German. A check should not inherit the thing it is checking. */
 const run = (args, cwd) =>
-  execFileSync(process.execPath, [join(ROOT, "tools", "import-transcript.mjs"), ...args], {
-    cwd: cwd ?? ROOT,
-    encoding: "utf8",
-    env: { ...process.env, LANG: "de_DE.UTF-8" },
-  });
+  execFileSync(
+    process.execPath,
+    [
+      join(ROOT, "tools", "import-transcript.mjs"),
+      ...(args.includes("--lang") ? args : [...args, "--lang", "de"]),
+    ],
+    { cwd: cwd ?? ROOT, encoding: "utf8" },
+  );
 
 const scratch = () => mkdtempSync(join(tmpdir(), "fundstelle-import-"));
 

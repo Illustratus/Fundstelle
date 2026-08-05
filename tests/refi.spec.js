@@ -49,15 +49,62 @@ const CATEGORIES = [
 ];
 const PROPOSITIONS = { practice: { color: "#6C8EBF" }, coordination: { color: "#D79B00" } };
 
+/**
+ * Somebody else's opinion on whether the archive is an archive.
+ *
+ * This tool writes the zip by hand, so a check that reads it back with the same
+ * code proves only that the code agrees with itself. `unzip` was that outside
+ * opinion until a machine turned up without it — so there are two, and one of
+ * them has to be there. Not skipping: a check that quietly stops checking is
+ * worse than one that fails.
+ */
+const opener = (() => {
+  for (const [name, probe] of [
+    ["unzip", ["-v"]],
+    ["python3", ["-c", "import zipfile"]],
+  ]) {
+    try {
+      execFileSync(name, probe, { stdio: "ignore" });
+      return name;
+    } catch {
+      // Try the next one.
+    }
+  }
+  return null;
+})();
+
 function unpack(buffer) {
+  expect(opener, "either unzip or python3 has to be here to read the archive").toBeTruthy();
   const folder = mkdtempSync(join(tmpdir(), "fundstelle-qdpx-"));
   const file = join(folder, "project.qdpx");
   writeFileSync(file, buffer);
-  // `unzip` is the outside opinion: this suite should not be the only thing
-  // that believes the archive is an archive.
-  execFileSync("unzip", ["-q", "-o", file, "-d", folder]);
+  let list;
+  if (opener === "unzip") {
+    execFileSync("unzip", ["-q", "-o", file, "-d", folder]);
+    list = execFileSync("unzip", ["-Z1", file], { encoding: "utf8" }).trim().split("\n");
+  } else {
+    /* `testzip` walks every entry and checks its CRC, which is more than `unzip`
+       is being asked for above — a wrong length or a wrong checksum fails here
+       rather than turning into a file that looks fine. */
+    list = execFileSync(
+      "python3",
+      [
+        "-c",
+        "import sys,zipfile\n" +
+          "z=zipfile.ZipFile(sys.argv[1])\n" +
+          "bad=z.testzip()\n" +
+          "assert bad is None, bad\n" +
+          "z.extractall(sys.argv[2])\n" +
+          "print('\\n'.join(i.filename for i in z.infolist()))",
+        file,
+        folder,
+      ],
+      { encoding: "utf8" },
+    )
+      .trim()
+      .split("\n");
+  }
   const read = (name) => readFileSync(join(folder, name), "utf8");
-  const list = execFileSync("unzip", ["-Z1", file], { encoding: "utf8" }).trim().split("\n");
   return { read, list, clean: () => rmSync(folder, { recursive: true, force: true }) };
 }
 
