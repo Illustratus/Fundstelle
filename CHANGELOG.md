@@ -6,7 +6,15 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.4.0 — 2026-08-05
+
+### Upgrading
+
+Nothing to do. No file changes shape, no setting changes meaning, and every
+study written by 0.1.0 onwards is read where it lies. If you seed your own
+deductive system with `START_SYSTEM`, a file the tool cannot read now stops it
+with an explanation instead of a half-drawn screen — the same files that worked
+before still work.
 
 ### Added
 
