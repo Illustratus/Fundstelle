@@ -30,6 +30,17 @@ where it lies.
 
 ### Fixed
 
+- **A page on another site can no longer change your study.** Binding to
+  127.0.0.1 keeps the tool off the network and does nothing about the browser
+  already on the machine — that address is exactly the one a hostile page would
+  use. It could never read an answer, but a POST with `text/plain` or a form
+  encoding is sent without asking permission first, and all three shapes went
+  straight through: coding units appeared in an interview, a category appeared in
+  the system, and an inductive category could have been dissolved into another.
+  What the browser says about where a request came from now decides it —
+  `Sec-Fetch-Site`, or `Origin` where that is missing. Neither present means no
+  browser sent it, so `curl`, a script and the container health check are
+  unaffected, and reading is left alone.
 - **An interview name from a URL can no longer decide where the files are.**
   `/api/interviews/<id>` joins that name onto the transcript folder to build
   every path for that interview, and a URL can say `..%2f..%2fetc`: reading

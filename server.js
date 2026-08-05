@@ -272,6 +272,40 @@ async function staticFile(response, path) {
   }
 }
 
+/**
+ * Whether a request that changes something came from this tool's own page.
+ *
+ * A page on another site cannot read what this tool answers — the browser sees
+ * to that — but it can make it answer. A POST whose content type is `text/plain`
+ * or a form encoding is sent without asking permission first, so any tab left
+ * open on any website could write into somebody's study: add coding units,
+ * create categories, dissolve an inductive one into another. Months of work,
+ * reachable from a page the reader had no reason to distrust. The tool binds to
+ * 127.0.0.1, which does not help here at all — that is exactly the address such
+ * a page would use.
+ *
+ * `Sec-Fetch-Site` is what modern browsers say about where a request came from,
+ * and it is decided by the browser rather than by the page. Where it is missing,
+ * `Origin` answers the same question for anything a browser sends with a body.
+ * A request with neither is not a browser: a script, `curl`, the container
+ * health check — somebody who ran it on purpose, on their own machine.
+ */
+function fromThisTool(request) {
+  const site = request.headers["sec-fetch-site"];
+  if (site) return site === "same-origin" || site === "none";
+  const origin = request.headers.origin;
+  if (!origin) return true;
+  try {
+    // Host and not the whole origin: a reverse proxy in front of this may speak
+    // https to the reader while the tool speaks http behind it.
+    return new URL(origin).host === request.headers.host;
+  } catch {
+    return false;
+  }
+}
+
+const READ_ONLY = new Set(["GET", "HEAD", "OPTIONS"]);
+
 const server = createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
   const path = url.pathname;
@@ -285,6 +319,13 @@ const server = createServer(async (request, response) => {
   // Only the very first read seeds anything; afterwards the stored system wins
   // and this value is never looked at again.
   const seedLanguage = START_LANGUAGE ?? language;
+
+  if (!READ_ONLY.has(request.method) && !fromThisTool(request)) {
+    return send(response, 403, {
+      error: t("errorForeignOrigin"),
+      code: "errorForeignOrigin",
+    });
+  }
 
   try {
     if (!path.startsWith("/api/")) return await staticFile(response, path);

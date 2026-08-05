@@ -211,6 +211,17 @@ quietly dropping the other's work.
   history, as the transcripts. Adding a coding unit adds a coding unit; writing a
   memo touches the memo and the moment it was written, and nothing else.
 
+## What it is careful about
+
+The server binds `127.0.0.1`, so nothing on the network reaches it. That says
+nothing about the browser on the same machine, which is why anything that
+changes a study is accepted only from this tool's own page: the browser's own
+account of where a request came from decides it, and a request no browser sent —
+`curl`, a script, the container's health check — is treated as the reader acting
+on their own machine. Reading is not restricted. An interview name from a URL is
+one folder name and cannot steer a path out of the transcript folder, and no
+answer carries a path from the machine the tool runs on.
+
 ## Configuration
 
 | Variable | Meaning | Default |
