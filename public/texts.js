@@ -595,16 +595,20 @@ export const TEXTS = {
     chartMoscowTitle: "Verteilung der MoSCoW-Stufen",
     chartMoscowCaption:
       "Eine Anforderung ohne Stufe ist noch nicht entschieden; sie steht als „offen“ am Ende.",
-    chartCloudTitle: "Wolke: drei Achsen aus derselben Tabelle",
-    chartCloudCaption:
-      "Dieselbe Rechnung wie die Karte, eine Achse mehr. Isometrisch statt perspektivisch, damit " +
-      "eine Strecke überall dasselbe bedeutet; Tiefe steckt in Größe, Blässe und darin, was was " +
-      "verdeckt. Jeder Punkt lässt eine Linie auf den Boden fallen — ohne die hat ein Punkt in " +
-      "der Luft keine Adresse. Nummern statt Namen, Schlüssel darunter. Kreis = Anforderung, " +
-      "Quadrat = Kategorie.",
-    summaryCloud:
-      "{rows} Anforderungen und {categories} Kategorien in drei Achsen: {first} %, {second} % " +
-      "und {third} % der Streuung, zusammen {total} %.",
+    chartCityDepartmentsTitle: "Stadtplan: Höhe = Bereiche, die die Anforderung nennen",
+    chartCityDepartmentsCaption:
+      "Dasselbe Gitter, andere Höhe. Nicht die Belege in einer Zelle, sondern wie viele Bereiche " +
+      "diese Anforderung überhaupt nennen — also ist jede Reihe gleich hoch und liest sich als " +
+      "Rücken: die Länge ist die Reichweite über die Kategorien, die Höhe ist, wie breit die " +
+      "Anforderung im Haus getragen wird. Eine Anforderung, die nur ein Bereich nennt, bleibt " +
+      "flach, auch wenn viel Material daran hängt. Farbe = MoSCoW-Stufe.",
+    summaryCityDepartments:
+      "{rows} Anforderungen über {categories} Kategorien; am breitesten getragen wird „{top}“ " +
+      "mit {max} Bereichen.",
+    cityTipDepartments: "{title} — {category}: {n} Belege · von {departments} Bereichen genannt",
+    cityFiguresCaption: "Belege je Anforderung und Kategorie",
+    cityDepartmentsFiguresCaption:
+      "Belege je Anforderung und Kategorie, dazu die Bereiche, die die Anforderung nennen",
     chartCityTitle: "Stadtplan: Kategorie × Anforderung, Höhe = Belege",
     chartCityCaption:
       "Dein Modell wörtlich genommen: X sind die Kategorien, Y die Anforderungen, Z die Belege " +
@@ -613,31 +617,6 @@ export const TEXTS = {
       "gleich hohe Säulen wirken je nach Tiefe verschieden hoch.",
     summaryCity:
       "{rows} Anforderungen über {categories} Kategorien; die höchste Säule steht für {max} Belege.",
-    chartShareTitle: "Deckungsanteil: wie viel einer Kategorie eine Anforderung beansprucht",
-    chartShareCaption:
-      "Dieselbe Matrix wie oben, aber die Fläche eines Punktes ist nicht die Zahl der Belege, " +
-      "sondern ihr Anteil am gesamten Material dieser Kategorie. Zwölf von fünfzehn und zwölf " +
-      "von zweihundert sind nicht derselbe Befund: ein voller Punkt heißt, dass diese eine " +
-      "Anforderung fast alles trägt, was dazu gesagt wurde. Sonst wie oben — Zeile lesen für " +
-      "Reichweite, Spalte für Abdeckung, eingekreist = einzige Anforderung dazu.",
-    reachTipShare: "{title} — {category}: {n} Belege · {percent} % der Kategorie",
-    reachTipShareSole:
-      "{title} — {category}: {n} Belege · {percent} % der Kategorie · einzige Anforderung dazu",
-    chartMapTitle: "Karte: Anforderungen und Kategorien in einer Ebene",
-    chartMapCaption:
-      "Jede Anforderung ist ein Vektor über die Kategorien — wie viele ihrer Belege in welcher " +
-      "Kategorie liegen. Die beiden Achsen sind nicht gesetzt, sondern die Richtungen, in denen " +
-      "diese Zahlen am stärksten streuen (Korrespondenzanalyse); in Klammern steht, wie viel der " +
-      "Streuung jede trägt. Nähe bedeutet etwas: zwei Anforderungen stehen genau so nah " +
-      "beieinander, wie sie sich Material teilen, und jede steht bei den Kategorien, aus denen " +
-      "sie lebt. Die Mitte ist das Durchschnittsprofil — was weit außen steht, hängt an einer " +
-      "Ecke der Studie. Kreis = Anforderung (Größe = Belege, Farbe = MoSCoW), Quadrat = Kategorie.",
-    mapAxis: "Achse {n} · {share} % der Streuung",
-    mapTipRequirement: "{title} · {n} Belege",
-    mapTipCategory: "Kategorie {category} · {n} Kodiereinheiten",
-    summaryMap:
-      "{rows} Anforderungen und {categories} Kategorien in einer Ebene; die erste Achse trägt " +
-      "{first} %, die zweite {second} % der Streuung.",
     chartReachTitle: "Welche Kategorien eine Anforderung berührt",
     chartReachCaption:
       "Nach Reichweite sortiert: oben die Anforderungen, die viel von der Studie tragen, unten " +
@@ -1253,16 +1232,20 @@ export const TEXTS = {
     chartMoscowTitle: "Distribution of MoSCoW levels",
     chartMoscowCaption:
       "A requirement without a level has not been decided yet; it sits at the end as “open”.",
-    chartCloudTitle: "Cloud: three axes out of the same table",
-    chartCloudCaption:
-      "The same arithmetic as the map with one axis more. Isometric rather than perspective, so " +
-      "a distance means the same thing everywhere; depth is carried by size, paleness and what " +
-      "covers what. Every point drops a line to the floor — without it a dot in the air has no " +
-      "address. Numbers instead of names, key underneath. Circle = requirement, square = " +
-      "category.",
-    summaryCloud:
-      "{rows} requirements and {categories} categories on three axes: {first} %, {second} % and " +
-      "{third} % of the variation, {total} % together.",
+    chartCityDepartmentsTitle: "City plot: height = departments naming the requirement",
+    chartCityDepartmentsCaption:
+      "The same lattice, a different height. Not the citations in one cell but how many " +
+      "departments name this requirement at all — so every row is one height and reads as a " +
+      "ridge: its length is the reach across the categories, its height is how broadly the " +
+      "requirement is carried in the organisation. One named by a single department stays low " +
+      "however much material hangs on it. Colour = MoSCoW level.",
+    summaryCityDepartments:
+      "{rows} requirements across {categories} categories; “{top}” is carried most broadly, by " +
+      "{max} departments.",
+    cityTipDepartments: "{title} — {category}: {n} citations · named by {departments} departments",
+    cityFiguresCaption: "Citations per requirement and category",
+    cityDepartmentsFiguresCaption:
+      "Citations per requirement and category, with the departments naming the requirement",
     chartCityTitle: "City plot: category × requirement, height = citations",
     chartCityCaption:
       "Your model taken literally: X is the categories, Y the requirements, Z the citations in " +
@@ -1271,31 +1254,6 @@ export const TEXTS = {
       "and two columns of the same height read differently depending on how far back they are.",
     summaryCity:
       "{rows} requirements across {categories} categories; the tallest column stands for {max} citations.",
-    chartShareTitle: "Coverage: how much of a category a requirement claims",
-    chartShareCaption:
-      "The same matrix as above, but the area of a dot is not the number of citations — it is " +
-      "their share of everything in that category. Twelve out of fifteen and twelve out of two " +
-      "hundred are not the same finding: a full dot means this one requirement carries almost " +
-      "all of what was said. Otherwise as above — read a row for reach, a column for coverage, " +
-      "circled = the only requirement for it.",
-    reachTipShare: "{title} — {category}: {n} citations · {percent} % of the category",
-    reachTipShareSole:
-      "{title} — {category}: {n} citations · {percent} % of the category · the only requirement for it",
-    chartMapTitle: "Map: requirements and categories in one plane",
-    chartMapCaption:
-      "Every requirement is a vector over the categories — how many of its citations fall in " +
-      "which one. The two axes are not chosen but are the directions those numbers vary most " +
-      "along (correspondence analysis); in brackets, how much of the variation each carries. " +
-      "Distance means something: two requirements stand as close together as they share " +
-      "material, and each stands among the categories it lives on. The centre is the average " +
-      "profile — what sits far out hangs on one corner of the study. Circle = requirement (size " +
-      "= citations, colour = MoSCoW), square = category.",
-    mapAxis: "Axis {n} · {share} % of the variation",
-    mapTipRequirement: "{title} · {n} citations",
-    mapTipCategory: "Category {category} · {n} coding units",
-    summaryMap:
-      "{rows} requirements and {categories} categories in one plane; the first axis carries " +
-      "{first} %, the second {second} % of the variation.",
     chartReachTitle: "Which categories a requirement reaches",
     chartReachCaption:
       "Sorted by reach: at the top the requirements that carry much of the study, at the bottom " +

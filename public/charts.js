@@ -1109,7 +1109,7 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
  * together: a category answered only by pale dots is one the catalog has
  * noticed and postponed.
  */
-export function reachChart(rows, categories, t, { moscow = [], by = "citations" } = {}) {
+export function reachChart(rows, categories, t, { moscow = [] } = {}) {
   let columns = categories.filter((one) => one.sum > 0);
   let withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !columns.length) return null;
@@ -1123,22 +1123,6 @@ export function reachChart(rows, categories, t, { moscow = [], by = "citations" 
     }
   }
   const max = Math.max(1, ...counts.values());
-
-  /**
-   * What a dot's area says.
-   *
-   * `citations` is the raw count: how much material ties this requirement to
-   * this category. `share` is the part of that category's whole material this
-   * one requirement claims — "covers four fifths of everything said about
-   * filing" against "clips a corner of it". They answer different questions and
-   * the second is nearer to influence: twelve citations out of fifteen and
-   * twelve out of two hundred are not the same finding.
-   */
-  const area = (row, column) => {
-    const n = counts.get(`${row.id}|${column.category}`) ?? 0;
-    if (!n) return 0;
-    return by === "share" ? n / Math.max(1, column.sum) : n / max;
-  };
 
   const links = (row) => columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length;
   const answers = (column) =>
@@ -1206,9 +1190,9 @@ export function reachChart(rows, categories, t, { moscow = [], by = "citations" 
   const { size, line: LINE, labels, tallest } = labelColumn(names, { room: LABEL - 12 });
   const CELL = Math.max(24, Math.ceil(tallest * LINE) + 8);
 
-  // By area rather than by width: area is what the eye compares when it
-  // compares circles.
-  const radius = (fraction) => 3.2 + Math.sqrt(fraction) * 4.3;
+  // A dot says how many citations tie the two together, by area rather than by
+  // width: area is what the eye compares when it compares circles.
+  const radius = (n) => 3.2 + Math.sqrt(n / max) * 4.3;
 
   /* The headings run at an angle into the space under the row labels, as the
      heatmap's do — a column the width of a thumbnail holds no category name
@@ -1259,15 +1243,10 @@ export function reachChart(rows, categories, t, { moscow = [], by = "citations" 
           if (!n) return "";
           const only = sole.has(one.category);
           const cx = LABEL + k * width + width / 2;
-          const r = radius(area(row, one));
-          const percent = Math.round((n / Math.max(1, one.sum)) * 100);
-          const values =
-            by === "share"
-              ? { title: row.title, category: one.name, n, percent }
-              : { title: row.title, category: one.name, n };
+          const r = radius(n);
           const tip = only
-            ? t(by === "share" ? "reachTipShareSole" : "reachTipSole", values)
-            : t(by === "share" ? "reachTipShare" : "reachTip", values);
+            ? t("reachTipSole", { title: row.title, category: one.name, n })
+            : t("reachTip", { title: row.title, category: one.name, n });
           return (
             // The ring first, so the dot sits on top of it rather than inside it.
             (only
@@ -1298,10 +1277,10 @@ export function reachChart(rows, categories, t, { moscow = [], by = "citations" 
   ).length;
 
   return {
-    id: by === "share" ? "share" : "reach",
-    file: by === "share" ? "requirement-share.svg" : "requirement-reach.svg",
-    title: by === "share" ? t("chartShareTitle") : t("chartReachTitle"),
-    caption: by === "share" ? t("chartShareCaption") : t("chartReachCaption"),
+    id: "reach",
+    file: "requirement-reach.svg",
+    title: t("chartReachTitle"),
+    caption: t("chartReachCaption"),
     width: WIDTH,
     height,
     body: tally + heads + dots,
@@ -1334,451 +1313,32 @@ export function reachChart(rows, categories, t, { moscow = [], by = "citations" 
 }
 
 /**
- * The catalog as a map: requirements and categories in one plane.
+ * The matrix as a city.
  *
- * An experiment, and an answer to a question the matrix could not settle. A
- * sorted matrix shows *that* some requirements keep company; it cannot show how
- * close, or put a name on what they have in common, because everything in it is
- * on a lattice and distance in it means nothing.
+ * X is the categories, Y is the requirements, and Z is whatever the caller says
+ * a tower is worth. Isometric columns on a lattice, drawn from the back forward
+ * so the near ones cover the far ones, each in the MoSCoW colour of its
+ * requirement.
  *
- * Each requirement is already a vector: how many of its citations fall in each
- * category. That is an embedding, in the ordinary sense — the same shape a
- * language model's weights have, a point in a space with one axis per category
- * — and the question "where do the other two axes come from" has an answer that
- * does not need inventing. They come out of the table. Correspondence analysis
- * takes the axes along which the counts vary most and projects onto the first
- * two, which is the flat picture that loses the least.
+ * Two things this took to become readable.
  *
- * What it buys, and why it is worth the arithmetic: rows and columns land in
- * the *same* plane. A requirement sits among the categories it draws on, and
- * two requirements are near each other exactly to the degree that they draw on
- * the same material. So a cluster is a cluster you can point at, and it comes
- * labelled with the categories inside it.
+ * The towers stand apart. Filling their whole cell they met at the edges and
+ * three neighbours read as one long building; inset by a fifth of a cell each
+ * keeps its own footprint, the floor shows between them, and a gap in the city
+ * is visibly a gap rather than something hidden behind a wall.
  *
- * Three notes on reading it. Distance means something and direction from the
- * centre means something; the axes themselves have no names, and the share of
- * variation each accounts for is written on them so nobody reads more into a
- * short axis than it carries. The centre is the average profile: a requirement
- * near it draws on the study the way the study is, an outlier draws on one
- * corner of it. And it wants three of each to exist at all — two points always
- * lie on a line and would make a picture that says nothing.
+ * And the names run horizontally along the two near edges rather than with
+ * their own axis. Set along its axis, one label lies on the line the next one
+ * starts on — which is how the first attempt turned both edges into a smear.
+ * Written flat, consecutive labels are a whole cell apart in the vertical, and
+ * the two edges read as two staircases of ordinary text.
  *
- * No random numbers anywhere: the axes come from power iteration on a fixed
- * start vector, so the browser and the endpoint draw the same map. A projection
- * that moved every time it was drawn would be a figure nobody could cite.
+ * What the projection costs is still real and still visible: a tall tower in
+ * front hides what stands behind it. Nothing in the drawing can fix that; it is
+ * the price of the third dimension, and worth knowing before reading a hole as
+ * an absence.
  */
-export function clusterMap(rows, categories, t, { moscow = [] } = {}) {
-  const columns = categories.filter((one) => one.sum > 0);
-  const withCitations = rows.filter((row) => row.citations.length);
-  if (withCitations.length < 3 || columns.length < 3) return null;
-
-  const table = withCitations.map((row) =>
-    columns.map(
-      (one) => row.citations.filter((citation) => citation.category === one.category).length,
-    ),
-  );
-  // A row or column of nothing has no profile to place, and would divide by zero.
-  const usableRow = table.map((line) => line.some(Boolean));
-  const usableColumn = columns.map((one, j) => table.some((line) => line[j]));
-  const places = axesOf(
-    table.filter((line, i) => usableRow[i]).map((line) => line.filter((v, j) => usableColumn[j])),
-  );
-  if (!places) return null;
-
-  const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
-  const shownRows = withCitations.filter((row, i) => usableRow[i]);
-  const shownColumns = columns.filter((one, j) => usableColumn[j]);
-
-  const points = [
-    ...shownRows.map((row, i) => ({
-      kind: "requirement",
-      label: row.title,
-      x: places[0].rows[i],
-      y: places[1].rows[i],
-      weight: row.citations.length,
-      level: moscowClass(row.moscow),
-      tip: t("mapTipRequirement", { title: row.title, n: row.citations.length }),
-    })),
-    ...shownColumns.map((one, j) => ({
-      kind: "category",
-      label: one.name,
-      x: places[0].cols[j],
-      y: places[1].cols[j],
-      weight: one.sum,
-      tip: t("mapTipCategory", { category: one.name, n: one.sum }),
-    })),
-  ];
-
-  const PAD = 58;
-  const HEIGHT = 460;
-  const spanX = Math.max(...points.map((one) => Math.abs(one.x))) || 1;
-  const spanY = Math.max(...points.map((one) => Math.abs(one.y))) || 1;
-  /* One scale for both axes. A map whose axes are stretched differently is a
-     map in which distance no longer means what it looks like it means, which is
-     the only thing this figure has to offer. */
-  const span = Math.max(spanX, spanY) * 1.08;
-  const room = Math.min(WIDTH - 2 * PAD, HEIGHT - 2 * PAD) / 2;
-  const midX = WIDTH / 2;
-  const midY = HEIGHT / 2 - 6;
-  const at = (one) => ({ x: midX + (one.x / span) * room, y: midY - (one.y / span) * room });
-
-  const biggest = Math.max(1, ...points.map((one) => one.weight));
-  const radius = (weight) => 3.4 + Math.sqrt(weight / biggest) * 5.2;
-
-  const cross =
-    `<line class="grid" x1="${midX - room - 14}" y1="${midY}" x2="${midX + room + 14}" y2="${midY}"></line>` +
-    `<line class="grid" x1="${midX}" y1="${midY - room - 14}" x2="${midX}" y2="${midY + room + 14}"></line>`;
-
-  /* Labels are the hard part of any map. Placed to the right of their mark and
-     pushed down past whatever is already there — greedy, in the order the
-     points are drawn, categories first because they are what the map is read
-     against. Crude, and better than a pile of overlapping words. */
-  const taken = [];
-  const laid = [...points]
-    .sort((a, b) => (a.kind === b.kind ? b.weight - a.weight : a.kind === "category" ? -1 : 1))
-    .map((one) => {
-      const spot = at(one);
-      const text = shorten(one.label, 26);
-      const wide = estimateWidth(text, { size: 9.5 });
-      let x = spot.x + radius(one.weight) + 4;
-      let y = spot.y + 3;
-      for (let tries = 0; tries < 14; tries += 1) {
-        const clash = taken.some(
-          (box) => Math.abs(box.y - y) < 11 && x < box.x + box.wide + 4 && box.x < x + wide + 4,
-        );
-        if (!clash) break;
-        y += 11;
-      }
-      taken.push({ x, y, wide });
-      return { one, spot, text, x, y };
-    });
-
-  /* Requirements first and categories over them. A requirement that lives on
-     one category lands on top of it — which is the method working, not a fault
-     — and whichever is drawn second is the one you can see. The category is the
-     landmark, so it wins; and it is drawn wider than the widest dot, so it
-     reads as a ring around the pile rather than as something hidden under it. */
-  const mark = ({ one, spot, text, x, y }) =>
-    one.kind === "requirement"
-      ? `<circle class="map-point ${one.level}" cx="${spot.x.toFixed(2)}" cy="${spot.y.toFixed(2)}"` +
-        ` r="${radius(one.weight).toFixed(2)}" data-row="${escape(one.label)}"` +
-        ` data-value="${one.weight}" data-tip="${escape(one.tip)}"></circle>`
-      : `<rect class="map-category" x="${(spot.x - 6.5).toFixed(2)}" y="${(spot.y - 6.5).toFixed(2)}"` +
-        ` width="13" height="13" data-category="${escape(one.label)}"` +
-        ` data-value="${one.weight}" data-tip="${escape(one.tip)}"></rect>`;
-  const label = ({ one, text, x, y }) =>
-    `<text class="map-label${one.kind === "category" ? " category" : ""}"` +
-    ` x="${x.toFixed(2)}" y="${y.toFixed(2)}">${escape(text)}</text>`;
-
-  const marks =
-    laid.filter(({ one }) => one.kind === "requirement").map(mark).join("") +
-    laid.filter(({ one }) => one.kind === "category").map(mark).join("") +
-    laid.map(label).join("");
-
-  const share = (k) => Math.round(places[k].share * 100);
-  /* Both titles outside the field, at the far end of their own axis. Rotated
-     text swaps its coordinates, which is how the second one ended up standing
-     in the middle of the map across the vertical line. */
-  const axisLabels =
-    `<text class="axis-title" x="${WIDTH - 6}" y="${HEIGHT - 6}" text-anchor="end">` +
-    `${escape(t("mapAxis", { n: 1, share: share(0) }))}</text>` +
-    `<text class="axis-title" x="-6" y="11" text-anchor="end" transform="rotate(-90)">` +
-    `${escape(t("mapAxis", { n: 2, share: share(1) }))}</text>`;
-
-  return {
-    id: "map",
-    file: "catalog-map.svg",
-    title: t("chartMapTitle"),
-    caption: t("chartMapCaption"),
-    width: WIDTH,
-    height: HEIGHT,
-    body: cross + axisLabels + marks,
-    legend: {
-      kind: "moscow",
-      entries: [...MOSCOW_ORDER, "open"].map((id) => ({
-        paint: moscowClass(id),
-        label: id === "open" ? t("open") : nameOf(id),
-      })),
-    },
-    summary: t("summaryMap", {
-      rows: shownRows.length,
-      categories: shownColumns.length,
-      first: share(0),
-      second: share(1),
-    }),
-  };
-}
-
-/**
- * The two axes a table varies most along, by correspondence analysis.
- *
- * Standardized residuals, then the two leading singular triplets by power
- * iteration with deflation — small tables, so an exact method would be
- * overkill and this converges in a few hundred passes. The start vector is
- * fixed, and every sign is settled by a rule rather than by whatever the
- * arithmetic happened to produce, so the same table always gives the same map.
- *
- * Returns the principal coordinates of the rows and of the columns on each
- * axis, in the same units — which is what puts both in one plane — with the
- * share of the table's total variation that axis accounts for.
- */
-function axesOf(table, { wanted = 2, passes = 300 } = {}) {
-  const R = table.length;
-  const C = table[0]?.length ?? 0;
-  if (R < 3 || C < 3) return null;
-  const n = table.reduce((sum, line) => sum + line.reduce((a, b) => a + b, 0), 0);
-  if (!n) return null;
-
-  const P = table.map((line) => line.map((value) => value / n));
-  const mass = P.map((line) => line.reduce((a, b) => a + b, 0));
-  const weight = Array.from({ length: C }, (_, j) => P.reduce((sum, line) => sum + line[j], 0));
-  if (mass.some((one) => !one) || weight.some((one) => !one)) return null;
-
-  const S = P.map((line, i) =>
-    line.map((p, j) => (p - mass[i] * weight[j]) / Math.sqrt(mass[i] * weight[j])),
-  );
-  const inertia = S.flat().reduce((sum, x) => sum + x * x, 0);
-  if (inertia < 1e-12) return null;
-
-  let A = S.map((a) => S.map((b) => a.reduce((sum, x, j) => sum + x * b[j], 0)));
-  const times = (M, v) => M.map((line) => line.reduce((sum, x, j) => sum + x * v[j], 0));
-  const length = (v) => Math.sqrt(v.reduce((sum, x) => sum + x * x, 0));
-
-  const found = [];
-  for (let k = 0; k < wanted; k += 1) {
-    // Fixed and not uniform: a uniform start is orthogonal to some eigenvectors
-    // of a symmetric matrix, and would find the wrong one or nothing at all.
-    let v = Array.from({ length: R }, (_, i) => 1 / (i + 2));
-    for (let pass = 0; pass < passes; pass += 1) {
-      const next = times(A, v);
-      const len = length(next);
-      if (len < 1e-12) break;
-      v = next.map((x) => x / len);
-    }
-    const Av = times(A, v);
-    const eigen = v.reduce((sum, x, i) => sum + x * Av[i], 0);
-    if (eigen <= 1e-10) break;
-    found.push({ u: v, sigma: Math.sqrt(eigen) });
-    A = A.map((line, i) => line.map((x, j) => x - eigen * v[i] * v[j]));
-  }
-  if (found.length < wanted) return null;
-
-  return found.map(({ u, sigma }) => {
-    const v = Array.from(
-      { length: C },
-      (_, j) => S.reduce((sum, line, i) => sum + line[j] * u[i], 0) / sigma,
-    );
-    const rows = u.map((x, i) => (sigma * x) / Math.sqrt(mass[i]));
-    const cols = v.map((x, j) => (sigma * x) / Math.sqrt(weight[j]));
-    /* A singular vector is only defined up to its sign, so an axis could come
-       out mirrored from one run to the next with nothing wrong. Pinned: the
-       point furthest from the centre sits on the positive side. */
-    const far = rows.reduce((best, x, i) => (Math.abs(x) > Math.abs(rows[best]) ? i : best), 0);
-    const flip = rows[far] < 0 ? -1 : 1;
-    return {
-      sigma,
-      share: (sigma * sigma) / inertia,
-      rows: rows.map((x) => x * flip),
-      cols: cols.map((x) => x * flip),
-    };
-  });
-}
-
-/**
- * The catalog as a cloud: three axes out of the same table.
- *
- * The flat map put everything that shares a profile on one spot, and on a real
- * study that is most of it — one requirement with an odd profile takes the
- * first axis for itself and squashes the rest onto the centre line. A third
- * axis does not repair that; it adds the next-strongest direction, and things
- * that lay on top of each other in two dimensions can come apart in the third.
- *
- * Isometric, not perspective: parallel lines stay parallel, so a distance means
- * the same thing wherever it is on the page. Depth is carried three ways at
- * once, because on paper one is never enough — a point further back is drawn
- * smaller and paler, everything is drawn back to front so the near hides the
- * far, and every point drops a line to the floor grid. The drop lines are what
- * actually make it readable: without them a dot in the air has no address.
- *
- * Names are numbers here, with the key underneath. Twenty-five labels beside
- * twenty-five points is the thing that made the flat map unreadable, and in a
- * projection where points cross each other it would be worse.
- */
-export function cloudMap(rows, categories, t, { moscow = [] } = {}) {
-  const columns = categories.filter((one) => one.sum > 0);
-  const withCitations = rows.filter((row) => row.citations.length);
-  if (withCitations.length < 4 || columns.length < 4) return null;
-
-  const table = withCitations.map((row) =>
-    columns.map(
-      (one) => row.citations.filter((citation) => citation.category === one.category).length,
-    ),
-  );
-  const usableRow = table.map((line) => line.some(Boolean));
-  const usableColumn = columns.map((one, j) => table.some((line) => line[j]));
-  const places = axesOf(
-    table.filter((line, i) => usableRow[i]).map((line) => line.filter((v, j) => usableColumn[j])),
-    { wanted: 3 },
-  );
-  if (!places) return null;
-
-  const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
-  const shownRows = withCitations.filter((row, i) => usableRow[i]);
-  const shownColumns = columns.filter((one, j) => usableColumn[j]);
-
-  const points = [
-    ...shownRows.map((row, i) => ({
-      kind: "requirement",
-      label: row.title,
-      x: places[0].rows[i],
-      y: places[1].rows[i],
-      z: places[2].rows[i],
-      weight: row.citations.length,
-      level: moscowClass(row.moscow),
-      tip: t("mapTipRequirement", { title: row.title, n: row.citations.length }),
-    })),
-    ...shownColumns.map((one, j) => ({
-      kind: "category",
-      label: one.name,
-      x: places[0].cols[j],
-      y: places[1].cols[j],
-      z: places[2].cols[j],
-      weight: one.sum,
-      tip: t("mapTipCategory", { category: one.name, n: one.sum }),
-    })),
-  ].map((one, index) => ({ ...one, number: index + 1 }));
-
-  const span =
-    Math.max(...points.flatMap((one) => [Math.abs(one.x), Math.abs(one.y), Math.abs(one.z)])) || 1;
-  const unit = (value) => value / (span * 1.05);
-
-  /* The isometric convention: x runs down-right, z runs down-left, y is up. */
-  const COS = Math.cos(Math.PI / 6);
-  const SIN = Math.sin(Math.PI / 6);
-  const SCALE = 150;
-  const FIELD = 360;
-  const midX = WIDTH / 2;
-  const midY = 168;
-  const flat = (x, y, z) => ({
-    x: midX + (unit(x) - unit(z)) * COS * SCALE,
-    y: midY + ((unit(x) + unit(z)) * SIN - unit(y)) * SCALE,
-  });
-
-  /* A floor to drop onto. Without it the cloud has no orientation at all and
-     the drop lines below have nothing to end on. */
-  const FLOOR = -1;
-  let floor = "";
-  for (let step = -1; step <= 1; step += 0.5) {
-    const a = flat(step * span, FLOOR * span, -span);
-    const b = flat(step * span, FLOOR * span, span);
-    const c = flat(-span, FLOOR * span, step * span);
-    const d = flat(span, FLOOR * span, step * span);
-    floor +=
-      `<line class="floor" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"></line>` +
-      `<line class="floor" x1="${c.x.toFixed(1)}" y1="${c.y.toFixed(1)}" x2="${d.x.toFixed(1)}" y2="${d.y.toFixed(1)}"></line>`;
-  }
-
-  const biggest = Math.max(1, ...points.map((one) => one.weight));
-  // Depth in three channels at once: size, paleness, and who covers whom.
-  const placed = points
-    .map((one) => {
-      const spot = flat(one.x, one.y, one.z);
-      const foot = flat(one.x, FLOOR * span, one.z);
-      // How near the viewer, 0 back to 1 front, along the isometric depth.
-      const near = (unit(one.x) + unit(one.z) + 2) / 4;
-      const size = (3 + Math.sqrt(one.weight / biggest) * 4.5) * (0.72 + near * 0.5);
-      return { ...one, spot, foot, near, size };
-    })
-    .sort((a, b) => a.near - b.near);
-
-  const marks = placed
-    .map((one) => {
-      const fade = (0.45 + one.near * 0.55).toFixed(2);
-      const drop =
-        `<line class="drop" x1="${one.spot.x.toFixed(1)}" y1="${one.spot.y.toFixed(1)}"` +
-        ` x2="${one.foot.x.toFixed(1)}" y2="${one.foot.y.toFixed(1)}" opacity="${fade}"></line>` +
-        `<circle class="foot" cx="${one.foot.x.toFixed(1)}" cy="${one.foot.y.toFixed(1)}" r="1.4"` +
-        ` opacity="${fade}"></circle>`;
-      const body =
-        one.kind === "requirement"
-          ? `<circle class="map-point ${one.level}" cx="${one.spot.x.toFixed(1)}" cy="${one.spot.y.toFixed(1)}"` +
-            ` r="${one.size.toFixed(2)}" opacity="${fade}" data-row="${escape(one.label)}"` +
-            ` data-value="${one.weight}" data-tip="${escape(one.tip)}"></circle>`
-          : `<rect class="map-category" x="${(one.spot.x - one.size).toFixed(1)}"` +
-            ` y="${(one.spot.y - one.size).toFixed(1)}" width="${(one.size * 2).toFixed(1)}"` +
-            ` height="${(one.size * 2).toFixed(1)}" opacity="${fade}"` +
-            ` data-category="${escape(one.label)}" data-value="${one.weight}"` +
-            ` data-tip="${escape(one.tip)}"></rect>`;
-      return (
-        drop +
-        body +
-        `<text class="map-number" x="${(one.spot.x + one.size + 2).toFixed(1)}"` +
-        ` y="${(one.spot.y + 3).toFixed(1)}">${one.number}</text>`
-      );
-    })
-    .join("");
-
-  /* The key, drawn in rather than written beside: a figure that leaves this
-     tool has to carry the names of its own points. */
-  const KEY_TOP = midY + FIELD / 2 + 26;
-  const perColumn = Math.ceil(points.length / 3);
-  const key = points
-    .map((one, index) => {
-      const column = Math.floor(index / perColumn);
-      const x = 8 + column * ((WIDTH - 16) / 3);
-      const y = KEY_TOP + (index % perColumn) * 12;
-      const text = shorten(`${one.number}  ${one.label}`, 34);
-      return (
-        `<text class="map-key${one.kind === "category" ? " category" : ""}"` +
-        ` x="${x}" y="${y}">${escape(text)}</text>`
-      );
-    })
-    .join("");
-  const height = KEY_TOP + perColumn * 12;
-
-  const share = (k) => Math.round(places[k].share * 100);
-  return {
-    id: "cloud",
-    file: "catalog-cloud.svg",
-    title: t("chartCloudTitle"),
-    caption: t("chartCloudCaption"),
-    width: WIDTH,
-    height,
-    body: floor + marks + key,
-    legend: {
-      kind: "moscow",
-      entries: [...MOSCOW_ORDER, "open"].map((id) => ({
-        paint: moscowClass(id),
-        label: id === "open" ? t("open") : nameOf(id),
-      })),
-    },
-    summary: t("summaryCloud", {
-      rows: shownRows.length,
-      categories: shownColumns.length,
-      first: share(0),
-      second: share(1),
-      third: share(2),
-      total: share(0) + share(1) + share(2),
-    }),
-  };
-}
-
-/**
- * The matrix as a city: your model, taken literally.
- *
- * X is the categories, Y is the requirements, Z is the one thing a cell can
- * hold a number of — citations. Isometric columns on a lattice, drawn from the
- * back forward so the near ones cover the far ones, each in the MoSCoW colour
- * of its requirement.
- *
- * It is here to be looked at rather than argued about, but the argument against
- * it is visible in the picture itself: a tall column in front hides whatever
- * stands behind it, and two columns of the same height read as different
- * heights depending on how far back they are. Both are properties of the
- * projection, not of the drawing — which is why the flat matrix carries the
- * same number as an area and can be read at a glance.
- */
-export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
+export function cityPlot(rows, categories, t, { moscow = [], by = "citations" } = {}) {
   const columns = categories.filter((one) => one.sum > 0);
   const withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !columns.length) return null;
@@ -1790,25 +1350,60 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
   }
-  const max = Math.max(1, ...counts.values());
   const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
+
+  /**
+   * What a tower is worth.
+   *
+   * `citations` is the material in that one cell — how much was said that ties
+   * this requirement to this category. Every tower in a row can differ.
+   *
+   * `departments` is how many departments the *requirement* serves, so every
+   * tower in a row is the same height and a row reads as a ridge: length is how
+   * far the requirement reaches across the study, height is how many parts of
+   * the organisation named it. A requirement carried by one department is a low
+   * long row; one everybody named stands up across its whole reach. The two are
+   * different questions and the second is not derivable from the first — a
+   * requirement can rest on a great deal of material from a single department.
+   */
+  const height = (row) =>
+    by === "departments" ? row.departments.length : 0;
+  const cellValue = (row, column) => {
+    const n = counts.get(`${row.id}|${column.category}`) ?? 0;
+    if (!n) return 0;
+    return by === "departments" ? Math.max(1, height(row)) : n;
+  };
+  const max = Math.max(
+    1,
+    ...withCitations.flatMap((row) => columns.map((one) => cellValue(row, one))),
+  );
 
   const COS = Math.cos(Math.PI / 6);
   const SIN = Math.sin(Math.PI / 6);
-  const CELL = Math.max(14, Math.min(30, 560 / (columns.length + withCitations.length)));
-  const TALL = 120;
-  const midX = WIDTH / 2 + ((withCitations.length - columns.length) * CELL * COS) / 2;
-  const top = TALL + 40;
+  /* Room for a name at each end of both axes. The labels are ordinary
+     horizontal text, so what they need is width, and the grid gets what is
+     left. */
+  const NAMES = 132;
+  const CELL = Math.max(
+    14,
+    Math.min(34, (WIDTH - 2 * NAMES) / ((columns.length + withCitations.length) * COS)),
+  );
+  const TALL = 96;
+  const INSET = 0.2;
+
+  const spread = (columns.length + withCitations.length) * CELL * SIN;
+  // Centred on the diamond itself, with a name's width outside each of its two
+  // side corners.
+  const midX = (WIDTH - (columns.length - withCitations.length) * CELL * COS) / 2;
+  const top = TALL + 26;
   const foot = (i, j) => ({
     x: midX + (j - i) * CELL * COS,
     y: top + (j + i) * CELL * SIN,
   });
+  const canvas = top + spread + 34;
 
-  const height =
-    top + (columns.length + withCitations.length) * CELL * SIN + 96;
-
-  /* The lattice first, so every column stands on a visible square and an empty
-     cell is a hole in a floor rather than nothing at all. */
+  /* The lattice first, so a tower stands on a visible square and an empty cell
+     is a hole in a floor rather than nothing at all. */
   let lattice = "";
   for (let i = 0; i <= withCitations.length; i += 1) {
     const a = foot(i, 0);
@@ -1825,64 +1420,84 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
   const cells = [];
   for (let i = 0; i < withCitations.length; i += 1) {
     for (let j = 0; j < columns.length; j += 1) {
-      const n = counts.get(`${withCitations[i].id}|${columns[j].category}`) ?? 0;
-      if (n) cells.push({ i, j, n });
+      const value = cellValue(withCitations[i], columns[j]);
+      if (value) cells.push({ i, j, value, n: counts.get(`${withCitations[i].id}|${columns[j].category}`) });
     }
   }
   cells.sort((a, b) => a.i + a.j - (b.i + b.j));
 
-  const bars = cells
-    .map(({ i, j, n }) => {
+  const towers = cells
+    .map(({ i, j, value, n }) => {
       const row = withCitations[i];
-      const rise = (n / max) * TALL;
-      const a = foot(i, j);
-      const b = foot(i, j + 1);
-      const c = foot(i + 1, j + 1);
-      const d = foot(i + 1, j);
+      const rise = (value / max) * TALL;
+      const a = foot(i + INSET, j + INSET);
+      const b = foot(i + INSET, j + 1 - INSET);
+      const c = foot(i + 1 - INSET, j + 1 - INSET);
+      const d = foot(i + 1 - INSET, j + INSET);
       const up = (point) => `${point.x.toFixed(1)} ${(point.y - rise).toFixed(1)}`;
-      const tip = t("reachTip", { title: row.title, category: columns[j].name, n });
+      const down = (point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
+      const tip =
+        by === "departments"
+          ? t("cityTipDepartments", {
+              title: row.title,
+              category: columns[j].name,
+              n,
+              departments: row.departments.length,
+            })
+          : t("reachTip", { title: row.title, category: columns[j].name, n });
       const level = moscowClass(row.moscow);
       return (
         `<g class="tower" data-row="${escape(row.title)}" data-category="${escape(columns[j].name)}"` +
-        ` data-value="${n}" data-tip="${escape(tip)}">` +
+        ` data-value="${value}" data-citations="${n}" data-tip="${escape(tip)}">` +
         `<polygon class="face top ${level}" points="${up(a)} ${up(b)} ${up(c)} ${up(d)}"></polygon>` +
-        `<polygon class="face left ${level}" points="${up(a)} ${up(d)} ${d.x.toFixed(1)} ${d.y.toFixed(1)} ${a.x.toFixed(1)} ${a.y.toFixed(1)}"></polygon>` +
-        `<polygon class="face right ${level}" points="${up(d)} ${up(c)} ${c.x.toFixed(1)} ${c.y.toFixed(1)} ${d.x.toFixed(1)} ${d.y.toFixed(1)}"></polygon>` +
+        `<polygon class="face left ${level}" points="${up(a)} ${up(d)} ${down(d)} ${down(a)}"></polygon>` +
+        `<polygon class="face right ${level}" points="${up(d)} ${up(c)} ${down(c)} ${down(d)}"></polygon>` +
         `</g>`
       );
     })
     .join("");
 
-  // Names along the two near edges, each running with its own axis.
+  /* Names flat along the two *near* edges, each running outward from the city.
+     Which two edges those are is the whole of it: put on a far edge, a label
+     sits exactly where the towers of its own row rise through, and no amount of
+     nudging saves it. The near-left edge belongs to the categories and its
+     outside is to the left; the near-right edge belongs to the requirements and
+     its outside is to the right. Written flat, consecutive labels are a whole
+     cell apart in the vertical, which is what keeps them off each other. */
+  const letters = Math.max(8, Math.floor((NAMES - 14) / 4.7));
   const categoryNames = columns
     .map((one, j) => {
       const spot = foot(withCitations.length, j + 0.5);
       return (
-        `<text class="axis city" x="${(spot.x + 4).toFixed(1)}" y="${(spot.y + 4).toFixed(1)}"` +
-        ` transform="rotate(30 ${(spot.x + 4).toFixed(1)} ${(spot.y + 4).toFixed(1)})">` +
-        `<title>${escape(one.name)}</title>${escape(shorten(one.name, 18))}</text>`
+        `<text class="axis city" x="${(spot.x - 9).toFixed(1)}" y="${(spot.y + 3).toFixed(1)}"` +
+        ` text-anchor="end"><title>${escape(one.name)}</title>` +
+        `${escape(shorten(one.name, letters))}</text>`
       );
     })
     .join("");
   const requirementNames = withCitations
     .map((row, i) => {
-      const spot = foot(i + 0.5, 0);
+      const spot = foot(i + 0.5, columns.length);
       return (
-        `<text class="axis city" x="${(spot.x - 6).toFixed(1)}" y="${(spot.y + 4).toFixed(1)}"` +
-        ` text-anchor="end" transform="rotate(-30 ${(spot.x - 6).toFixed(1)} ${(spot.y + 4).toFixed(1)})">` +
-        `<title>${escape(row.title)}</title>${escape(shorten(row.title, 20))}</text>`
+        `<text class="axis city" x="${(spot.x + 9).toFixed(1)}" y="${(spot.y + 3).toFixed(1)}">` +
+        `<title>${escape(row.title)}</title>${escape(shorten(row.title, letters))}</text>`
       );
     })
     .join("");
 
+  const tallest = withCitations.reduce(
+    (best, row) => (height(row) > (best ? height(best) : -1) ? row : best),
+    null,
+  );
+
   return {
-    id: "city",
-    file: "catalog-city.svg",
-    title: t("chartCityTitle"),
-    caption: t("chartCityCaption"),
+    id: by === "departments" ? "city-departments" : "city",
+    file: by === "departments" ? "catalog-city-departments.svg" : "catalog-city.svg",
+    title: by === "departments" ? t("chartCityDepartmentsTitle") : t("chartCityTitle"),
+    caption: by === "departments" ? t("chartCityDepartmentsCaption") : t("chartCityCaption"),
     width: WIDTH,
-    height,
-    body: lattice + bars + categoryNames + requirementNames,
+    height: canvas,
+    body: lattice + towers + categoryNames + requirementNames,
     legend: {
       kind: "moscow",
       entries: [...MOSCOW_ORDER, "open"].map((id) => ({
@@ -1890,11 +1505,35 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
         label: id === "open" ? t("open") : nameOf(id),
       })),
     },
-    summary: t("summaryCity", {
-      rows: withCitations.length,
-      categories: columns.length,
-      max,
-    }),
+    /* Every chart carries its numbers as a table as well. Here it matters more
+       than usual: a tower hidden behind a taller one is unreadable in the
+       picture by construction, and the table is where it is still readable. */
+    figures: {
+      caption: by === "departments" ? t("cityDepartmentsFiguresCaption") : t("cityFiguresCaption"),
+      columns: [
+        t("columnRequirement"),
+        ...columns.map((one) => one.name),
+        by === "departments" ? t("columnDepartments") : t("total"),
+      ],
+      rows: withCitations.map((row) => [
+        row.title,
+        ...columns.map((one) => counts.get(`${row.id}|${one.category}`) ?? 0),
+        by === "departments" ? row.departments.length : row.citations.length,
+      ]),
+    },
+    summary:
+      by === "departments"
+        ? t("summaryCityDepartments", {
+            rows: withCitations.length,
+            categories: columns.length,
+            top: tallest?.title ?? "—",
+            max,
+          })
+        : t("summaryCity", {
+            rows: withCitations.length,
+            categories: columns.length,
+            max,
+          }),
   };
 }
 
@@ -2023,7 +1662,6 @@ export function stylesheet(theme = "light") {
         `.moscow-band.moscow-${id}{fill:${colour}}` +
         `.point.moscow-${id}{fill:${colour}}` +
         `.reach.moscow-${id}{fill:${colour}}` +
-        `.map-point.moscow-${id}{fill:${colour}}` +
         `.face.moscow-${id}{fill:${colour}}`,
     )
     .join("");
@@ -2046,18 +1684,9 @@ export function stylesheet(theme = "light") {
     `.axis.unmet{fill:${c.inkFaint}}` +
     `.reach{stroke:${c.sheet};stroke-width:1}` +
     `.reach-sole{fill:none;stroke:${c.inkSoft};stroke-width:1}` +
-    `.map-point{stroke:${c.sheet};stroke-width:1}` +
-    `.map-category{fill:none;stroke:${c.inkSoft};stroke-width:1.4}` +
-    `.map-label{fill:${c.ink};font-size:9.5px;font-family:${FONTS.sans}}` +
-    `.map-label.category{fill:${c.inkSoft};font-style:italic}` +
     `.floor{stroke:${c.line}}` +
-    `.drop{stroke:${c.lineStrong};stroke-dasharray:2 2}` +
-    `.foot{fill:${c.inkFaint}}` +
-    `.map-number{fill:${c.inkSoft};font-size:8.5px;font-family:${FONTS.mono}}` +
-    `.map-key{fill:${c.ink};font-size:9px;font-family:${FONTS.sans}}` +
-    `.map-key.category{fill:${c.inkSoft};font-style:italic}` +
     `.axis.city{font-size:8.5px}` +
-    `.face{stroke:${c.sheet};stroke-width:.4}` +
+    `.face{stroke:${c.sheet};stroke-width:.6}` +
     `.face.left{opacity:.78}.face.right{opacity:.58}` +
     `.axis-title{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
     `.row-label{fill:${c.ink};font-size:11.5px;font-family:${FONTS.sans}}` +

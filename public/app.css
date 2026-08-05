@@ -2005,39 +2005,15 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
    already says something about the row. */
 .chart .reach-sole { fill: none; stroke: var(--ink-soft); stroke-width: 1; }
 
-/* The map. A requirement is a filled dot in its MoSCoW colour; a category is a
-   small open square, because it is a landmark rather than a thing being placed
-   — the map is read against the categories. */
-.chart .map-point { fill: var(--moscow); stroke: var(--sheet); stroke-width: 1; }
-.chart .map-point:hover { stroke: var(--ink); }
-.chart .map-category { fill: none; stroke: var(--ink-soft); stroke-width: 1.4; }
-.chart .map-category:hover { stroke: var(--ink); }
-.chart .map-label {
-  fill: var(--ink);
-  font-size: 9.5px;
-  font-family: var(--sans);
-  pointer-events: none;
-}
-.chart .map-label.category { fill: var(--ink-soft); font-style: italic; }
-
-/* The cloud and the city: floor, drop lines, numbers, key. Depth on paper needs
-   more than one signal, so size and paleness and covering all say it at once. */
+/* The city: the lattice a tower stands on, and the names along its two near
+   edges. Written flat rather than along their own axis — set along it, one
+   label lies on the line the next one starts on. */
 .chart .floor { stroke: var(--line); }
-.chart .drop { stroke: var(--line-strong); stroke-dasharray: 2 2; }
-.chart .foot { fill: var(--ink-faint); }
-.chart .map-number {
-  fill: var(--ink-soft);
-  font-size: 8.5px;
-  font-family: var(--mono);
-  pointer-events: none;
-}
-.chart .map-key { fill: var(--ink); font-size: 9px; font-family: var(--sans); }
-.chart .map-key.category { fill: var(--ink-soft); font-style: italic; }
 .chart .axis.city { font-size: 8.5px; }
 
 /* A column of the city, lit from the left: the same colour at three strengths,
    which is what makes a box read as a box rather than as three flat shapes. */
-.chart .face { stroke: var(--sheet); stroke-width: .4; }
+.chart .face { stroke: var(--sheet); stroke-width: .6; }
 .chart .face.top { fill: var(--moscow); }
 .chart .face.left { fill: var(--moscow); opacity: .78; }
 .chart .face.right { fill: var(--moscow); opacity: .58; }
