@@ -31,6 +31,13 @@ where it lies.
 
 ### Changed
 
+- **A search that finds nothing says where the word does turn up.** The search
+  covers what people said, which is right — a guide prompt is the question, not
+  the answer — but the method makes prompts and category names share their
+  vocabulary with the material. Searching a study whose first guide prompt is
+  called "Ablage" for the word Ablage gave "kein Treffer" while the word stood on
+  the screen three times. It now names the prompt or the category it is, and
+  stays quiet when the word really is nowhere.
 - **The catalog opens on the requirements, not on figures about them.** It is a
   whole view that only exists once somebody has built requirements, which is why
   it had never been looked at with anything in it. Built out, it opened on three
@@ -86,6 +93,10 @@ now needs to be served from the same origin.
 
 ### Fixed
 
+- **The search field keeps its width in both languages.** The key legend beside
+  it is longer in English than in German, and the field yielded to it: the same
+  input was 344px in one language and 228px in the other, which cut its own
+  placeholder off mid-word. The control keeps its room now and the legend wraps.
 - **A page on another site can no longer change your study.** Binding to
   127.0.0.1 keeps the tool off the network and does nothing about the browser
   already on the machine — that address is exactly the one a hostile page would

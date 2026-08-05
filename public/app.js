@@ -596,12 +596,42 @@ async function searchElsewhere(word) {
   }
 }
 
+/**
+ * Where a word turns up when nobody said it.
+ *
+ * The search covers what people said, which is right: a guide prompt is the
+ * question, not the answer, and a category name is the tool's word rather than
+ * the respondent's. But those two share their vocabulary with the material by
+ * the nature of the method — that is what a deductive category *is* — so
+ * searching for "Ablage" in a study whose first guide prompt is called Ablage
+ * gives "kein Treffer" while the word stands on the screen three times. Correct,
+ * and it reads like a broken search.
+ */
+function alsoKnownAs(word) {
+  const wanted = word.trim().toLowerCase();
+  if (wanted.length < 2) return "";
+  const sections = (state.transcript?.sections ?? [])
+    .filter((section) => section.name.toLowerCase().includes(wanted))
+    .map((section) => section.name);
+  const categories = (state.categories ?? [])
+    .filter((category) => category.name.toLowerCase().includes(wanted))
+    .map((category) => category.name);
+  if (!sections.length && !categories.length) return "";
+  const parts = [];
+  if (sections.length) parts.push(t("searchInGuide", { names: sections.join(", ") }));
+  if (categories.length) parts.push(t("searchInCategories", { names: categories.join(", ") }));
+  return `<p class="column-note">${t("searchNotSpoken")} ${parts.join(" ")}</p>`;
+}
+
 function showElsewhere(data) {
   const field = $("#search-elsewhere");
   const others = (data.interviews ?? []).filter((i) => i.id !== state.current);
   if (!others.length) {
-    field.hidden = true;
-    field.innerHTML = "";
+    // Nothing anybody said, anywhere — but the word may still be on the screen,
+    // and a dead end that explains itself is not a dead end.
+    const elsewhere = state.matches.length ? "" : alsoKnownAs(data.word ?? state.search ?? "");
+    field.hidden = !elsewhere;
+    field.innerHTML = elsewhere;
     return;
   }
   field.hidden = false;

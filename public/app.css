@@ -336,14 +336,24 @@ button, select, input, textarea {
   display: flex;
   align-items: center;
   gap: .4rem;
+  /* So the reminder can step onto its own line rather than squeezing the field
+     it is a reminder about. */
+  flex-wrap: wrap;
 }
 .search input {
   flex: 1 1 auto;
-  min-width: 0;
+  /* Not zero. With `min-width: 0` the field yielded to everything beside it,
+     and the key legend is longer in English than in German — the same field
+     came out 344px in one language and 228px in the other, which cut the
+     English placeholder off mid-word. The control keeps its room; the legend
+     wraps. */
+  min-width: 18rem;
   max-width: 22rem;
   font-family: inherit;
   font-size: .8rem;
 }
+/* Pushed to the end of whatever line it lands on. */
+.search .keys { margin-left: auto; }
 .search-status {
   font-family: var(--mono);
   font-size: .62rem;
