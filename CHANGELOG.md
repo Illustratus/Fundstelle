@@ -28,6 +28,23 @@ where it lies.
   the licence, and the image — which ships no `package.json` — carries the same
   string in its environment, so the label and the running tool cannot disagree.
 
+### Fixed
+
+- **An interview name from a URL can no longer decide where the files are.**
+  `/api/interviews/<id>` joins that name onto the transcript folder to build
+  every path for that interview, and a URL can say `..%2f..%2fetc`: reading
+  resolved two levels above the root, a longer chain walked further up, and the
+  write path was the same join. The read was always of a file called `final.md`
+  and the tool binds to 127.0.0.1, which makes it smaller than it looks and no
+  smaller than it is. Static files were already guarded; this was the other door.
+  The rule is kept where the paths are built — the transcript loader and the
+  store — so no route can forget it, and again at the boundary, so a crafted name
+  now gets a 404 that reads as a sentence.
+- **No answer carries a path from the machine the tool runs on.** An unknown
+  interview came back as a 500 whose message was the absolute path it had tried
+  to open. Named cases still read as sentences; anything unforeseen now says that
+  it happened and where to look, and the detail goes to the terminal.
+
 ### Changed
 
 - **The figures are drawn at the size they were drawn for.** The charts are

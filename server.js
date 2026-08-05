@@ -168,7 +168,15 @@ async function body(request) {
 
 /** Transcript with checked anchors; unambiguous cases are moved right away. */
 async function loadChecked(id) {
-  const transcript = await loadTranscript(TRANSCRIPTS, id);
+  /* An id that names no folder is a wrong address, not a broken tool: without
+     this it came back as a 500 carrying the absolute path it had tried to open,
+     which is both the wrong status and more than anybody asking needs to know. */
+  const transcript = await loadTranscript(TRANSCRIPTS, id).catch((error) => {
+    if (error.code === "ENOENT" || error.code === "ENOTDIR") {
+      throw Object.assign(fail("errorUnknownInterview"), { status: 404 });
+    }
+    throw error;
+  });
   const { codings, memo } = await store.codings(id);
   const { codings: checked, changed } = checkAnchors(transcript, codings);
   if (changed) await store.setCodings(id, withoutCheckMarks(checked));
@@ -742,8 +750,13 @@ const server = createServer(async (request, response) => {
     else if (error.key) console.error(`${error.key}: ${t(error.key, error.params)}`);
     // The storage layer throws a key; the request knows the language. Anything
     // without a key is an unforeseen error and keeps its own wording.
+    /* A named case reads as a sentence and is meant for the reader. Anything
+       else is an internal accident, and its wording is written for whoever is
+       looking at the terminal — it has carried absolute paths from the machine
+       the tool runs on. The operator gets it in full above; the browser gets
+       the fact that it happened and where to look. */
     send(response, status, {
-      error: error.key ? t(error.key, error.params) : error.message,
+      error: error.key ? t(error.key, error.params) : t("errorUnexpected"),
       code: error.key,
       conflict: error.conflict,
     });
