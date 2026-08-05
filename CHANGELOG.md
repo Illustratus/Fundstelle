@@ -31,6 +31,13 @@ where it lies.
 
 ### Changed
 
+- **A whole study is walked end to end by the tests.** Every part had its own
+  checks and the first five minutes had been walked once; the rest never had. The
+  new walk starts on an empty folder and runs a recording in, codes it from the
+  keyboard, lets an inductive category emerge, takes a second coder's work in,
+  opens the analysis, downloads every document it offers, exports the project,
+  and then corrects the transcript underneath it all — checking the things that
+  have to agree *between* those steps rather than within them.
 - **The example study says why its third interview skips a guide prompt.** It
   covers prompts 1 and 3, which is what happens when a prompt comes up on its
   own — but with nothing saying so it read as a gap in the bundled example.
