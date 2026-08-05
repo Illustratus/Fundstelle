@@ -89,6 +89,13 @@ async function drawn(page) {
       unmet: one.classList.contains("unmet"),
       x: Number(one.getAttribute("x")),
     })),
+    labels: [...document.querySelectorAll("#reach text.row-label")].map((one) =>
+      [...one.querySelectorAll("tspan")].map((line) => line.textContent).join(" "),
+    ),
+    rings: [...document.querySelectorAll("#reach circle.reach-sole")].map((one) => ({
+      cx: Number(one.getAttribute("cx")),
+      cy: Number(one.getAttribute("cy")),
+    })),
   }));
 }
 
@@ -260,4 +267,104 @@ test("with no citations anywhere it is not drawn, and the endpoint says why", as
   const answer = await request.get("/api/figures/requirement-reach.svg");
   expect(answer.status(), "the address is right, the study is not there yet").toBe(409);
   expect((await answer.json()).error.length, "and it says which condition").toBeGreaterThan(10);
+});
+
+/**
+ * The order, which is the whole difference between a picture of the links and a
+ * picture of the structure.
+ *
+ * A matrix holds what it holds whatever order it is in, and shows *shape* only
+ * in one of them. Left in catalog order this figure was a scatter of correct
+ * dots in which nothing was legible at a glance: which requirements carry a lot
+ * of the study and which touch one corner of it, and which of them keep turning
+ * up in the same company.
+ */
+test("the widest requirement is at the top and the narrowest at the bottom", async ({
+  page,
+  request,
+}) => {
+  /* Built so the answer is known and is not the catalog's own order: the third
+     requirement reaches most, and the first — which is the one carrying a
+     MoSCoW level, so catalog order would put it first — reaches least. */
+  await study(request, [
+    { requirement: 2, category: 0 },
+    { requirement: 2, category: 1 },
+    { requirement: 2, category: 2 },
+    { requirement: 1, category: 0 },
+    { requirement: 1, category: 1 },
+    { requirement: 0, category: 0 },
+  ]);
+  await catalog(page);
+
+  const { dots, labels } = await drawn(page);
+  const reachOf = new Map();
+  for (const dot of dots) {
+    reachOf.set(dot.row, (reachOf.get(dot.row) ?? new Set()).add(dot.category));
+  }
+  const order = labels.map((title) => reachOf.get(title)?.size ?? 0);
+  expect(order.length).toBe(TITLES.length);
+  for (let index = 1; index < order.length; index += 1) {
+    expect(order[index], `row ${index} against the one above it`).toBeLessThanOrEqual(
+      order[index - 1],
+    );
+  }
+  // And it really did reorder rather than agreeing with catalog order by luck.
+  expect(labels[0]).toBe(TITLES[2]);
+  expect(labels.at(-1)).toBe(TITLES[0]);
+});
+
+test("columns follow the rows, so shared categories stand together", async ({ page, request }) => {
+  await study(request, [
+    { requirement: 2, category: 0 },
+    { requirement: 2, category: 1 },
+    { requirement: 2, category: 2 },
+    { requirement: 1, category: 0 },
+    { requirement: 1, category: 1 },
+    { requirement: 0, category: 0 },
+  ]);
+  await catalog(page);
+
+  const { dots } = await drawn(page);
+  /* The staircase: reading the columns left to right, the row each column first
+     has a dot in never moves upwards. That is what makes a block a block, and
+     it is checkable without asking the picture how it looks. */
+  const columns = [...new Set(dots.map((one) => one.cx))].sort((a, b) => a - b);
+  const firstRow = columns.map((cx) =>
+    Math.min(...dots.filter((one) => one.cx === cx).map((one) => one.cy)),
+  );
+  for (let index = 1; index < firstRow.length; index += 1) {
+    expect(firstRow[index], `column ${index}`).toBeGreaterThanOrEqual(firstRow[index - 1]);
+  }
+});
+
+test("the only requirement carrying a category is circled", async ({ page, request }) => {
+  /* Reach is not importance on its own: a requirement touching one category can
+     be the only thing in the catalog that answers it, and dropping it would
+     leave what people said there unanswered. */
+  const { categories } = await study(request, [
+    { requirement: 0, category: 0 },
+    { requirement: 1, category: 0 },
+    { requirement: 2, category: 1 },
+  ]);
+  await catalog(page);
+
+  const { dots, rings } = await drawn(page);
+  const shared = categories[0].name;
+  const alone = categories[1].name;
+
+  const circled = dots.filter((dot) =>
+    rings.some((ring) => Math.abs(ring.cx - dot.cx) < 0.5 && Math.abs(ring.cy - dot.cy) < 0.5),
+  );
+  expect(circled.map((one) => one.category), "only the category with one answer").toEqual([alone]);
+  expect(circled[0].row).toBe(TITLES[2]);
+  // Two requirements answer the other one, so neither of them is circled.
+  expect(dots.filter((one) => one.category === shared)).toHaveLength(2);
+  expect(rings).toHaveLength(1);
+
+  // And the dot says so where a mouse asks, not only where the eye can see it.
+  const said = await page.evaluate(
+    () => document.querySelector("#reach circle.reach[data-sole='true']")?.dataset.tip,
+  );
+  expect(said).toContain(alone);
+  expect(said, "the tip names what the ring means").toMatch(/einzige/i);
 });

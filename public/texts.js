@@ -593,17 +593,26 @@ export const TEXTS = {
       "Eine Anforderung ohne Stufe ist noch nicht entschieden; sie steht als „offen“ am Ende.",
     chartReachTitle: "Welche Kategorien eine Anforderung berührt",
     chartReachCaption:
+      "Nach Reichweite sortiert: oben die Anforderungen, die viel von der Studie tragen, unten " +
+      "die, die eine Ecke davon berühren. Die Spalten folgen den Zeilen, damit Anforderungen mit " +
+      "gemeinsamen Kategorien nebeneinander stehen — die Treppe sichtbar zu machen ist der Zweck " +
+      "der Sortierung, nicht die Reihenfolge des Kategoriensystems. " +
       "Eine Zeile lesen: erfüllst du diese Anforderung, spricht sie diese Kategorien an. " +
       "Eine Spalte lesen: das wurde gesagt, und das sind die Anforderungen, die es beantworten. " +
-      "Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. Die Zahl rechts sagt, wie viele Kategorien " +
-      "eine Anforderung berührt; die Zahl über einem Kategorienamen, wie viele Anforderungen sie " +
-      "berühren. Eine Null dort ist eine Kategorie, aus der noch nichts geworden ist.",
+      "Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. Ein eingekreister Punkt ist die einzige " +
+      "Anforderung, die diese Kategorie trägt: fällt sie weg, beantwortet nichts mehr, was hier " +
+      "gesagt wurde. Die Zahl rechts sagt, wie viele Kategorien eine Anforderung berührt; die " +
+      "Zahl über einem Kategorienamen, wie viele Anforderungen sie berühren. Eine Null dort ist " +
+      "eine Kategorie, aus der noch nichts geworden ist.",
+    reachTipSole: "{title} — {category}: {n} Belege · einzige Anforderung dazu",
     reachTip: "{title} — {category}: {n} Belege",
     reachFiguresCaption: "Belege je Anforderung und Kategorie",
     columnReaches: "Kategorien",
     summaryReach:
-      "{rows} Anforderungen über {categories} Kategorien. Am weitesten reicht „{top}“ mit " +
-      "{touched} Kategorien; {unmet} Kategorien berührt bisher keine Anforderung.",
+      "{rows} Anforderungen über {categories} Kategorien, nach Reichweite sortiert. Am weitesten " +
+      "reicht „{top}“ mit {touched} Kategorien; {narrow} Anforderungen berühren nur eine. " +
+      "{only} Anforderungen sind für mindestens eine Kategorie die einzige; {unmet} Kategorien " +
+      "berührt bisher keine.",
     chartCoverageTitle: "Belege je Anforderung und Bereich",
     chartCoverageCaption:
       "Segmentfarbe = Bereich, Reihenfolge wie im Katalog. Eine Anforderung, die nur ein Bereich nennt, trägt einen einfarbigen Balken.",
@@ -1195,17 +1204,26 @@ export const TEXTS = {
       "A requirement without a level has not been decided yet; it sits at the end as “open”.",
     chartReachTitle: "Which categories a requirement reaches",
     chartReachCaption:
+      "Sorted by reach: at the top the requirements that carry much of the study, at the bottom " +
+      "the ones that touch a corner of it. The columns follow the rows, so requirements sharing " +
+      "categories stand together — showing that staircase is what the ordering is for, rather " +
+      "than the order of the category system. " +
       "Read across a row: meet this requirement, and these are the categories it speaks to. " +
       "Read down a column: this is what people said, and these are the requirements that would " +
-      "answer it. Dot size = citations, dot colour = MoSCoW level. The number on the right is how " +
-      "many categories a requirement reaches; the number above a category name is how many " +
-      "requirements reach it. A zero there is a category nothing has been made of yet.",
+      "answer it. Dot size = citations, dot colour = MoSCoW level. A circled dot is the only " +
+      "requirement carrying that category: drop it and nothing answers what was said here any " +
+      "more. The number on the right is how many categories a requirement reaches; the number " +
+      "above a category name is how many requirements reach it. A zero there is a category " +
+      "nothing has been made of yet.",
+    reachTipSole: "{title} — {category}: {n} citations · the only requirement for it",
     reachTip: "{title} — {category}: {n} citations",
     reachFiguresCaption: "Citations per requirement and category",
     columnReaches: "Categories",
     summaryReach:
-      "{rows} requirements across {categories} categories. “{top}” reaches furthest with " +
-      "{touched} categories; {unmet} categories no requirement reaches yet.",
+      "{rows} requirements across {categories} categories, sorted by reach. “{top}” reaches " +
+      "furthest with {touched} categories; {narrow} requirements touch only one. {only} " +
+      "requirements are the only one for at least one category; {unmet} categories no " +
+      "requirement reaches yet.",
     chartCoverageTitle: "Citations per requirement and department",
     chartCoverageCaption:
       "Segment color = department, order as in the catalog. A requirement named by one department only carries a single-color bar.",

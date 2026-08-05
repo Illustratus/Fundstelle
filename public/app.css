@@ -1995,6 +1995,10 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
    colour, so two dots that land beside each other stay two dots. */
 .chart .reach { fill: var(--moscow); stroke: var(--sheet); stroke-width: 1; }
 .chart .reach:hover { stroke: var(--ink); }
+/* Circled: the only requirement that reaches this category. Drawn around the
+   dot rather than in it, because it says something about the column and the dot
+   already says something about the row. */
+.chart .reach-sole { fill: none; stroke: var(--ink-soft); stroke-width: 1; }
 /* A category no requirement reaches. Quieter, not hidden — it is the finding,
    and --ink-faint is the tool's word for "a zero that means nothing is here".
    It clears 4.5:1 in both themes; `npm run test:contrast` keeps it there. */

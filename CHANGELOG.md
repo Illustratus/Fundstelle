@@ -25,6 +25,18 @@ where it lies.
   finding worth having. The count under each column says so as a number, and the
   name of an unreached category is set quietly so the eye finds it.
 
+  **Sorted so the structure shows.** Rows run widest reach first, so the top of
+  the figure is what a study turns on and the bottom is what is local; the
+  columns then follow the rows, which puts requirements sharing categories side
+  by side and makes the picture a staircase whose breaks are groups. A matrix
+  holds what it holds in any order and shows shape in only one of them, and
+  catalog order was not it.
+
+  **A circled dot is the only requirement carrying that category** — drop it and
+  nothing in the catalog answers what people said there any more. That is what
+  keeps reach from being read as importance on its own: a requirement touching
+  one category can be the single thing holding it.
+
   Dot size is citations, dot colour is the requirement's MoSCoW level, so a
   category answered only by pale dots is one the catalog has noticed and
   postponed. Fetchable like the others, at `GET /api/figures/requirement-reach.svg`.

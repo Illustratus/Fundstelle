@@ -1110,8 +1110,8 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
  * noticed and postponed.
  */
 export function reachChart(rows, categories, t, { moscow = [] } = {}) {
-  const columns = categories.filter((one) => one.sum > 0);
-  const withCitations = rows.filter((row) => row.citations.length);
+  let columns = categories.filter((one) => one.sum > 0);
+  let withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !columns.length) return null;
 
   const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
@@ -1123,6 +1123,61 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     }
   }
   const max = Math.max(1, ...counts.values());
+
+  const links = (row) => columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length;
+  const answers = (column) =>
+    withCitations.filter((row) => counts.has(`${row.id}|${column.category}`)).length;
+
+  /**
+   * The order, which is the whole difference between a picture of the links and
+   * a picture of the structure.
+   *
+   * A matrix says what it has in it whatever order its rows and columns are in,
+   * and shows *shape* only in one of them. Left in catalog order the figure was
+   * a scatter of correct dots in which nothing was legible at a glance: which
+   * requirements carry a lot of the study and which touch one corner of it, and
+   * which of them keep turning up in the same company.
+   *
+   * Two sorts, and they have to be done in this order.
+   *
+   * Rows by how many categories they reach, widest first. That alone is the
+   * reading somebody wants from this figure — the top of it is what a study
+   * turns on, the bottom is what is local — and it is the input to how much a
+   * requirement is worth, which is a judgement the tool must not make but should
+   * put the material for in front of whoever does.
+   *
+   * Then columns by where their topmost dot is, and by how many they hold. Now
+   * that the rows are ordered, that is the cheapest seriation there is, and it
+   * is enough: categories a broad requirement carries move left, the ones only
+   * one narrow requirement speaks to fall to the right, and requirements sharing
+   * categories end up in the same block instead of scattered across the width.
+   * The result reads as a staircase, and a break in the staircase is a group.
+   *
+   * The cost is that the columns are no longer in the order of the category
+   * system. That order is meaningful elsewhere and is not what this figure is
+   * about; the caption says so, and every name is written out.
+   */
+  withCitations = [...withCitations].sort(
+    (a, b) =>
+      links(b) - links(a) ||
+      b.citations.length - a.citations.length ||
+      a.title.localeCompare(b.title, "de"),
+  );
+  const topmost = (column) =>
+    withCitations.findIndex((row) => counts.has(`${row.id}|${column.category}`));
+  columns = [...columns].sort((a, b) => {
+    const first = topmost(a) < 0 ? withCitations.length : topmost(a);
+    const other = topmost(b) < 0 ? withCitations.length : topmost(b);
+    return first - other || answers(b) - answers(a) || a.name.localeCompare(b.name, "de");
+  });
+
+  /* A category only one requirement reaches. Worth marking, because it turns
+     breadth into an argument: drop that requirement and nothing in the catalog
+     answers what people said here any more. A row with several of them is
+     load-bearing however few categories it touches. */
+  const sole = new Set(
+    columns.filter((one) => answers(one) === 1).map((one) => one.category),
+  );
 
   const LABEL = 200;
   const REACH = 30;
@@ -1153,9 +1208,7 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
   const FOOT = Math.ceil(reach * Math.sin(RADIANS)) + 12;
   const height = grid + TALLY + FOOT;
 
-  const perCategory = columns.map(
-    (one) => withCitations.filter((row) => counts.has(`${row.id}|${one.category}`)).length,
-  );
+  const perCategory = columns.map(answers);
 
   const heads = columns
     .map((one, k) => {
@@ -1188,16 +1241,25 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
         .map((one, k) => {
           const n = counts.get(`${row.id}|${one.category}`) ?? 0;
           if (!n) return "";
-          const tip = t("reachTip", { title: row.title, category: one.name, n });
+          const only = sole.has(one.category);
+          const cx = LABEL + k * width + width / 2;
+          const r = radius(n);
+          const tip = only
+            ? t("reachTipSole", { title: row.title, category: one.name, n })
+            : t("reachTip", { title: row.title, category: one.name, n });
           return (
-            `<circle class="reach ${level}" cx="${LABEL + k * width + width / 2}" cy="${middle}"` +
-            ` r="${radius(n).toFixed(2)}" data-row="${escape(row.title)}"` +
+            // The ring first, so the dot sits on top of it rather than inside it.
+            (only
+              ? `<circle class="reach-sole" cx="${cx}" cy="${middle}" r="${(r + 2.6).toFixed(2)}"></circle>`
+              : "") +
+            `<circle class="reach ${level}" cx="${cx}" cy="${middle}"` +
+            ` r="${r.toFixed(2)}" data-row="${escape(row.title)}"` +
             ` data-category="${escape(one.name)}" data-value="${n}"` +
-            ` data-tip="${escape(tip)}"></circle>`
+            ` data-sole="${only}" data-tip="${escape(tip)}"></circle>`
           );
         })
         .join("");
-      const touched = columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length;
+      const touched = links(row);
       return (
         labelText(labels[index], { x: LABEL - 8, middle, size, line: LINE }) +
         marks +
@@ -1207,12 +1269,12 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     .join("");
 
   const unmet = perCategory.filter((n) => !n).length;
-  const widest = withCitations
-    .map((row) => ({
-      title: row.title,
-      touched: columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length,
-    }))
-    .reduce((best, one) => (one.touched > (best?.touched ?? -1) ? one : best), null);
+  // Sorted widest first, so the first row is the answer to "which requirement
+  // carries the most of this study".
+  const widest = { title: withCitations[0].title, touched: links(withCitations[0]) };
+  const onlyOne = withCitations.filter((row) =>
+    columns.some((one) => sole.has(one.category) && counts.has(`${row.id}|${one.category}`)),
+  ).length;
 
   return {
     id: "reach",
@@ -1232,8 +1294,10 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     summary: t("summaryReach", {
       rows: withCitations.length,
       categories: columns.length,
-      top: widest?.title ?? "—",
-      touched: widest?.touched ?? 0,
+      top: widest.title,
+      touched: widest.touched,
+      narrow: withCitations.filter((row) => links(row) === 1).length,
+      only: onlyOne,
       unmet,
     }),
     figures: {
@@ -1242,7 +1306,7 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
       rows: withCitations.map((row) => [
         row.title,
         ...columns.map((one) => counts.get(`${row.id}|${one.category}`) ?? 0),
-        columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length,
+        links(row),
       ]),
     },
   };
@@ -1393,6 +1457,7 @@ export function stylesheet(theme = "light") {
     `.axis{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans}}` +
     `.axis.unmet{fill:${c.inkFaint}}` +
     `.reach{stroke:${c.sheet};stroke-width:1}` +
+    `.reach-sole{fill:none;stroke:${c.inkSoft};stroke-width:1}` +
     `.axis-title{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
     `.row-label{fill:${c.ink};font-size:11.5px;font-family:${FONTS.sans}}` +
     `.row-label.child{fill:${c.inkSoft}}` +
