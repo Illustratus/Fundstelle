@@ -595,20 +595,7 @@ export const TEXTS = {
     chartMoscowTitle: "Verteilung der MoSCoW-Stufen",
     chartMoscowCaption:
       "Eine Anforderung ohne Stufe ist noch nicht entschieden; sie steht als „offen“ am Ende.",
-    chartCityDepartmentsTitle: "Stadtplan: Höhe = Bereiche, die die Anforderung nennen",
-    chartCityDepartmentsCaption:
-      "Dasselbe Gitter, andere Höhe. Nicht die Belege in einer Zelle, sondern wie viele Bereiche " +
-      "diese Anforderung überhaupt nennen — also ist jede Reihe gleich hoch und liest sich als " +
-      "Rücken: die Länge ist die Reichweite über die Kategorien, die Höhe ist, wie breit die " +
-      "Anforderung im Haus getragen wird. Eine Anforderung, die nur ein Bereich nennt, bleibt " +
-      "flach, auch wenn viel Material daran hängt. Farbe = MoSCoW-Stufe.",
-    summaryCityDepartments:
-      "{rows} Anforderungen über {categories} Kategorien; am breitesten getragen wird „{top}“ " +
-      "mit {max} Bereichen.",
-    cityTipDepartments: "{title} — {category}: {n} Belege · von {departments} Bereichen genannt",
     cityFiguresCaption: "Belege je Anforderung und Kategorie",
-    cityDepartmentsFiguresCaption:
-      "Belege je Anforderung und Kategorie, dazu die Bereiche, die die Anforderung nennen",
     chartCityTitle: "Stadtplan: Kategorie × Anforderung, Höhe = Belege",
     chartCityCaption:
       "Dein Modell wörtlich genommen: X sind die Kategorien, Y die Anforderungen, Z die Belege " +
@@ -619,17 +606,16 @@ export const TEXTS = {
       "{rows} Anforderungen über {categories} Kategorien; die höchste Säule steht für {max} Belege.",
     chartReachTitle: "Welche Kategorien eine Anforderung berührt",
     chartReachCaption:
-      "Nach Reichweite sortiert: oben die Anforderungen, die viel von der Studie tragen, unten " +
-      "die, die eine Ecke davon berühren. Die Spalten folgen den Zeilen, damit Anforderungen mit " +
-      "gemeinsamen Kategorien nebeneinander stehen — die Treppe sichtbar zu machen ist der Zweck " +
-      "der Sortierung, nicht die Reihenfolge des Kategoriensystems. " +
-      "Eine Zeile lesen: erfüllst du diese Anforderung, spricht sie diese Kategorien an. " +
-      "Eine Spalte lesen: das wurde gesagt, und das sind die Anforderungen, die es beantworten. " +
-      "Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. Ein eingekreister Punkt ist die einzige " +
-      "Anforderung, die diese Kategorie trägt: fällt sie weg, beantwortet nichts mehr, was hier " +
-      "gesagt wurde. Die Zahl rechts sagt, wie viele Kategorien eine Anforderung berührt; die " +
-      "Zahl über einem Kategorienamen, wie viele Anforderungen sie berühren. Eine Null dort ist " +
-      "eine Kategorie, aus der noch nichts geworden ist.",
+      "Eine Zeile lesen: erfüllst du diese Anforderung, spricht sie diese Kategorien an. Eine " +
+      "Spalte lesen: das wurde gesagt, und das sind die Anforderungen, die es beantworten. " +
+      "Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. " +
+      "Die Zahl rechts sagt, wie viele Kategorien eine Anforderung berührt, die Zahl über einem " +
+      "Kategorienamen, wie viele Anforderungen sie berühren; eine Null dort ist eine Kategorie, " +
+      "aus der noch nichts geworden ist. " +
+      "Sortiert ist nach Reichweite — oben, was viel von der Studie trägt, unten, was eine Ecke " +
+      "davon berührt; die Spalten folgen den Zeilen, damit Anforderungen mit gemeinsamen " +
+      "Kategorien nebeneinander stehen.",
+    reachSoleKey: "einzige Anforderung für diese Kategorie",
     reachTipSole: "{title} — {category}: {n} Belege · einzige Anforderung dazu",
     reachTip: "{title} — {category}: {n} Belege",
     reachFiguresCaption: "Belege je Anforderung und Kategorie",
@@ -1232,20 +1218,7 @@ export const TEXTS = {
     chartMoscowTitle: "Distribution of MoSCoW levels",
     chartMoscowCaption:
       "A requirement without a level has not been decided yet; it sits at the end as “open”.",
-    chartCityDepartmentsTitle: "City plot: height = departments naming the requirement",
-    chartCityDepartmentsCaption:
-      "The same lattice, a different height. Not the citations in one cell but how many " +
-      "departments name this requirement at all — so every row is one height and reads as a " +
-      "ridge: its length is the reach across the categories, its height is how broadly the " +
-      "requirement is carried in the organisation. One named by a single department stays low " +
-      "however much material hangs on it. Colour = MoSCoW level.",
-    summaryCityDepartments:
-      "{rows} requirements across {categories} categories; “{top}” is carried most broadly, by " +
-      "{max} departments.",
-    cityTipDepartments: "{title} — {category}: {n} citations · named by {departments} departments",
     cityFiguresCaption: "Citations per requirement and category",
-    cityDepartmentsFiguresCaption:
-      "Citations per requirement and category, with the departments naming the requirement",
     chartCityTitle: "City plot: category × requirement, height = citations",
     chartCityCaption:
       "Your model taken literally: X is the categories, Y the requirements, Z the citations in " +
@@ -1256,17 +1229,16 @@ export const TEXTS = {
       "{rows} requirements across {categories} categories; the tallest column stands for {max} citations.",
     chartReachTitle: "Which categories a requirement reaches",
     chartReachCaption:
-      "Sorted by reach: at the top the requirements that carry much of the study, at the bottom " +
-      "the ones that touch a corner of it. The columns follow the rows, so requirements sharing " +
-      "categories stand together — showing that staircase is what the ordering is for, rather " +
-      "than the order of the category system. " +
-      "Read across a row: meet this requirement, and these are the categories it speaks to. " +
-      "Read down a column: this is what people said, and these are the requirements that would " +
-      "answer it. Dot size = citations, dot colour = MoSCoW level. A circled dot is the only " +
-      "requirement carrying that category: drop it and nothing answers what was said here any " +
-      "more. The number on the right is how many categories a requirement reaches; the number " +
-      "above a category name is how many requirements reach it. A zero there is a category " +
-      "nothing has been made of yet.",
+      "Read across a row: meet this requirement, and these are the categories it speaks to. Read " +
+      "down a column: this is what people said, and these are the requirements that would answer " +
+      "it. Dot size = citations, dot colour = MoSCoW level. " +
+      "The number on the right is how many categories a requirement reaches, the number above a " +
+      "category name how many requirements reach it; a zero there is a category nothing has been " +
+      "made of yet. " +
+      "Sorted by reach — at the top what carries much of the study, at the bottom what touches a " +
+      "corner of it; the columns follow the rows, so requirements sharing categories stand " +
+      "together.",
+    reachSoleKey: "the only requirement for this category",
     reachTipSole: "{title} — {category}: {n} citations · the only requirement for it",
     reachTip: "{title} — {category}: {n} citations",
     reachFiguresCaption: "Citations per requirement and category",

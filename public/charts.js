@@ -1286,10 +1286,18 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     body: tally + heads + dots,
     legend: {
       kind: "moscow",
-      entries: [...MOSCOW_ORDER, "open"].map((id) => ({
-        paint: moscowClass(id),
-        label: id === "open" ? t("open") : nameOf(id),
-      })),
+      entries: [
+        ...[...MOSCOW_ORDER, "open"].map((id) => ({
+          paint: moscowClass(id),
+          label: id === "open" ? t("open") : nameOf(id),
+        })),
+        /* The ring belongs in the key, not in a sentence at the end of a long
+           caption. A mark that has to be explained and is explained only in
+           prose is a mark nobody reads — it was there, said what it meant, and
+           read as decoration anyway. It is only offered when there is one on
+           the figure: a key entry for something not drawn is worse than none. */
+        ...(sole.size ? [{ paint: "sole", shape: "ring", label: t("reachSoleKey") }] : []),
+      ],
     },
     summary: t("summaryReach", {
       rows: withCitations.length,
@@ -1338,7 +1346,7 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
  * the price of the third dimension, and worth knowing before reading a hole as
  * an absence.
  */
-export function cityPlot(rows, categories, t, { moscow = [], by = "citations" } = {}) {
+export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
   const columns = categories.filter((one) => one.sum > 0);
   const withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !columns.length) return null;
@@ -1352,31 +1360,7 @@ export function cityPlot(rows, categories, t, { moscow = [], by = "citations" } 
   }
   const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
 
-  /**
-   * What a tower is worth.
-   *
-   * `citations` is the material in that one cell — how much was said that ties
-   * this requirement to this category. Every tower in a row can differ.
-   *
-   * `departments` is how many departments the *requirement* serves, so every
-   * tower in a row is the same height and a row reads as a ridge: length is how
-   * far the requirement reaches across the study, height is how many parts of
-   * the organisation named it. A requirement carried by one department is a low
-   * long row; one everybody named stands up across its whole reach. The two are
-   * different questions and the second is not derivable from the first — a
-   * requirement can rest on a great deal of material from a single department.
-   */
-  const height = (row) =>
-    by === "departments" ? row.departments.length : 0;
-  const cellValue = (row, column) => {
-    const n = counts.get(`${row.id}|${column.category}`) ?? 0;
-    if (!n) return 0;
-    return by === "departments" ? Math.max(1, height(row)) : n;
-  };
-  const max = Math.max(
-    1,
-    ...withCitations.flatMap((row) => columns.map((one) => cellValue(row, one))),
-  );
+  const max = Math.max(1, ...counts.values());
 
   const COS = Math.cos(Math.PI / 6);
   const SIN = Math.sin(Math.PI / 6);
@@ -1420,35 +1404,27 @@ export function cityPlot(rows, categories, t, { moscow = [], by = "citations" } 
   const cells = [];
   for (let i = 0; i < withCitations.length; i += 1) {
     for (let j = 0; j < columns.length; j += 1) {
-      const value = cellValue(withCitations[i], columns[j]);
-      if (value) cells.push({ i, j, value, n: counts.get(`${withCitations[i].id}|${columns[j].category}`) });
+      const n = counts.get(`${withCitations[i].id}|${columns[j].category}`) ?? 0;
+      if (n) cells.push({ i, j, n });
     }
   }
   cells.sort((a, b) => a.i + a.j - (b.i + b.j));
 
   const towers = cells
-    .map(({ i, j, value, n }) => {
+    .map(({ i, j, n }) => {
       const row = withCitations[i];
-      const rise = (value / max) * TALL;
+      const rise = (n / max) * TALL;
       const a = foot(i + INSET, j + INSET);
       const b = foot(i + INSET, j + 1 - INSET);
       const c = foot(i + 1 - INSET, j + 1 - INSET);
       const d = foot(i + 1 - INSET, j + INSET);
       const up = (point) => `${point.x.toFixed(1)} ${(point.y - rise).toFixed(1)}`;
       const down = (point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
-      const tip =
-        by === "departments"
-          ? t("cityTipDepartments", {
-              title: row.title,
-              category: columns[j].name,
-              n,
-              departments: row.departments.length,
-            })
-          : t("reachTip", { title: row.title, category: columns[j].name, n });
+      const tip = t("reachTip", { title: row.title, category: columns[j].name, n });
       const level = moscowClass(row.moscow);
       return (
         `<g class="tower" data-row="${escape(row.title)}" data-category="${escape(columns[j].name)}"` +
-        ` data-value="${value}" data-citations="${n}" data-tip="${escape(tip)}">` +
+        ` data-value="${n}" data-tip="${escape(tip)}">` +
         `<polygon class="face top ${level}" points="${up(a)} ${up(b)} ${up(c)} ${up(d)}"></polygon>` +
         `<polygon class="face left ${level}" points="${up(a)} ${up(d)} ${down(d)} ${down(a)}"></polygon>` +
         `<polygon class="face right ${level}" points="${up(d)} ${up(c)} ${down(c)} ${down(d)}"></polygon>` +
@@ -1485,16 +1461,11 @@ export function cityPlot(rows, categories, t, { moscow = [], by = "citations" } 
     })
     .join("");
 
-  const tallest = withCitations.reduce(
-    (best, row) => (height(row) > (best ? height(best) : -1) ? row : best),
-    null,
-  );
-
   return {
-    id: by === "departments" ? "city-departments" : "city",
-    file: by === "departments" ? "catalog-city-departments.svg" : "catalog-city.svg",
-    title: by === "departments" ? t("chartCityDepartmentsTitle") : t("chartCityTitle"),
-    caption: by === "departments" ? t("chartCityDepartmentsCaption") : t("chartCityCaption"),
+    id: "city",
+    file: "catalog-city.svg",
+    title: t("chartCityTitle"),
+    caption: t("chartCityCaption"),
     width: WIDTH,
     height: canvas,
     body: lattice + towers + categoryNames + requirementNames,
@@ -1509,31 +1480,23 @@ export function cityPlot(rows, categories, t, { moscow = [], by = "citations" } 
        than usual: a tower hidden behind a taller one is unreadable in the
        picture by construction, and the table is where it is still readable. */
     figures: {
-      caption: by === "departments" ? t("cityDepartmentsFiguresCaption") : t("cityFiguresCaption"),
+      caption: t("cityFiguresCaption"),
       columns: [
         t("columnRequirement"),
         ...columns.map((one) => one.name),
-        by === "departments" ? t("columnDepartments") : t("total"),
+        t("total"),
       ],
       rows: withCitations.map((row) => [
         row.title,
         ...columns.map((one) => counts.get(`${row.id}|${one.category}`) ?? 0),
-        by === "departments" ? row.departments.length : row.citations.length,
+        row.citations.length,
       ]),
     },
-    summary:
-      by === "departments"
-        ? t("summaryCityDepartments", {
-            rows: withCitations.length,
-            categories: columns.length,
-            top: tallest?.title ?? "—",
-            max,
-          })
-        : t("summaryCity", {
-            rows: withCitations.length,
-            categories: columns.length,
-            max,
-          }),
+    summary: t("summaryCity", {
+      rows: withCitations.length,
+      categories: columns.length,
+      max,
+    }),
   };
 }
 
@@ -1707,6 +1670,7 @@ export function stylesheet(theme = "light") {
     `.saturation-line{stroke:${c.accent};stroke-width:2;stroke-linejoin:round;fill:none}` +
     `.saturation-point{fill:${c.accent}}` +
     `.key-label{fill:${c.ink};font-size:10px;font-family:${FONTS.sans}}` +
+    `.key-ring{fill:none;stroke:${c.inkSoft};stroke-width:1.4}` +
     swatches
   );
 }
@@ -1744,13 +1708,18 @@ function drawKey(legend, width, measure) {
   let y = 12;
   for (const entry of entries) {
     const label = entry.label ?? "";
-    const box = (entry.paint ? SIZE + 5 : 0) + widthOf(label);
+    const box = (entry.paint || entry.shape ? SIZE + 5 : 0) + widthOf(label);
     if (!box) continue;
     if (x && x + box > width) {
       x = 0;
       y += LINE;
     }
-    if (entry.paint) {
+    if (entry.shape === "ring") {
+      markup +=
+        `<circle class="key-ring" cx="${x + SIZE / 2}" cy="${y - SIZE / 2 + 1}"` +
+        ` r="${SIZE / 2}"></circle>`;
+      x += SIZE + 5;
+    } else if (entry.paint) {
       markup +=
         `<rect class="key-${entry.paint}" x="${x}" y="${y - SIZE + 1}" width="${SIZE}"` +
         ` height="${SIZE}" rx="2"></rect>`;

@@ -2480,10 +2480,13 @@ function keyHTML(legend) {
   return (
     `<div class="chart-legend${classed ? " moscow" : ""}">` +
     legend.entries
-      .map(
-        (entry) =>
-          `<span${classed ? ` class="${entry.paint}"` : ""}>` +
-          `<i${classed ? "" : ` class="${entry.paint}"`}></i>${escapeHTML(entry.label)}</span>`,
+      .map((entry) =>
+        // An outline rather than a colour: the entry is about a shape drawn
+        // around a dot, so the key has to show that shape and not a swatch.
+        entry.shape === "ring"
+          ? `<span class="ring-key"><i></i>${escapeHTML(entry.label)}</span>`
+          : `<span${classed ? ` class="${entry.paint}"` : ""}>` +
+            `<i${classed ? "" : ` class="${entry.paint}"`}></i>${escapeHTML(entry.label)}</span>`,
       )
       .join("") +
     `</div>`
@@ -3236,10 +3239,7 @@ function catalogFiguresHTML(rows, departments) {
        from the first requirement onwards — so it keeps the coverage chart
        company below rather than waiting with the two above. */
     chartHTML(reachChart(rows, state.categoryRows ?? [], t, shared)) +
-    /* Two cities, side by side for one round of looking: the same lattice with
-       two different things standing on it. */
-    chartHTML(cityPlot(rows, state.categoryRows ?? [], t, shared)) +
-    chartHTML(cityPlot(rows, state.categoryRows ?? [], t, { ...shared, by: "departments" }));
+    chartHTML(cityPlot(rows, state.categoryRows ?? [], t, shared));
 
   return (
     (charts || `<p class="empty-state">${t("catalogChartsEmpty")}</p>`) +

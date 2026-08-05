@@ -2034,6 +2034,13 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .point-label { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); pointer-events: none; }
 
 .chart-legend.moscow i { background: var(--moscow); border-radius: 50%; }
+/* An outline, because the thing it stands for is a shape drawn around a dot
+   rather than a colour. */
+.chart-legend .ring-key i {
+  background: none;
+  border: 1.4px solid var(--ink-soft);
+  border-radius: 50%;
+}
 
 /* Onboarding without transcripts: the instructions on the edition sheet. */
 .onboarding {
