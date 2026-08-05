@@ -977,9 +977,29 @@ async function mergeCategories(source, target) {
         n: answer.moved,
         word: plural(answer.moved, "locationOne", "locationMany"),
       }),
+      "info",
+      /* The largest thing a single click does here — a category gone, every one
+         of its units re-hung — and it was the only one with no way back, while
+         deleting a single unit had one. The offer sits on the message, the way
+         it does there, and goes when the message goes. */
+      answer.undo ? { label: t("undo"), run: () => undoMerge(answer.undo) } : undefined,
     );
   } catch (error) {
     complain(error);
+  }
+}
+
+/** Put the dissolved category back, with exactly the units that moved. */
+async function undoMerge(undo) {
+  try {
+    const back = await api("/api/categories/merge/undo", { method: "POST", body: undo });
+    await loadCategories();
+    await loadTranscript();
+    state.expanded.add(back.restored.id);
+    drawAll();
+    notify(t("mergeUndone", { name: back.restored.name }));
+  } catch (error) {
+    notify(t("restoreFailed", { error: error.message }), "error");
   }
 }
 

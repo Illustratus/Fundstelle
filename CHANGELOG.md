@@ -18,6 +18,13 @@ where it lies.
   one the exports write, so a quotation taken from the screen and one lifted
   from the appendix are the same string.
 
+- **Merging two categories can be taken back.** It is the largest thing one
+  click does here — a category dissolved, every unit it held re-hung, its rules
+  and note pulled across, everything under it re-parented — and it was the only
+  move with no way back, while deleting a single unit had one. The message that
+  reports the merge now offers "Rückgängig", and what comes back is the system
+  that stood there: same identifier, same place in the order, both sides' rules
+  and notes, the subcategories where they hung, and exactly the units that moved.
 - **The analysis screen holds up at the size of a real study.** Built out to
   eighteen interviews, eight departments, twenty categories and 324 coded units,
   the numbers and the charts held; the page did not. The citation list drew 240

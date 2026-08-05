@@ -468,12 +468,28 @@ const server = createServer(async (request, response) => {
       // in that order no coding ever points at a category that is already gone.
       const early = { beforeCoding: await nothingCoded() };
       await store.checkMerge(source, target, early);
+      const units = [];
       let moved = 0;
       for (const { id } of await findInterviews(TRANSCRIPTS)) {
-        moved += await store.replaceCategory(id, source, target);
+        const ids = await store.replaceCategory(id, source, target);
+        if (ids.length) units.push({ interview: id, ids });
+        moved += ids.length;
       }
-      const { target: merged } = await store.mergeCategories(source, target, early);
-      return send(response, 200, { target: merged, moved });
+      const { target: merged, undo } = await store.mergeCategories(source, target, early);
+      /* Everything needed to take it back travels with the answer. The tool
+         keeps no server-side history of one step — the message that offers the
+         undo holds it, and when the message goes so does the offer. */
+      return send(response, 200, { target: merged, moved, undo: { ...undo, units } });
+    }
+
+    if (path === "/api/categories/merge/undo" && request.method === "POST") {
+      const undo = await body(request);
+      await store.undoCategoryMerge(undo);
+      let back = 0;
+      for (const { interview, ids } of undo.units ?? []) {
+        back += await store.recategorise(interview, ids, undo.source.category.id);
+      }
+      return send(response, 200, { restored: undo.source.category, moved: back });
     }
 
     const category = path.match(/^\/api\/categories\/([^/]+)$/);
