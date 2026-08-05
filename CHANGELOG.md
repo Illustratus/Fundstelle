@@ -34,6 +34,31 @@ where it lies.
 
 ### Changed
 
+- **The figures take the width of the column again**, in both views, and the
+  catalog puts them above its requirements as the analysis does. Held to 720
+  units the labels were the same size on a 27-inch screen as on a laptop with
+  the rest of the column left white; drawn to the column the same names and
+  cells are read at a glance. The cost is that a label inside a figure is larger
+  than the prose beside it on a wide screen.
+
+  This reverses the placement 0.6.0 chose and keeps the rule it introduced: a
+  figure needing a judgment nobody has made is still not drawn. That rule, not
+  the position, is what keeps the catalog from becoming the wall it was — a
+  catalog somebody has just started shows one row of counts and its
+  requirements. Once every judgment has been made there are three figures above
+  the list, and they are meant to be scrolled past.
+- **A chart tooltip wraps instead of running off the screen.** It was set not to
+  break, which is right for two words and wrong for a saturation point, whose
+  tip names every category that first turned up there. With the figures at
+  column width, hovering the last cell of a heatmap means hovering a few pixels
+  from the right edge — so the part that fell outside was the end of the
+  sentence, which is what somebody hovered to read. It is now placed on
+  whichever side of the pointer it fits, and never wider than the window.
+- **A link to the API reference sits in the header**, opening in a new tab so
+  that reading it does not cost the passage that was open.
+- The row of controls in the header wraps on a narrow screen. It never did, so
+  every control added to it was a few more pixels the page had to scroll
+  sideways on a phone.
 - **The drawing moved out of the interface.** The geometry lived in `app.js` and
   the colours in `app.css`, so a figure only existed where a browser had already
   laid it out — and the saved file was made by asking that browser what colour

@@ -209,6 +209,10 @@ button, select, input, textarea {
   cursor: pointer;
 }
 .button-quiet:hover { color: var(--ink); border-color: var(--ink-faint); }
+/* The quiet button is worn by links too — an export, the reference. A link is
+   the right element when the thing on the other side is a place rather than an
+   action, and it should not look like a different control for saying so. */
+a.button-quiet { text-decoration: none; display: inline-block; }
 
 /* Base grid ------------------------------------------------------------- */
 
@@ -1525,6 +1529,11 @@ tbody tr:hover { background: var(--paper); }
   .views { margin-left: 0; }
   .header h1 { font-size: 1rem; }
   .field select { max-width: 12rem; }
+  /* The header wraps, but the row of controls inside it did not — so every
+     control added to it was a few more pixels the page had to scroll sideways
+     to show, on the width where sideways scrolling is worst. It wraps too now,
+     and none of them has to be the one that gets left out. */
+  .header-right { flex-wrap: wrap; }
   /* Without a keyboard the hint carries nothing, and the bar does not stick,
      because here the window scrolls and not the column. */
   .search-bar { position: static; margin-bottom: .6rem; }
@@ -1786,20 +1795,28 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .series-s7 { --series: var(--series-7); }
 .series-s8 { --series: var(--series-8); }
 
-/* A figure is drawn at a size, and that size is part of the drawing.
-   These charts are authored 720 units wide with 10–11.5px type against a 14px
-   page. Stretched to a 1312px column they came out at 1.64× — labels at 18.9px,
-   bars at 23px — so the figures read as a louder document than the one they sit
-   in, and a study of twenty units filled a screen. Drawn at their own size the
-   proportions are the ones they were given, two figures fit where one did, and
-   the page is one piece of work. Narrower columns still scale them down.
+/* A figure takes the width it is given.
+   These charts are authored 720 units wide and were held to that, because
+   stretched to a 1312px column they come out at 1.64× — labels at 18.9px
+   against a 15px page, bars at 23px — and type inside a figure that is louder
+   than the type around it makes the page two documents. That is still true, and
+   it is the cost of this: on a wide screen the labels are larger than the prose
+   they sit next to.
 
-   In pixels rather than rem on purpose: it has to agree with the unit the
-   drawing counts in, or the type inside it drifts against the type outside. */
+   What is bought with it is the reading. A category name has 200 of 720 units
+   and is cut at 30 characters; a heatmap has one column per guide section, and
+   nine of them in 512 units is 57 units a column. Held to 720 those are the
+   widths on a 27-inch screen as much as on a laptop, with the rest of the
+   column left white. Drawn to the column, the same names fit and the same cells
+   are read at a glance — and the numbers do not change, only the size they are
+   read at.
+
+   The drawing is a viewBox, so this is scaling and not reflow: nothing is
+   recomputed, nothing can be cut off, and a narrow column still scales down. */
 .chart-head,
 .chart-legend,
 .chart,
-.chart + .figures { max-width: 720px; }
+.chart + .figures { max-width: 100%; }
 
 .chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .chart-head h3 { margin-bottom: 0; }
@@ -1839,15 +1856,24 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   vertical-align: -1px;
 }
 
+/* A tip is as wide as it needs and never wider than the window.
+   It used to be `nowrap`, which is right for two words and wrong for a
+   saturation point, whose tip names every category that first turned up there.
+   Against the right-hand edge that ran off the screen, and the part that fell
+   off was the end of the list — the part you were hovering to read. The width
+   it may take is set from the window when it is placed; wrapping is what
+   happens when the text needs more than that. */
 .chart-tip {
   position: absolute;
   pointer-events: none;
   background: var(--ink);
   color: var(--paper);
   font-size: .75rem;
+  line-height: 1.35;
   padding: .28rem .55rem;
   border-radius: 6px;
-  white-space: nowrap;
+  /* A word longer than the whole window is not a reason to overflow. */
+  overflow-wrap: anywhere;
   box-shadow: 0 2px 10px rgba(0, 0, 0, .25);
   z-index: 5;
 }

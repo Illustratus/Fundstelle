@@ -34,6 +34,12 @@
     </label>
     <button type="button" id="import" class="button-quiet" data-t-title="importOpen" data-t-aria="importOpen" title="Transkript einlesen" aria-label="Transkript einlesen">＋</button>
     <button type="button" id="keys" class="button-quiet" data-t-title="keysOpen" data-t-aria="keysOpen" title="Tastenkürzel anzeigen" aria-label="Tastenkürzel anzeigen">?</button>
+    <!-- In a new tab, because this is a reference and the other one is work:
+         reading what an endpoint answers should not cost the passage that was
+         open, the selection in it, or the place in the transcript. -->
+    <a id="api-docs" class="button-quiet" href="/api/docs" target="_blank" rel="noopener"
+       data-t-title="apiDocsTitle" data-t-aria="apiDocsTitle"
+       title="Schnittstelle: alles, was dieses Werkzeug beantwortet" aria-label="Schnittstelle: alles, was dieses Werkzeug beantwortet">{ }</a>
     <button type="button" id="language" class="button-quiet" title="Switch the interface to English" aria-label="Switch the interface to English">EN</button>
     <button type="button" id="theme" class="button-quiet" data-t-title="themeTitle" data-t-aria="themeAria" title="Hell oder dunkel" aria-label="Darstellung wechseln">◐</button>
   </div>

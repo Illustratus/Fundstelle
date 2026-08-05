@@ -16,9 +16,17 @@ import { expect, test } from "@playwright/test";
  * made. Drawn anyway they were not empty but misleading: six requirements with
  * no level came out as one grey bar labelled 6, which reads as a finding.
  *
- * So those two wait until there is a judgment to draw, and say what would fill
- * them and where it is entered. The third counts citations, which exist from the
- * first requirement onwards, and stays.
+ * That rule is what these checks are about, and it is the one that does the
+ * work: those two wait until there is a judgment to draw and say what would
+ * fill them and where it is entered, so a catalog somebody has just started
+ * shows its requirements and not a wall. The third counts citations, which
+ * exist from the first requirement onwards, and stays.
+ *
+ * The figures sit above the list, as in the analysis — both views open on the
+ * overview, and two views of one tool that order themselves differently make
+ * the reader learn the tool twice. What that costs is checked below: once every
+ * judgment has been made the three figures are there to be scrolled past, and
+ * the check is that they are the *reviewed* size rather than the wall.
  */
 
 const TITLES = [
@@ -92,15 +100,38 @@ test("a figure that needs a judgment nobody has made is not drawn", async ({ pag
   await expect(page.locator("#coverage")).toBeVisible();
 });
 
-test("the requirements are on the screen they were just made on", async ({ page, request }) => {
+test("what an unjudged catalog puts above its requirements is the smaller wall", async ({
+  page,
+  request,
+}) => {
+  /* The whole point, said in the unit the problem was in: pixels above the
+     first card. With the figures back on top it is no longer the fold that can
+     be asserted — three figures at column width do not fit above it and are not
+     meant to. What the rule still buys is measured instead: a catalog nobody
+     has judged puts materially less in front of its requirements than a judged
+     one, because two of the three figures are not drawn. If that difference
+     ever goes to nothing, the rule has stopped working, whatever the reason. */
   await catalogWith(request);
   await catalog(page);
+  const unjudged = (await page.locator(".requirement").first().boundingBox()).y;
 
-  /* The whole point, said in the unit the problem was in: a card the reader can
-     see without scrolling past figures about work they have not done. */
+  await catalogWith(request, { judged: true });
+  await catalog(page);
+  const judged = (await page.locator(".requirement").first().boundingBox()).y;
+
+  expect(
+    judged - unjudged,
+    `first card at ${Math.round(unjudged)}px unjudged, ${Math.round(judged)}px judged`,
+  ).toBeGreaterThan(200);
+});
+
+test("a judged catalog puts its figures first, as the analysis does", async ({ page, request }) => {
+  await catalogWith(request, { judged: true });
+  await catalog(page);
+
+  const charts = await page.locator("#catalog-charts").boundingBox();
   const card = await page.locator(".requirement").first().boundingBox();
-  const viewport = page.viewportSize().height;
-  expect(Math.round(card.y), `first card at ${Math.round(card.y)}px in ${viewport}px`).toBeLessThan(viewport);
+  expect(charts.y, "the figures come before the list they are about").toBeLessThan(card.y);
 });
 
 test("the first judgment brings both figures back", async ({ page, request }) => {

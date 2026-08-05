@@ -490,6 +490,7 @@ export const TEXTS = {
        stehen im OpenAPI-Dokument und sind dort englisch — das ist die Sprache,
        in der eine Schnittstelle beschrieben wird. Übersetzt ist das Drumherum,
        damit die Seite dieselbe Sprache spricht wie das Werkzeug daneben. */
+    apiDocsTitle: "Schnittstelle: alles, was dieses Werkzeug beantwortet",
     docsToApplication: "Zur Anwendung",
     docsContents: "Inhalt",
     docsParameters: "Parameter",
@@ -1078,6 +1079,7 @@ export const TEXTS = {
     exportCodingGuide: "Coding guide",
     exportNotes: "Notes",
     exportCodingTable: "Coding table",
+    apiDocsTitle: "The interface: everything this tool answers",
     docsToApplication: "Back to the application",
     docsContents: "Contents",
     docsParameters: "Parameters",

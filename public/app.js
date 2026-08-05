@@ -3366,11 +3366,18 @@ async function drawCatalog() {
   root.innerHTML =
     head +
     `<div id="catalog-metrics">${catalogMetricsHTML(state.requirements)}</div>` +
+    /* Figures first, as in the analysis: both views open on the overview and
+       then give the detail under it, and two views of one tool that order
+       themselves differently make the reader learn the tool twice.
+
+       What keeps this from becoming the wall it once was is the rule below it
+       rather than the position: a figure that needs a judgment nobody has made
+       is not drawn at all. So a catalog somebody has just started shows one
+       compact row of counts and its requirements; the field and the level
+       distribution appear when there is something in them to read. */
+    `<div id="catalog-charts">${catalogFiguresHTML(state.requirements, state.departments)}</div>` +
     filter +
     `<div class="catalog-list">${cards || `<p class="empty-state">${t("noRequirementInSlice")}</p>`}</div>` +
-    // The figures come after the list they are about: this view's subject is the
-    // requirements, and a review of work belongs after the work.
-    `<div id="catalog-charts">${catalogFiguresHTML(state.requirements, state.departments)}</div>` +
     `<div class="exports"><a class="button-quiet" href="${exportHref("/api/export/requirements-catalog.md")}" download>` +
     `${t("catalogTitle")}</a></div>`;
 
@@ -4193,6 +4200,43 @@ function connectEvents() {
     await assign(interview, citation, (before) => [...before, value]);
   });
 
+  /**
+   * A tip beside the pointer, inside the window whatever the pointer is doing.
+   *
+   * Three things in order, because each one can only be decided once the one
+   * before it is settled. First how wide it may be: the window less a margin,
+   * which is what makes a long tip wrap instead of running off — the figures
+   * now take the whole column, so hovering the last cell of a heatmap means
+   * hovering a few pixels from the right edge, and that is the ordinary case
+   * rather than the awkward one. Then which side of the pointer it goes: the
+   * right if it fits there, otherwise the left, and clamped to the margin if
+   * neither — which can only happen when the tip is as wide as the window, and
+   * then it is already wrapped. Then above or below, by the same rule.
+   *
+   * Measured after the text is in and the width is capped, because a box that
+   * has not been laid out yet has no width to place.
+   */
+  function place(tip, event) {
+    const EDGE = 8;
+    const GAP = 14;
+    const room = document.documentElement.clientWidth - 2 * EDGE;
+    tip.style.maxWidth = `${room}px`;
+
+    const box = tip.getBoundingClientRect();
+    let x = event.clientX + GAP;
+    if (x + box.width > document.documentElement.clientWidth - EDGE) {
+      x = event.clientX - GAP - box.width;
+    }
+    x = Math.max(EDGE, x);
+
+    let y = event.clientY - box.height - 10;
+    if (y < EDGE) y = event.clientY + 18;
+
+    const frame = tip.parentElement.getBoundingClientRect();
+    tip.style.left = `${x - frame.left}px`;
+    tip.style.top = `${y - frame.top}px`;
+  }
+
   // Tooltips of the charts: follow the mouse over anything that carries one.
   const HOVERABLE = ".segment, .cell, .point, .moscow-band";
   for (const view of [$("#analysis"), catalog]) {
@@ -4206,9 +4250,7 @@ function connectEvents() {
       if (!tip) return;
       tip.textContent = mark.dataset.tip ?? "";
       tip.hidden = false;
-      const frame = tip.parentElement.getBoundingClientRect();
-      tip.style.left = `${event.clientX - frame.left + 14}px`;
-      tip.style.top = `${event.clientY - frame.top - 30}px`;
+      place(tip, event);
     });
     view.addEventListener("mouseleave", () => {
       for (const tip of view.querySelectorAll(".chart-tip")) tip.hidden = true;
