@@ -390,6 +390,42 @@ function drawOnboarding(root) {
   });
 }
 
+/**
+ * The screen for a tool that could not start.
+ *
+ * Pointing START_SYSTEM at a file with a stray comma in it is the likeliest
+ * first-run failure there is once anybody brings a category system of their
+ * own — which is the whole point of the thing being configurable. What that
+ * produced was the application drawn around nothing: an empty interview
+ * picker, a search bar over a transcript that is not there, a column
+ * explaining percentages per guide block, and a button offering to create a
+ * category in a system that could not be read. The reason for all of it sat in
+ * a red message that faded after six seconds.
+ *
+ * A configuration that cannot be read is a state, not an event. So it takes
+ * the screen, it stays, and it says the one thing the message never did: what
+ * to do about it.
+ */
+function cannotStart(error) {
+  document.body.classList.add("cannot-start");
+  /* No toast beside it. The panel carries the reason permanently and in full,
+     and the same sentence twice on one screen reads as two problems. */
+  const code = String(error.data?.code ?? "");
+  $("#transcript").innerHTML =
+    `<div class="onboarding halt" role="alert">` +
+    `<h2>${t("haltTitle")}</h2>` +
+    `<p class="halt-reason">${escapeHTML(error.message)}</p>` +
+    // Only where the tool knows which knob it is: a generic "check your
+    // configuration" is the sentence that helps nobody.
+    (code.startsWith("errorStartSystem")
+      ? `<p>${t("haltStartSystem")}</p><p class="column-note">${t("haltStartSystemExample")}</p>`
+      : `<p>${t("haltGeneral")}</p>`) +
+    `<p class="onboarding-actions">` +
+    `<button type="button" class="button" id="halt-reload">${t("tryAgain")}</button></p>` +
+    `</div>`;
+  document.getElementById("halt-reload")?.addEventListener("click", () => location.reload());
+}
+
 function drawTranscript() {
   const root = $("#transcript");
   if (!state.transcript) {
@@ -4927,8 +4963,7 @@ async function start() {
     watchSections();
     restoreReadingPosition();
   } catch (error) {
-    complain(error);
-    $("#transcript").innerHTML = `<p class="empty-state">${escapeHTML(error.message)}</p>`;
+    cannotStart(error);
   }
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});

@@ -18,6 +18,14 @@ where it lies.
   one the exports write, so a quotation taken from the screen and one lifted
   from the appendix are the same string.
 
+- **A start system the tool cannot read now says so, and says what to do.**
+  Pointing `START_SYSTEM` at a file with a stray comma is the likeliest first-run
+  failure once anybody brings a category system of their own — which is the whole
+  point of it being configurable. It used to draw the whole application around
+  nothing (an empty picker, a search over no transcript, a button offering to
+  create a category in a system that could not be read) with the reason in a
+  message that faded after six seconds. Now it takes the screen, it stays, it
+  quotes the parser verbatim, and it names the variable and the example file.
 - **Merging two categories can be taken back.** It is the largest thing one
   click does here — a category dissolved, every unit it held re-hung, its rules
   and note pulled across, everything under it re-parented — and it was the only

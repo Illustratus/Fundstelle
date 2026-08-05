@@ -763,6 +763,50 @@ button, select, input, textarea {
 .citation-group[open] > .citations { margin-bottom: 1.2rem; }
 .citation-filter #slice-export { margin-left: .4rem; }
 
+/* A tool that could not start ---------------------------------------------
+   The same lesson the empty first screen taught: nothing on the screen may be
+   a control over nothing. If the category system could not be read, then the
+   block column, the category panel, the search over a transcript that was
+   never loaded and the two other views are furniture around a failure — and
+   furniture is what teaches a reader that parts of a screen mean nothing. */
+
+body.cannot-start .column-left,
+body.cannot-start .column-right,
+body.cannot-start .search-bar,
+body.cannot-start .views,
+body.cannot-start .header-right .field,
+/* Reading a recording in would land in the same wall. The language switch, the
+   key sheet and the theme stay: they work, and somebody may want the fix
+   explained in the other language. */
+body.cannot-start #import { display: none; }
+
+body.cannot-start .view { grid-template-columns: 1fr; }
+
+.onboarding.halt { max-width: 46rem; }
+.onboarding.halt .halt-reason {
+  font-family: var(--mono);
+  font-size: .82rem;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--sheet);
+  border-left: 3px solid var(--error, #a03027);
+  border-radius: 0 var(--radius-sm, 4px) var(--radius-sm, 4px) 0;
+  padding: .7rem .9rem;
+  margin: 1rem 0 1.4rem;
+  /* A parser's complaint about a file is one long line and must not push the
+     page sideways to show it. */
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.onboarding.halt code {
+  font-family: var(--mono);
+  font-size: .88em;
+  background: var(--sheet);
+  padding: .05rem .3rem;
+  border-radius: 3px;
+}
+
 /* From citation to requirement -------------------------------------------- */
 
 .citation-requirement {

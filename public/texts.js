@@ -312,6 +312,17 @@ export const TEXTS = {
     unitDeleted: "Kodiereinheit gelöscht.",
     unitRestored: "Kodiereinheit wiederhergestellt.",
     restoreFailed: "Wiederherstellen nicht möglich: {error}",
+    haltTitle: "Fundstelle kann so nicht starten",
+    haltStartSystem:
+      "Das betrifft die Datei, auf die <code>START_SYSTEM</code> zeigt. Nimm die Variable weg, dann startet die " +
+      "Anwendung mit dem eingebauten Startsystem — sonst korrigiere die Datei und lade neu. Es geht nichts verloren: " +
+      "gelesen wird sie nur beim allerersten Start, solange es noch keine <code>categories.json</code> gibt.",
+    haltStartSystemExample:
+      "Wie eine gültige Datei aussieht, steht in <code>example-start-system.json</code> im Projektordner.",
+    haltGeneral:
+      "Das kam vom Server, nicht aus dem Browser. Die Meldung im Terminal, in dem die Anwendung läuft, sagt dasselbe " +
+      "noch einmal — und meistens mit der Datei, um die es geht.",
+    tryAgain: "Erneut versuchen",
     mergeUndone: "„{name}“ steht wieder; die Belege hängen wieder daran.",
     unitMoved: "1 Kodiereinheit wurde nachgeführt, weil sich der Text verschoben hat.",
     unitsMoved: "{n} Kodiereinheiten wurden nachgeführt, weil sich der Text verschoben hat.",
@@ -847,6 +858,17 @@ export const TEXTS = {
     unitDeleted: "Coding unit deleted.",
     unitRestored: "Coding unit restored.",
     restoreFailed: "Could not restore: {error}",
+    haltTitle: "Fundstelle cannot start like this",
+    haltStartSystem:
+      "This is about the file <code>START_SYSTEM</code> points at. Drop the variable and the tool starts with its " +
+      "built-in start system — otherwise fix the file and reload. Nothing is lost either way: it is read only on the " +
+      "very first start, while there is no <code>categories.json</code> yet.",
+    haltStartSystemExample:
+      "What a valid file looks like is in <code>example-start-system.json</code> in the project folder.",
+    haltGeneral:
+      "This came from the server rather than from the browser. The message in the terminal running the tool says the " +
+      "same thing again — usually with the file it is about.",
+    tryAgain: "Try again",
     mergeUndone: "“{name}” is back, and so are its citations.",
     unitMoved: "1 coding unit was moved along, because the text has shifted.",
     unitsMoved: "{n} coding units were moved along, because the text has shifted.",

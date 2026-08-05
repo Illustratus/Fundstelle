@@ -318,7 +318,9 @@ ambiguous. The file itself is never corrected; it is yours.
 On first start (no `categories.json` yet) the tool seeds a deductive start
 system, which can be edited away in the interface as long as nothing is coded.
 Point `START_SYSTEM` at a JSON file to seed your own instead — see
-[example-start-system.json](example-start-system.json) for the format:
+[example-start-system.json](example-start-system.json) for the format. If the
+file cannot be read, the tool says so on its own screen, with the parser's
+complaint and the way out, rather than starting half-empty:
 propositions are optional color groups, missing abbreviations are derived from
 the name. A configured but unreadable file fails loudly instead of silently
 coding with the wrong system.

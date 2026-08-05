@@ -225,12 +225,16 @@ test("the citation list folds instead of running for thirty thousand pixels", as
   }
   await expect(study.locator(".citation-group:not([open])")).toHaveCount(0);
   const flat = (await study.locator("#citations-part").boundingBox()).height;
-  /* Under half here, where each category holds a handful. The study that
-     prompted this — twenty categories, three hundred and twenty-four units —
-     went from 30,808px to 4,338px, and the more each category holds the wider
-     the gap gets. */
+  /* Comfortably under two thirds here, where each category holds a handful.
+     The study that prompted this — twenty categories, 324 units — went from
+     30,808px to 4,338px, and the more each category holds the wider the gap.
+
+     The threshold is loose on purpose. This measures rendered pixels, so it
+     moves with the font the machine has, and a check that fails on a different
+     platform for a reason nobody can read is worse than a looser one: what it
+     is here to catch is folding that stops happening, which reads as 1.0. */
   expect(folded, `${Math.round(folded)}px folded against ${Math.round(flat)}px flat`)
-    .toBeLessThan(flat * 0.45);
+    .toBeLessThan(flat * 0.65);
   await study.close();
 });
 
