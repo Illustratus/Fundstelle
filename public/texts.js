@@ -65,6 +65,11 @@ export const TEXTS = {
     languageAria: "Switch the interface to English",
 
     sections: "Blöcke",
+    sectionsNoneNote:
+      "Dieses Transkript führt keine Erzählanstöße. Sie gehören zum Leitfaden, " +
+      "nicht zur Aufnahme — eine eingelesene Datei trägt deshalb keine. „## " +
+      "Erzählanstoß: Name“ als eigene Zeile in der Datei ergänzt sie; ohne sie " +
+      "funktioniert alles außer dieser Leiste.",
     sectionsNote:
       "Je Erzählanstoß: wie viel von dem, was dort gesagt wurde, in " +
       "Kodiereinheiten steckt. Die Zahlen sind Anteile je Block, keine " +
@@ -367,6 +372,10 @@ export const TEXTS = {
     /* Intercoder reliability ---------------------------------------------- */
     agreementTitle: "Übereinstimmung mit einer Zweitkodierung",
     exportAgreement: "Intercoderreliabilität",
+    howToCode:
+      "<b>Eine Stelle kodieren:</b> mit der Maus über den Wortlaut ziehen — oder " +
+      "<kbd>s</kbd> drücken, dann führen <kbd>↓</kbd> <kbd>↑</kbd> von Satz zu " +
+      "Satz. Eine Ziffer wählt die Kategorie. <kbd>?</kbd> zeigt alle Tasten.",
     copyCitation: "Zitat kopieren",
     citationCopied: "Zitat mit Quelle in der Zwischenablage.",
     citationNotCopied:
@@ -582,6 +591,11 @@ export const TEXTS = {
     languageAria: "Oberfläche auf Deutsch umstellen",
 
     sections: "Sections",
+    sectionsNoneNote:
+      "This transcript carries no guide sections. They belong to the interview " +
+      "guide rather than to the recording, so a file that was read in has none. " +
+      "A line of the form “## Section: Name” in the file adds them; everything " +
+      "except this bar works without them.",
     sectionsNote:
       "Per guide section: how much of what was said there is held in coding " +
       "units. These are shares within each block, not a split of the codings — " +
@@ -879,6 +893,10 @@ export const TEXTS = {
     /* Intercoder reliability ---------------------------------------------- */
     agreementTitle: "Agreement with a second coding",
     exportAgreement: "Intercoder reliability",
+    howToCode:
+      "<b>To code a passage:</b> drag across the words with the mouse — or press " +
+      "<kbd>s</kbd>, and <kbd>↓</kbd> <kbd>↑</kbd> walk from sentence to " +
+      "sentence. A digit picks the category. <kbd>?</kbd> shows every key.",
     copyCitation: "Copy citation",
     citationCopied: "Citation and source are on the clipboard.",
     citationNotCopied:

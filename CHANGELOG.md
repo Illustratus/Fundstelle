@@ -18,6 +18,17 @@ where it lies.
   one the exports write, so a quotation taken from the screen and one lifted
   from the appendix are the same string.
 
+- **The screen a transcript lands on says how to code.** Every key was in the
+  sheet behind `?`, which is no use to somebody who does not yet know there is a
+  sheet, and the mouse gesture was written nowhere at all — so the one act the
+  screen exists for was undiscoverable. It is said once, above the transcript,
+  and goes as soon as anything is coded.
+- **A transcript without guide sections says why.** Sections belong to the
+  interview guide rather than to the recording, so a file that was read in never
+  carries any. The column beside the transcript explained percentages per
+  section for a study that had none and reported "0 blocks" as though something
+  were missing.
+
 ### Changed
 
 - **Dissolving one requirement into another is folded away.** It stood open on

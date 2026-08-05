@@ -387,6 +387,13 @@ function drawTranscript() {
     drawOnboarding(root);
     return;
   }
+  /* The one act this screen exists for, said once, on the screen where it is
+     wanted. Walking the first run end to end — empty folder, a recording read
+     in, a transcript open — the tool showed a reading surface and a column of
+     zeroes, and nothing anywhere said how to make a coding. The keys are all in
+     the sheet behind `?`, which is no help to somebody who does not yet know
+     there is a sheet. It goes as soon as anything is coded. */
+  $("#how-to-code").hidden = state.codings.length > 0;
   const parts = [];
   let lastSection = -1;
   for (const turn of state.transcript.turns) {
@@ -665,6 +672,19 @@ function drawDrift() {
 function drawSections() {
   const list = $("#sections");
   if (!state.transcript) return (list.innerHTML = "");
+
+  /* A transcript that carries no guide sections is the ordinary case for one
+     that came out of a recording — the sections belong to the interview guide,
+     not to the tape. The column then explained percentages for a thing that
+     does not exist, said "0 blocks" as though it were a shortfall, and left the
+     reader to work out whether they had done something wrong. */
+  const explains = $("#sections-note");
+  const bare = !state.transcript.sections.length;
+  explains.textContent = t(bare ? "sectionsNoneNote" : "sectionsNote");
+  if (bare) {
+    list.innerHTML = "";
+    return;
+  }
 
   const charactersPerSection = new Map();
   const codedPerSection = new Map();
