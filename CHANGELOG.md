@@ -10,6 +10,17 @@ where it lies.
 
 ### Added
 
+- **The whole study exports as REFI-QDA (`.qdpx`).** The claim has been that
+  the work is not locked in here because everything is plain files — which is
+  half an answer while the other half is "and to continue in MAXQDA you retype
+  it". The analysis screen now offers the study in the interchange format that
+  MAXQDA, ATLAS.ti, NVivo, QualCoder and Quirkos read: the category system with
+  its definitions, its hierarchy, its coding rules and its colours; every
+  transcript as text with its speakers, times and guide sections; and every
+  coding as a character range on that text. A unit that has lost its place is
+  left out, as everywhere else. Written without a dependency — the zip is a few
+  dozen lines and `zlib` is in the standard library — and the same study
+  exported twice is the same file, so two exports can be diffed.
 - **The tool says which version it is.** It was nowhere: not in the interface,
   not on an endpoint, and in the image only as an OCI label. Somebody filing an
   issue against a public tool had to guess. `GET /api/version` answers it, the

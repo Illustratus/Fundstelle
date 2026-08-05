@@ -353,6 +353,23 @@ shared or scripted setup wants. A text that exists in only one language is used
 as it stands rather than coming out blank — you can always hand the tool a
 single-language file.
 
+## Taking the study elsewhere
+
+Everything lives as plain files beside the transcripts, so the work is readable
+without this tool at all. For continuing it in another program, the analysis
+screen offers the study as a REFI-QDA project (`.qdpx`) — the interchange format
+MAXQDA, ATLAS.ti, NVivo, QualCoder and Quirkos read. It carries the category
+system with its definitions, hierarchy, coding rules and colours; every
+transcript as text; and every coding as a character range on that text.
+
+```
+GET /api/export/project.qdpx
+```
+
+Codings whose passage no longer has a place are left out rather than exported as
+a range that points at the wrong sentence — the same rule every other surface
+here keeps.
+
 ## Upgrading from an earlier version
 
 Version 0.1 renamed the files and the keys inside them from German to English.

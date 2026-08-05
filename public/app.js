@@ -3271,6 +3271,15 @@ async function drawAnalysis() {
       )
       .join("") + link("notes.md", t("exportNotes"));
 
+  /* Everything above leaves as a document for a reader. This leaves as a
+     project for a program: the study whole, in the format MAXQDA, ATLAS.ti,
+     NVivo and QualCoder read. It is the check on the promise the README makes
+     — that the work is not locked in here — and a promise nobody can test is
+     not one. */
+  const forElsewhere =
+    `<a class="button-quiet" href="${exportHref("/api/export/project.qdpx")}" download>` +
+    `${t("exportProject")}</a>`;
+
   const exports =
     // Marked as one block so that printing can drop the heading with the links;
     // a heading whose only content is buttons is not a section on paper.
@@ -3278,7 +3287,9 @@ async function drawAnalysis() {
     `<p class="column-note exports-where">${t("exportsForMethod")}</p>` +
     `<div class="exports">${forMethod}</div>` +
     `<p class="column-note exports-where">${t("exportsForAppendix")}</p>` +
-    `<div class="exports">${forAppendix}</div></div>`;
+    `<div class="exports">${forAppendix}</div>` +
+    `<p class="column-note exports-where">${t("exportsForElsewhere")}</p>` +
+    `<div class="exports">${forElsewhere}</div></div>`;
 
   root.innerHTML =
     heading +

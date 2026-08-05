@@ -19,6 +19,7 @@ import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withReasons, withoutCheckMarks } from "./lib/anchoring.js";
 import { agreement, agreementMarkdown } from "./lib/agreement.js";
+import { projectFile } from "./lib/refi.js";
 import { convert, folderName, readTranscript } from "./lib/import.js";
 import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
 import {
@@ -673,6 +674,28 @@ const server = createServer(async (request, response) => {
         MARKDOWN,
       );
     }
+    /* The study whole, in the format the other programs read. Everything else
+       here leaves as a document for a reader; this leaves as a project for a
+       program, so that "your work is not locked in this tool" is something a
+       person can check rather than something a README claims. */
+    if (path === "/api/export/project.qdpx") {
+      const all = await allInterviews();
+      const { categories, propositions } = await store.categories(seedLanguage);
+      const file = projectFile({
+        studies: all,
+        categories,
+        propositions,
+        name: t("projectName"),
+      });
+      response.writeHead(200, {
+        "content-type": "application/zip",
+        "content-length": file.length,
+        "content-disposition": 'attachment; filename="fundstelle-project.qdpx"',
+        "cache-control": "no-store",
+      });
+      return response.end(file);
+    }
+
     if (path === "/api/export/sample.md") {
       return send(response, 200, sampleMarkdown(await allInterviews(), language), MARKDOWN);
     }

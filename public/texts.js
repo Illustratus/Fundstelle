@@ -324,6 +324,11 @@ export const TEXTS = {
       "noch einmal — und meistens mit der Datei, um die es geht.",
     tryAgain: "Erneut versuchen",
     versionLine: "Fundstelle {version} · Node {node} · MIT",
+    exportProject: "Projekt (REFI-QDA)",
+    exportsForElsewhere:
+      "Für ein anderes Programm: die Studie als Ganzes im Austauschformat REFI-QDA, das MAXQDA, ATLAS.ti, " +
+      "NVivo und QualCoder lesen — Kategoriensystem mit Definitionen, alle Transkripte als Text, jede " +
+      "Kodierung als Stelle darin. Die Arbeit bleibt nicht in diesem Werkzeug hängen.",
     mergeUndone: "„{name}“ steht wieder; die Belege hängen wieder daran.",
     unitMoved: "1 Kodiereinheit wurde nachgeführt, weil sich der Text verschoben hat.",
     unitsMoved: "{n} Kodiereinheiten wurden nachgeführt, weil sich der Text verschoben hat.",
@@ -871,6 +876,11 @@ export const TEXTS = {
       "same thing again — usually with the file it is about.",
     tryAgain: "Try again",
     versionLine: "Fundstelle {version} · Node {node} · MIT",
+    exportProject: "Project (REFI-QDA)",
+    exportsForElsewhere:
+      "For another program: the whole study in the REFI-QDA interchange format, which MAXQDA, ATLAS.ti, " +
+      "NVivo and QualCoder read — the category system with its definitions, every transcript as text, and " +
+      "every coding as a place in it. The work does not get stuck in this tool.",
     mergeUndone: "“{name}” is back, and so are its citations.",
     unitMoved: "1 coding unit was moved along, because the text has shifted.",
     unitsMoved: "{n} coding units were moved along, because the text has shifted.",

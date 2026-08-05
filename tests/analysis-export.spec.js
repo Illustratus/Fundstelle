@@ -115,9 +115,12 @@ test("the documents are offered by where each of them goes", async ({ page, requ
   await expect(page.locator("#matrix-table")).toBeVisible();
 
   const groups = page.locator(".exports-part .exports-where");
-  await expect(groups).toHaveCount(2);
+  await expect(groups).toHaveCount(3);
   await expect(groups.nth(0)).toContainText("Methodenkapitel");
   await expect(groups.nth(1)).toContainText("Anhang");
+  // And a third that is not a document for a reader at all: the study itself,
+  // in the format the other programs read.
+  await expect(groups.nth(2)).toContainText("anderes Programm");
 
   /* What describes the study goes in the first group, what quotes the material
      in the second — which is the distinction the flat row could not make. */
