@@ -34,6 +34,19 @@ where it lies.
 
 ### Changed
 
+- **Every part of a stacked bar carries its own number**, centred in the part.
+  How much of a category came from which department was only readable by
+  hovering — and a hover answers one person with a mouse, not a printed figure,
+  not the saved SVG, not a screen reader. A part too narrow for its number
+  carries none rather than one hanging over its neighbour, and the number is
+  black or white by measurement against the colour it sits on: the tool's own
+  near-black reaches 4.00 on the blue of the first series, against a threshold
+  of 4.5.
+- **A row label that is too long wraps instead of being cut**, and the whole
+  column of labels steps down a size when the longest of them needs it. Cut at
+  thirty characters, two categories whose names begin alike were two rows told
+  apart only by hovering — and not at all on paper. The labels are centred
+  against the bar they name.
 - **The figures take the width of the column again**, in both views, and the
   catalog puts them above its requirements as the analysis does. Held to 720
   units the labels were the same size on a 27-inch screen as on a laptop with

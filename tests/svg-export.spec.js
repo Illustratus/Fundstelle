@@ -246,14 +246,28 @@ test("the dark theme is saved dark, and stays readable", async ({ page }) => {
       return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
     };
     const ground = getComputedStyle(document.querySelector("svg > rect")).fill;
-    const labels = [...document.querySelectorAll("text")].map(
-      (one) => getComputedStyle(one).fill,
-    );
+    /* Against what it is actually read on. A number written into a bar is read
+       against the bar — black on a mid-blue segment, which is right — and
+       measuring it against the sheet behind it asks a question nobody has: on a
+       dark ground that number is near-invisible and also nowhere near it. Such a
+       label always follows the shape it belongs to, so the shape is one step
+       back. */
+    const behind = (text) => {
+      const shape = text.previousElementSibling;
+      const painted = /segment|cell |cell$|moscow-band/.test(
+        shape?.getAttribute("class") ?? "",
+      );
+      return painted ? getComputedStyle(shape).fill : ground;
+    };
+    const pairs = [...document.querySelectorAll("text")].map((one) => [
+      getComputedStyle(one).fill,
+      behind(one),
+    ]);
     return {
       ground: luminance(ground),
       worst: Math.min(
-        ...labels.map((colour) => {
-          const [bright, dark] = [luminance(colour), luminance(ground)].sort((a, b) => b - a);
+        ...pairs.map(([colour, under]) => {
+          const [bright, dark] = [luminance(colour), luminance(under)].sort((a, b) => b - a);
           return (bright + 0.05) / (dark + 0.05);
         }),
       ),

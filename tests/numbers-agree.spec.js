@@ -196,3 +196,54 @@ test("the progress table counts each interview as the interview does", async ({ 
     await expect(row).toContainText(`${entry.turnsCoded} / ${entry.turns}`);
   }
 });
+
+/**
+ * The number written into a bar is the number the bar is.
+ *
+ * How much of a category came from which department was only readable by
+ * hovering, and a hover answers one person with a mouse — not a printed figure,
+ * not the saved SVG, not a screen reader. The parts carry their own number now,
+ * and a number drawn on a shape is worth exactly as much as its agreement with
+ * the shape: this reads them back off the drawn chart and compares them with
+ * the analysis, department by department.
+ */
+test("every number inside a bar is the value of that part", async ({ page }) => {
+  await page.goto("/?lang=de");
+  await page.waitForSelector(".turn");
+  await page.locator('.tab[data-view="analysis"]').click();
+  await expect(page.locator("#chart svg")).toBeVisible();
+
+  const { drawn, analysis } = await page.evaluate(async () => {
+    const data = await (await fetch("/api/analysis")).json();
+    return {
+      analysis: data,
+      drawn: [...document.querySelectorAll("#chart text.bar-value")].map((one) => ({
+        value: one.textContent,
+        row: one.previousElementSibling?.dataset.row,
+        department: one.previousElementSibling?.dataset.department,
+        // What the segment itself says it is, which is what the tooltip says.
+        onSegment: one.previousElementSibling?.dataset.value,
+      })),
+    };
+  });
+
+  expect(drawn.length, "the bars carry their numbers").toBeGreaterThan(0);
+  for (const label of drawn) {
+    expect(label.value, `${label.row} · ${label.department}`).toBe(label.onSegment);
+    const row = analysis.rows.find((one) => one.name === label.row);
+    expect(row, `the analysis knows ${label.row}`).toBeTruthy();
+    const at = analysis.departments.indexOf(label.department);
+    expect(String(row.values[at]), `${label.row} · ${label.department}`).toBe(label.value);
+  }
+
+  /* And nothing was written where it could not be read: a part too narrow for
+     its own number carries none rather than one hanging over its neighbour. */
+  const overflow = await page.evaluate(() =>
+    [...document.querySelectorAll("#chart text.bar-value")].filter((one) => {
+      const text = one.getBoundingClientRect();
+      const segment = one.previousElementSibling.getBoundingClientRect();
+      return text.left < segment.left - 0.5 || text.right > segment.right + 0.5;
+    }).length,
+  );
+  expect(overflow, "no number reaches out of the part it belongs to").toBe(0);
+});

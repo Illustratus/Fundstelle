@@ -96,6 +96,30 @@ export const FONTS = {
   mono: 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
 };
 
+/**
+ * What a number written on a colour has to be, to be readable on it.
+ *
+ * Derived from the palette rather than written down beside it, because a table
+ * of eight colours next to a table of eight colours is a table that goes wrong
+ * the first time one of them is adjusted. Black or white and nothing between:
+ * the tool's own ink and paper are near-black and white but not quite, and on
+ * the blue of the first series that near-miss costs 4.00 against a threshold of
+ * 4.5 — the whole difference between passing and failing. On the eight series
+ * colours, in both themes, the better of the two always clears 4.5.
+ *
+ * The same values are written into `app.css` as `--on-1 … --on-8`, and
+ * `tests/svg-export.spec.js` compares the page against the saved file element
+ * by element, so the two cannot part company quietly.
+ */
+const luminance = (hex) => {
+  const [r, g, b] = [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16) / 255);
+  const channel = (value) =>
+    value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+};
+
+export const readableOn = (colour) => (luminance(colour) > 0.179 ? "#000000" : "#ffffff");
+
 const MOSCOW_ORDER = ["must", "should", "could", "wont"];
 
 export const moscowClass = (level) =>
@@ -164,6 +188,60 @@ export function shorten(text, limit = 30) {
 }
 
 /**
+ * A label broken over as many lines as it needs, inside the room it has.
+ *
+ * The row labels of a bar chart used to be cut at thirty characters with an
+ * ellipsis, which is fine for "Zusammenarbeit über Bereic…" until the row below
+ * it is "Zusammenarbeit über Bereic…" as well — two categories the analysis is
+ * about, told apart on screen only by hovering. A name is what a category *is*;
+ * a figure that will not print it is a figure somebody has to annotate by hand.
+ *
+ * Greedy wrapping on estimated widths rather than measured ones, for the same
+ * reason everything here estimates: the browser and the endpoint have to lay
+ * the same figure out, and only one of them can ask a font anything. The
+ * estimate runs wide, so a line breaks a word early rather than late.
+ *
+ * Returns the lines and whether anything had to be given up, which is what lets
+ * the caller try a smaller size before it settles for an ellipsis.
+ */
+export function wrapLabel(text, { room, size, maxLines = 3 }) {
+  const fits = (one) => estimateWidth(one, { size }) <= room;
+  const perLine = Math.max(4, Math.floor(room / (size * 0.58)));
+  const lines = [];
+  let line = "";
+
+  for (const word of String(text).trim().split(/\s+/)) {
+    let rest = word;
+    // A word wider than the column is broken rather than left hanging over it.
+    while (!fits(rest)) {
+      if (line) {
+        lines.push(line);
+        line = "";
+      }
+      lines.push(rest.slice(0, perLine));
+      rest = rest.slice(perLine);
+    }
+    if (!rest) continue;
+    const together = line ? `${line} ${rest}` : rest;
+    if (fits(together)) {
+      line = together;
+    } else {
+      lines.push(line);
+      line = rest;
+    }
+  }
+  if (line) lines.push(line);
+  if (!lines.length) return { lines: [""], truncated: false };
+  if (lines.length <= maxLines) return { lines, truncated: false };
+
+  // More than it may have: the last line it can keep says so with an ellipsis.
+  const kept = lines.slice(0, maxLines);
+  kept[maxLines - 1] = shorten(kept[maxLines - 1], Math.max(2, perLine - 1));
+  if (!kept[maxLines - 1].endsWith("…")) kept[maxLines - 1] += "…";
+  return { lines: kept, truncated: true };
+}
+
+/**
  * How wide a piece of text is, when nobody can be asked.
  *
  * A deliberate over-estimate. Every use of this reserves room — the foot below
@@ -217,12 +295,49 @@ export function stackedBars({
 
   const LABEL = 200;
   const VALUE = 34;
-  const ROW = 26;
   const BAR = 14;
   const TOP = 6;
   const track = WIDTH - LABEL - VALUE - 8;
-  const height = TOP + rows.length * ROW + 22;
   const scale = (value) => (value / end) * track;
+
+  /**
+   * One type size for every row label, chosen from the longest of them.
+   *
+   * The largest size at which every name fits in two lines, tried in order. All
+   * of them together and not each on its own: labels of a chart are a column,
+   * and a column set in four sizes is not read as a column. So the longest name
+   * decides, and the rest are set to match — which is also why a study whose
+   * categories are all short still gets the size the chart was drawn for.
+   *
+   * Two lines and not three, because the size and the height are the same
+   * decision seen twice: a long name kept at full size takes three lines, and
+   * three lines make a row twice as tall in every row of the chart, including
+   * the ones whose name is one word. A step smaller costs a little legibility
+   * in the label and buys it back in the shape of the whole figure. The third
+   * line is the floor under that, at the smallest size, before an ellipsis.
+   */
+  const SIZES = [11.5, 10.5, 9.5, 8.5, 7.5];
+  const WANTED_LINES = 2;
+  const MAX_LINES = 3;
+  const room = LABEL - 12;
+  const names = rows.map((row) => (row.child ? "… " : "") + row.name);
+  let size = SIZES.at(-1);
+  let labels = names.map((name) => wrapLabel(name, { room, size, maxLines: MAX_LINES }));
+  for (const candidate of SIZES) {
+    const tried = names.map((name) =>
+      wrapLabel(name, { room, size: candidate, maxLines: WANTED_LINES }),
+    );
+    if (!tried.some((one) => one.truncated)) {
+      size = candidate;
+      labels = tried;
+      break;
+    }
+  }
+  const LINE = Math.round(size * 1.2 * 10) / 10;
+  const tallest = Math.max(1, ...labels.map((one) => one.lines.length));
+  // The row grows to hold the tallest label; a bar is still a bar, centred in it.
+  const ROW = Math.max(26, Math.ceil(tallest * LINE) + 10);
+  const height = TOP + rows.length * ROW + 22;
 
   let grid = "";
   for (let tick = 0; tick <= end; tick += step) {
@@ -236,7 +351,6 @@ export function stackedBars({
   const bars = rows
     .map((row, index) => {
       const y = TOP + index * ROW + (ROW - BAR) / 2;
-      const label = (row.child ? "… " : "") + row.name;
       let x = LABEL;
       let last = -1;
       values[index].forEach((value, k) => {
@@ -251,13 +365,44 @@ export function stackedBars({
           const part =
             `<path class="segment ${series[k].className}" d="${segmentPath(x, y, width, BAR, k === last)}"` +
             ` data-department="${escape(series[k].name)}" data-row="${escape(row.name)}"` +
-            ` data-value="${value}" data-tip="${escape(`${row.name} — ${series[k].name}: ${value}`)}"></path>`;
+            ` data-value="${value}" data-tip="${escape(`${row.name} — ${series[k].name}: ${value}`)}"></path>` +
+            /* The part's own number, in the part. Which department contributed
+               how much was only readable by hovering, and a hover answers one
+               person with a mouse — not the reader of a printed figure, not a
+               screen reader, not the saved file.
+
+               Only where it fits. A segment narrower than its own number would
+               either have the digits hang over the neighbouring colour or be
+               cut in half, and both are worse than the tooltip that is still
+               there. The room is reckoned in the units the drawing counts in,
+               against the mono face the number is set in — no measuring, so
+               the same figure comes out of the browser and out of the API. */
+            (width >= String(value).length * 6.2 + 8
+              ? `<text class="bar-value ${series[k].className}" x="${x + width / 2}"` +
+                ` y="${y + BAR / 2 + 3.5}" text-anchor="middle">${value}</text>`
+              : "");
           x += full;
           return part;
         })
         .join("");
+      /* Centred on the bar, not sitting on its baseline: one line looks the
+         same either way, and three lines hung from the baseline would have the
+         name climbing away from the row it belongs to. */
+      const { lines } = labels[index];
+      const first = y + BAR / 2 - ((lines.length - 1) * LINE) / 2 + size * 0.35;
+      const label =
+        `<text class="row-label${row.child ? " child" : ""}" x="${LABEL - 8}" y="${first}"` +
+        ` text-anchor="end" style="font-size:${size}px">` +
+        lines
+          .map(
+            (line, k) =>
+              `<tspan x="${LABEL - 8}"${k ? ` dy="${LINE}"` : ""}>${escape(line)}</tspan>`,
+          )
+          .join("") +
+        `</text>`;
+
       return (
-        `<text class="row-label${row.child ? " child" : ""}" x="${LABEL - 8}" y="${y + BAR - 3}" text-anchor="end">${escape(shorten(label))}</text>` +
+        label +
         segments +
         `<text class="value${row.sum ? "" : " empty"}" x="${x + 6}" y="${y + BAR - 3}">${row.sum}</text>`
       );
@@ -887,7 +1032,11 @@ export const FIGURE_NAMES = Object.keys(FIGURES);
 export function stylesheet(theme = "light") {
   const c = THEMES[theme] ?? THEMES.light;
   const series = c.series
-    .map((colour, index) => `.segment.series-s${index + 1}{fill:${colour}}`)
+    .map(
+      (colour, index) =>
+        `.segment.series-s${index + 1}{fill:${colour}}` +
+        `.bar-value.series-s${index + 1}{fill:${readableOn(colour)}}`,
+    )
     .join("");
   const level = c.level.map((colour, index) => `.cell.level-${index + 1}{fill:${colour}}`).join("");
   const bands = Object.entries(c.moscow)
@@ -914,6 +1063,7 @@ export function stylesheet(theme = "light") {
     `.row-label.child{fill:${c.inkSoft}}` +
     `.value{fill:${c.inkSoft};font-size:10.5px;font-family:${FONTS.mono}}` +
     `.value.empty{fill:${c.inkFaint}}` +
+    `.bar-value{font-size:10px;font-family:${FONTS.mono}}` +
     series +
     level +
     `.cell-empty{fill:none;stroke:${c.line}}` +

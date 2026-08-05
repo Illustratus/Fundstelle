@@ -1770,30 +1770,45 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 :root {
   --series-1: #2a78d6; --series-2: #ea632d; --series-3: #19a06f; --series-4: #bd8000;
   --series-5: #e35f91; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  --on-1: #000; --on-2: #000; --on-3: #000; --on-4: #000;
+  --on-5: #000; --on-6: #fff; --on-7: #fff; --on-8: #000;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
     --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+    --on-1: #000; --on-2: #000; --on-3: #000; --on-4: #000;
+    --on-5: #000; --on-6: #fff; --on-7: #000; --on-8: #000;
   }
 }
 :root[data-theme="light"] {
   --series-1: #2a78d6; --series-2: #ea632d; --series-3: #19a06f; --series-4: #bd8000;
   --series-5: #e35f91; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  --on-1: #000; --on-2: #000; --on-3: #000; --on-4: #000;
+  --on-5: #000; --on-6: #fff; --on-7: #fff; --on-8: #000;
 }
 :root[data-theme="dark"] {
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
   --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  --on-1: #000; --on-2: #000; --on-3: #000; --on-4: #000;
+  --on-5: #000; --on-6: #fff; --on-7: #000; --on-8: #000;
 }
 
-.series-s1 { --series: var(--series-1); }
-.series-s2 { --series: var(--series-2); }
-.series-s3 { --series: var(--series-3); }
-.series-s4 { --series: var(--series-4); }
-.series-s5 { --series: var(--series-5); }
-.series-s6 { --series: var(--series-6); }
-.series-s7 { --series: var(--series-7); }
-.series-s8 { --series: var(--series-8); }
+/* Each series carries two things: the colour it is drawn in, and the colour a
+   number written on it has to be to be read on it. Black or white and nothing
+   between — the ink and paper of this page are near-black and white but not
+   quite, and on the blue of the first series that near-miss costs 4.00 against
+   a threshold of 4.5. `public/charts.js` derives the same choice from the same
+   palette for the saved file, and `npm run test:contrast` measures both themes
+   in the running application. */
+.series-s1 { --series: var(--series-1); --on-series: var(--on-1); }
+.series-s2 { --series: var(--series-2); --on-series: var(--on-2); }
+.series-s3 { --series: var(--series-3); --on-series: var(--on-3); }
+.series-s4 { --series: var(--series-4); --on-series: var(--on-4); }
+.series-s5 { --series: var(--series-5); --on-series: var(--on-5); }
+.series-s6 { --series: var(--series-6); --on-series: var(--on-6); }
+.series-s7 { --series: var(--series-7); --on-series: var(--on-7); }
+.series-s8 { --series: var(--series-8); --on-series: var(--on-8); }
 
 /* A figure takes the width it is given.
    These charts are authored 720 units wide and were held to that, because
@@ -1836,6 +1851,15 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .row-label.child { fill: var(--ink-soft); }
 .chart .value { fill: var(--ink-soft); font-size: 10.5px; font-family: var(--mono); }
 .chart .value.empty { fill: var(--ink-faint); }
+/* The part's own number, inside the part. `pointer-events: none` because the
+   segment under it carries the tooltip, and a label that swallowed the hover
+   would take away the sentence it is the short form of. */
+.chart .bar-value {
+  fill: var(--on-series);
+  font-size: 10px;
+  font-family: var(--mono);
+  pointer-events: none;
+}
 .chart figcaption { margin-top: .35rem; }
 
 .chart-legend {

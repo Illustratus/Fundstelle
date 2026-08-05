@@ -53,6 +53,20 @@ const measure = () => {
     });
   }
 
+  /* A number written into a bar is read against that bar. Which is why it is
+     black or white and not the page's ink: on the blue of the first series the
+     near-black this tool writes in reaches 4.00, and 4.5 is the threshold. */
+  for (const value of document.querySelectorAll("#chart text.bar-value")) {
+    const segment = value.previousElementSibling;
+    if (!segment?.classList.contains("segment")) continue;
+    const series = [...segment.classList].find((name) => name.startsWith("series-"));
+    found.push({
+      what: `bar value on ${series}`,
+      ratio: ratio(parse(getComputedStyle(value).fill), parse(getComputedStyle(segment).fill)),
+      need: 4.5,
+    });
+  }
+
   for (const selector of [
     "#chart text.axis",
     "#chart text.row-label",

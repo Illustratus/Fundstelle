@@ -216,3 +216,90 @@ test("a tip stays inside the window, wherever it is called up", async ({ page, r
   const gone = await request.delete(`/api/categories/${encodeURIComponent(made.id)}`);
   expect(gone.status(), "the category this check made is put back").toBe(204);
 });
+
+/**
+ * A category name is what a category is, so the figure prints it.
+ *
+ * The row labels were cut at thirty characters with an ellipsis, which is fine
+ * for one long name and useless for two: "Zusammenarbeit über Bereic…" above
+ * "Zusammenarbeit über Bereic…" is two rows of an analysis told apart only by
+ * hovering — and not at all on paper, in the saved SVG, or to a screen reader.
+ *
+ * They wrap now, and the whole column steps down a size when the longest of
+ * them needs it. All of them together: labels of a chart are a column, and a
+ * column set in four sizes is not read as a column.
+ */
+test("a long name is wrapped and set smaller, not cut off", async ({ page, request }) => {
+  await coded(request);
+  const long = "Zusammenarbeit über Bereiche hinweg und was sie im Alltag aufhält";
+  await request.post("/api/categories", { data: { name: long } });
+  const { categories } = await (await request.get("/api/categories")).json();
+  const made = categories.find((one) => one.name === long);
+
+  const interviews = await (await request.get("/api/interviews")).json();
+  const data = await (await request.get(`/api/interviews/${interviews[0].id}`)).json();
+  const turn = data.turns.filter((one) => !one.interviewer && one.text.length > 90).at(-1);
+  const coding = await (
+    await request.post(`/api/interviews/${interviews[0].id}/codings`, {
+      data: {
+        turn: turn.number,
+        start: 0,
+        end: 60,
+        category: made.id,
+        text: turn.text.slice(0, 60),
+        reviewed: true,
+      },
+    })
+  ).json();
+
+  await page.goto("/?lang=de");
+  await page.locator('.tab[data-view="analysis"]').click();
+  await expect(page.locator("#chart svg")).toBeVisible();
+
+  const labels = await page.evaluate(() =>
+    [...document.querySelectorAll("#chart text.row-label")].map((one) => ({
+      /* Joined with the space the break replaced: a wrapped label's own
+         `textContent` runs the lines together, so "… hinweg" and "und was …"
+         come back as one word that was never on the screen. */
+      text: [...one.querySelectorAll("tspan")].map((line) => line.textContent).join(" "),
+      lines: one.querySelectorAll("tspan").length,
+      size: getComputedStyle(one).fontSize,
+      // Where the writing sits against the bar it names.
+      middle: one.getBoundingClientRect().top + one.getBoundingClientRect().height / 2,
+      barMiddle: (() => {
+        const bar = [...document.querySelectorAll("#chart path.segment")].find(
+          (segment) => segment.dataset.row === one.textContent.replace(/^…\s*/, ""),
+        );
+        const box = bar?.getBoundingClientRect();
+        return box ? box.top + box.height / 2 : null;
+      })(),
+      right: one.getBoundingClientRect().right,
+    })),
+  );
+
+  const mine = labels.find((one) => one.text.startsWith("Zusammenarbeit"));
+  expect(mine, "the long name is a row").toBeTruthy();
+  // Whole, in the order it was written, and broken across lines rather than cut.
+  expect(mine.text).toBe(long);
+  expect(mine.text).not.toContain("…");
+  expect(mine.lines, "it is set over more than one line").toBeGreaterThan(1);
+
+  /* One size for the column. A single label set smaller than the rest would
+     read as an accident rather than as a decision about the chart. */
+  expect(new Set(labels.map((one) => one.size)).size, "one size throughout").toBe(1);
+  expect(parseFloat(mine.size), "and it stepped down for the long one").toBeLessThan(11.5);
+
+  // Vertically centred on the bar it names, not hung off its baseline.
+  for (const label of labels.filter((one) => one.barMiddle !== null)) {
+    expect(Math.abs(label.middle - label.barMiddle), label.text).toBeLessThan(3);
+  }
+
+  // And still inside the column: the writing stops before the bars begin.
+  const firstBar = await page.locator("#chart path.segment").first().boundingBox();
+  for (const label of labels) {
+    expect(label.right, `${label.text} stays out of the bars`).toBeLessThanOrEqual(firstBar.x + 1);
+  }
+
+  await request.delete(`/api/interviews/${interviews[0].id}/codings/${coding.id}`);
+  expect((await request.delete(`/api/categories/${encodeURIComponent(made.id)}`)).status()).toBe(204);
+});
