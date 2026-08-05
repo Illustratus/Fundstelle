@@ -6,6 +6,18 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **A citation goes onto the clipboard with its source attached.** The citations
+  screen is where a results chapter gets written, and the most repeated act
+  there is putting a passage into the text — which meant selecting the words by
+  hand and reassembling the source from the line above, once per quotation, each
+  one a chance to attribute a sentence to the wrong interview. The string is the
+  one the exports write, so a quotation taken from the screen and one lifted
+  from the appendix are the same string.
+
 ## 0.3.0 — 2026-08-05
 
 ### Upgrading

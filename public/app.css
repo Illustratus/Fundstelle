@@ -441,6 +441,11 @@ button, select, input, textarea {
 }
 .about .field-label { margin: 0; }
 
+/* The copy sits with the other handle on a citation, quieter than it. */
+.citation .copy { opacity: .75; }
+.citation:hover .copy,
+.citation .copy:focus-visible { opacity: 1; }
+
 .exports-where { margin: 1rem 0 .4rem; }
 .exports-where:first-of-type { margin-top: .4rem; }
 

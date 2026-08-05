@@ -2143,6 +2143,12 @@ function citationsHTML(data, color) {
               // time. A suggestion nobody has confirmed looked exactly like
               // evidence here, which is the decision it must not be mistaken in.
               `${citation.reviewed ? "" : `<span class="open-mark">${t("unreviewed")}</span>`}` +
+              /* The most repeated act of the writing phase, and the tool did
+                 nothing for it: quoting a passage meant selecting the words by
+                 hand and reassembling the source from the line above, thirty
+                 times over a results chapter. */
+              `<button type="button" class="button-quiet copy" data-copy="${citation.id}">` +
+              `${t("copyCitation")}</button>` +
               `<button type="button" class="button-quiet goto" data-passage="${citation.id}"` +
               ` data-interview="${escapeHTML(citation.interview)}">${t("viewInTranscript")}</button></div>` +
               `<blockquote>${quoted(escapeHTML(citation.text))}</blockquote>` +
@@ -4620,12 +4626,37 @@ function connectEvents() {
     });
   }
 
+/**
+ * A citation on the clipboard, in the shape it goes into a text.
+ *
+ * The same wording the exports use — the quotation, then where it is from —
+ * because a quotation copied from the screen and one lifted from the appendix
+ * have to be the same string, or the two disagree in the finished document.
+ */
+async function copyCitation(id) {
+  const citation = Object.values(state.analysis?.citations ?? {})
+    .flat()
+    .find((one) => one.id === id);
+  if (!citation) return;
+  const text = `${quoted(citation.text)} (${citation.department}, ${t("turn")} ${citation.turn})`;
+  try {
+    await navigator.clipboard.writeText(text);
+    notify(t("citationCopied"));
+  } catch {
+    // Refused by the browser, which happens over plain HTTP on another host.
+    // Saying so beats a button that looks as though it worked.
+    notify(t("citationNotCopied"), "error");
+  }
+}
+
   $("#analysis").addEventListener("click", async (event) => {
     const rest = event.target.closest("[data-show]");
     if (rest) {
       state.citationsShown.add(rest.dataset.show);
       return drawCitations();
     }
+    const copy = event.target.closest("[data-copy]");
+    if (copy) return copyCitation(copy.dataset.copy);
     const unlink = event.target.closest("[data-unlink]");
     if (unlink) {
       const { unlink: id, citation, interview } = unlink.dataset;

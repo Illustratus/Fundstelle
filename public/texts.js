@@ -367,6 +367,11 @@ export const TEXTS = {
     /* Intercoder reliability ---------------------------------------------- */
     agreementTitle: "Übereinstimmung mit einer Zweitkodierung",
     exportAgreement: "Intercoderreliabilität",
+    copyCitation: "Zitat kopieren",
+    citationCopied: "Zitat mit Quelle in der Zwischenablage.",
+    citationNotCopied:
+      "Der Browser hat die Zwischenablage verweigert. Über eine unverschlüsselte " +
+      "Verbindung auf einem anderen Rechner ist sie gesperrt.",
     exportSample: "Stichprobe",
     exportAnalysis: "Auswertung",
     exportsForMethod:
@@ -874,6 +879,11 @@ export const TEXTS = {
     /* Intercoder reliability ---------------------------------------------- */
     agreementTitle: "Agreement with a second coding",
     exportAgreement: "Intercoder reliability",
+    copyCitation: "Copy citation",
+    citationCopied: "Citation and source are on the clipboard.",
+    citationNotCopied:
+      "The browser refused the clipboard. Over an unencrypted connection to " +
+      "another machine it is blocked.",
     exportSample: "Sample",
     exportAnalysis: "Analysis",
     exportsForMethod:

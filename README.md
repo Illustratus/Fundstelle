@@ -199,6 +199,9 @@ quietly dropping the other's work.
   a summary in numbers and folds open into the figures it draws; the cross table
   names the category and department of each figure, and an empty cell still says
   nought.
+- **Quotations come away whole** — a citation copies with its source attached,
+  in the same wording the exports use, so a passage quoted from the screen and
+  one lifted from the appendix are the same string.
 - **It says what is still open where you are standing** — with a hand on the
   export button: suggestions not yet reviewed, categories without an anchor
   example, interviews nobody has coded, and what each of those means for the
