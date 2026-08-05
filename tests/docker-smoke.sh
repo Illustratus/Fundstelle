@@ -27,7 +27,8 @@ fail() {
 }
 
 echo "Building $IMAGE"
-docker build -q -t "$IMAGE" . >/dev/null
+docker build -q --build-arg VERSION="$(node -p "require('./package.json').version")" \
+  -t "$IMAGE" . >/dev/null
 
 # A volume owned by root is what `docker compose up` leaves behind when ./data
 # does not exist yet. The entrypoint has to hand it over.
@@ -43,7 +44,17 @@ docker exec fundstelle-smoke-a ps -o user,args | grep -q '^node .*server.js' \
 
 curl -fsS -m 5 "http://127.0.0.1:$PORT/api/categories" >/dev/null \
   || fail "seeding the category system failed on a root-owned folder"
-echo "    ok — seeded, and the server runs as node"
+
+# There is no package.json in the image, so the version has to arrive some other
+# way — the build argument, which is also where the OCI label gets it. A label
+# nobody can read from inside the running tool is not an answer.
+want=$(node -p "require('./package.json').version")
+said=$(curl -fsS -m 5 "http://127.0.0.1:$PORT/api/version" || true)
+echo "$said" | grep -q "\"version\":\"$want\"" \
+  || fail "the image should say it is $want, said: $said"
+docker inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$IMAGE" \
+  | grep -qx "$want" || fail "the label and the running tool should agree"
+echo "    ok — seeded, runs as node, and says it is $want"
 
 # Given a user of its own the entrypoint must not try to take ownership. The
 # tool then says what is wrong instead of dumping a stack trace.

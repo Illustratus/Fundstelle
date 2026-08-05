@@ -1689,6 +1689,22 @@ function openKeys() {
         .join("") +
       `</dl></section>`,
   ).join("");
+  /* Which version this is, where somebody looking for "what is this" already
+     goes. It was nowhere in the interface — a person filing an issue had to
+     guess, or read a label off a container image. Fetched when the sheet opens
+     rather than at boot: it is worth one request when asked for and none of the
+     startup path. */
+  const stamp = $("#keys-version");
+  if (stamp && !stamp.dataset.asked) {
+    stamp.dataset.asked = "1";
+    api("/api/version")
+      .then((about) => {
+        stamp.textContent = t("versionLine", { version: about.version, node: about.node });
+      })
+      .catch(() => {
+        stamp.remove();
+      });
+  }
   if (!sheet.open) sheet.showModal();
 }
 

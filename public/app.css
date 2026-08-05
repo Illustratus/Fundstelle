@@ -763,6 +763,19 @@ button, select, input, textarea {
 .citation-group[open] > .citations { margin-bottom: 1.2rem; }
 .citation-filter #slice-export { margin-left: .4rem; }
 
+/* Quiet, at the foot of the sheet: an answer for whoever needs it, not a thing
+   the eye has to step over on the way to the keys. */
+.keys-version {
+  margin: 1.4rem 0 0;
+  padding-top: .9rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: .68rem;
+  color: var(--ink-faint);
+  text-align: right;
+}
+.keys-version:empty { display: none; }
+
 /* A tool that could not start ---------------------------------------------
    The same lesson the empty first screen taught: nothing on the screen may be
    a control over nothing. If the category system could not be read, then the

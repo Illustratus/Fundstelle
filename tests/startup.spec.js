@@ -98,3 +98,38 @@ test("a folder it can write to starts without complaint", async () => {
   expect(output).toContain("Fundstelle on http://");
   expect(output).not.toContain("is not writable");
 });
+
+/**
+ * Which version this is.
+ *
+ * It was nowhere: not in the interface, not on an endpoint, and not in the
+ * image except as an OCI label. Somebody filing an issue against a public tool
+ * had to guess, and a machine watching the container had to parse a label.
+ */
+
+test("the tool says which version it is", async ({ request }) => {
+  const about = await (await request.get("/api/version")).json();
+  // The real one, from package.json in a checkout — not a string typed twice.
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const declared = JSON.parse(
+    readFileSync(fileURLToPath(new URL("../package.json", import.meta.url)), "utf8"),
+  ).version;
+  expect(about.version).toBe(declared);
+  expect(about.node).toBe(process.versions.node);
+});
+
+test("and shows it where somebody looks for what this is", async ({ page }) => {
+  await page.goto("/?lang=de");
+  await page.waitForSelector(".turn");
+  await page.locator("#keys").click();
+  const sheet = page.locator("#keys-sheet");
+  await expect(sheet).toBeVisible();
+  const stamp = sheet.locator("#keys-version");
+  await expect(stamp).toContainText(/Fundstelle \d+\.\d+\.\d+/);
+  await expect(stamp).toContainText("MIT");
+  // Quiet: at the foot, under the keys it came to show.
+  const after = await sheet.locator(".keys-after").boundingBox();
+  const line = await stamp.boundingBox();
+  expect(line.y).toBeGreaterThan(after.y);
+});

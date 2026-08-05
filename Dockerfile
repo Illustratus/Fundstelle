@@ -27,7 +27,9 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # the entrypoint and not here: a path set in the image is indistinguishable from
 # one the caller set, which took the choice away from anyone naming the folders
 # by their earlier German variable names.
-ENV HOST=0.0.0.0 \
+# The same string the label carries, readable from inside the running tool.
+ENV FUNDSTELLE_VERSION=$VERSION \
+    HOST=0.0.0.0 \
     PORT=4173
 
 EXPOSE 4173

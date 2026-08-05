@@ -225,6 +225,11 @@ quietly dropping the other's work.
 The German variable names of earlier versions (`TRANSKRIPTE`, `KATEGORIEN`,
 `STARTSYSTEM`) still work.
 
+Which version is running is answered by `GET /api/version` — and by the foot of
+the key sheet behind <kbd>?</kbd>, which is where to look before filing an
+issue. The Docker image carries the same string as its
+`org.opencontainers.image.version` label.
+
 ## Transcript format
 
 One folder per interview, containing a `final.md`:

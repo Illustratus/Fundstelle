@@ -6,6 +6,17 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **The tool says which version it is.** It was nowhere: not in the interface,
+  not on an endpoint, and in the image only as an OCI label. Somebody filing an
+  issue against a public tool had to guess. `GET /api/version` answers it, the
+  foot of the key sheet behind <kbd>?</kbd> shows it beside the Node version and
+  the licence, and the image — which ships no `package.json` — carries the same
+  string in its environment, so the label and the running tool cannot disagree.
+
 ## 0.4.0 — 2026-08-05
 
 ### Upgrading

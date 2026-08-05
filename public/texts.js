@@ -323,6 +323,7 @@ export const TEXTS = {
       "Das kam vom Server, nicht aus dem Browser. Die Meldung im Terminal, in dem die Anwendung läuft, sagt dasselbe " +
       "noch einmal — und meistens mit der Datei, um die es geht.",
     tryAgain: "Erneut versuchen",
+    versionLine: "Fundstelle {version} · Node {node} · MIT",
     mergeUndone: "„{name}“ steht wieder; die Belege hängen wieder daran.",
     unitMoved: "1 Kodiereinheit wurde nachgeführt, weil sich der Text verschoben hat.",
     unitsMoved: "{n} Kodiereinheiten wurden nachgeführt, weil sich der Text verschoben hat.",
@@ -869,6 +870,7 @@ export const TEXTS = {
       "This came from the server rather than from the browser. The message in the terminal running the tool says the " +
       "same thing again — usually with the file it is about.",
     tryAgain: "Try again",
+    versionLine: "Fundstelle {version} · Node {node} · MIT",
     mergeUndone: "“{name}” is back, and so are its citations.",
     unitMoved: "1 coding unit was moved along, because the text has shifted.",
     unitsMoved: "{n} coding units were moved along, because the text has shifted.",

@@ -9,7 +9,7 @@
 
 import { createServer } from "node:http";
 import { access, mkdir, open, readFile } from "node:fs/promises";
-import { constants } from "node:fs";
+import { constants, readFileSync } from "node:fs";
 import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -40,6 +40,24 @@ import {
    would otherwise fail somewhere in the middle of a file read, with a message
    about a function that does not exist rather than about the version. */
 const NEEDS_NODE = 18;
+/* Which version this is, answerable from inside the tool.
+   From a checkout that is package.json; in the image there is none — the
+   Dockerfile bakes the same string into the environment from its build
+   argument, which is where the OCI label gets it too. Somebody filing an issue
+   should not have to guess, and a machine watching the container should not
+   have to parse a label. */
+const VERSION = (() => {
+  if (process.env.FUNDSTELLE_VERSION) return process.env.FUNDSTELLE_VERSION;
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    // Read rather than awaited: the friendly "this Node is too old" message
+    // below is the first thing this file does, and it should stay that way.
+    return JSON.parse(readFileSync(join(here, "package.json"), "utf8")).version;
+  } catch {
+    return "unknown";
+  }
+})();
+
 const running = Number(process.versions.node.split(".")[0]);
 if (running < NEEDS_NODE) {
   console.error(`Fundstelle needs Node ${NEEDS_NODE} or newer; this is Node ${process.versions.node}.`);
@@ -449,6 +467,10 @@ const server = createServer(async (request, response) => {
     }
 
     // Categories ------------------------------------------------------------
+    if (path === "/api/version" && request.method === "GET") {
+      return send(response, 200, { version: VERSION, node: process.versions.node });
+    }
+
     if (path === "/api/categories" && request.method === "GET") {
       const { categories, propositions } = await store.categories(seedLanguage);
       return send(response, 200, { categories, propositions });
