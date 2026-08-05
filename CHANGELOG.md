@@ -18,13 +18,6 @@ startup instead of failing somewhere later.
 Nothing else changes: no file changes shape, no setting changes meaning, and
 every study written by 0.1.0 onwards is read where it lies.
 
-### Changed
-
-- **Node 24 is the floor, and the tests run there.** It was 18, the image ran 22
-  and the tests ran on 20 and 22 — all out of support or on the way there. The
-  floor moves everywhere at once: the startup check, `engines`, the image and the
-  suite, which runs on the active LTS.
-
 ### Added
 
 - **A second coding can be handed over as one file.** Intercoder reliability has
@@ -48,6 +41,10 @@ every study written by 0.1.0 onwards is read where it lies.
 
 ### Changed
 
+- **Node 24 is the floor, and the tests run there.** It was 18, the image ran 22
+  and the tests ran on 20 and 22 — all out of support or on the way there. The
+  floor moves everywhere at once: the startup check, `engines`, the image and the
+  suite, which runs on the active LTS.
 - **A search that finds nothing says where the word does turn up.** The search
   covers what people said, which is right — a guide prompt is the question, not
   the answer — but the method makes prompts and category names share their
