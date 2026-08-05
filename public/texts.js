@@ -468,6 +468,8 @@ export const TEXTS = {
     unreviewedOnly: "nur ungeprüfte",
     clearSlice: "{shown} von {all} — Schnitt aufheben",
     showAllCitations: "alle {n} Belege zeigen",
+    citationGroupsNote:
+      "Nach Kategorie geordnet. Die ersten sind aufgeklappt, die übrigen öffnen sich per Klick auf die Überschrift — die Zahl daneben gilt immer für die ganze Kategorie.",
     exportSlice: "Diesen Schnitt ausgeben",
     ofCount: "von {n}",
     viewInTranscript: "im Transkript ansehen",
@@ -998,6 +1000,8 @@ export const TEXTS = {
     unreviewedOnly: "unreviewed only",
     clearSlice: "{shown} of {all} — clear the slice",
     showAllCitations: "show all {n} citations",
+    citationGroupsNote:
+      "Grouped by category. The first ones are open; click a heading to open the rest — the number beside it always counts the whole category.",
     exportSlice: "Export this slice",
     ofCount: "of {n}",
     viewInTranscript: "view in transcript",

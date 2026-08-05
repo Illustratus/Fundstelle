@@ -101,6 +101,8 @@ const state = {
   citationFilter: { ...EMPTY_SLICE },
   // Categories whose citations are shown in full rather than the first few.
   citationsShown: new Set(),
+  // Groups a reader has opened or closed by hand, which outrank the default.
+  citationsOpen: new Map(),
   // Which requirements the catalog is showing. At twenty of them the list runs
   // to several screens, and the counts above it say how many are still
   // undecided without offering any way to reach them.
@@ -2157,16 +2159,36 @@ function citationsHTML(data, color) {
      holding back; the count in the heading is always the true one, and the
      filter above still cuts the whole set. Opening a category keeps it open. */
   const FIRST_FEW = 12;
+
+  /* That cap is per category, and the page is the sum of them. A study with
+     twenty categories drew two hundred and forty cards — thirty thousand pixels,
+     five sixths of the analysis screen — and put the notes below all of it,
+     where nobody was going to scroll. So the categories are groups that fold,
+     and they open from the top until this many citations are on the page. One
+     category behaves exactly as it did; twenty become a list you can see at
+     once and read in the order you choose. A heading that is closed still
+     carries its count, so nothing is hidden, only folded. */
+  const OPEN_BUDGET = 24;
+  let budget = OPEN_BUDGET;
+  let folded = false;
+
   const lists = data.rows
     .map((row) => {
       const own = (data.citations[row.category] ?? []).filter(fits);
       if (!own.length) return "";
       const whole = state.citationsShown.has(row.category) || own.length <= FIRST_FEW;
       const shownHere = whole ? own : own.slice(0, FIRST_FEW);
+      // A reader's own click outranks the budget, in both directions.
+      const chosen = state.citationsOpen.get(row.category);
+      const open = chosen === undefined ? budget > 0 : chosen;
+      if (!open) folded = true;
+      budget -= shownHere.length;
       return (
-        `<h4 class="citation-head">${escapeHTML(row.name)} · ${own.length}` +
+        `<details class="citation-group"${open ? " open" : ""}>` +
+        `<summary class="citation-head" data-group="${escapeHTML(row.category)}">` +
+        `${escapeHTML(row.name)} · ${own.length}` +
         (own.length !== row.sum ? ` <span class="of">${t("ofCount", { n: row.sum })}</span>` : "") +
-        `</h4><div class="citations">` +
+        `</summary><div class="citations">` +
         shownHere
           .map(
             (citation) =>
@@ -2197,7 +2219,7 @@ function citationsHTML(data, color) {
           ? ""
           : `<button type="button" class="button-quiet show-rest" data-show="${escapeHTML(row.category)}">` +
             `${t("showAllCitations", { n: own.length })}</button>`) +
-        `</div>`
+        `</div></details>`
       );
     })
     .join("");
@@ -2205,6 +2227,8 @@ function citationsHTML(data, color) {
   return (
     `<h3>${t("citationsTitle")}</h3>` +
     controls +
+    // Said once, and only when something is actually folded away.
+    (folded ? `<p class="column-note">${t("citationGroupsNote")}</p>` : "") +
     (lists ||
       `<p class="empty-state">${all.length ? t("noCitationMatches") : t("nothingCodedYet")}</p>`)
   );
@@ -2955,6 +2979,33 @@ function saveChart(id, file) {
   notify(t("svgSaved"));
 }
 
+/* Paper is a document, and nothing on it can be clicked open. A folded group
+   would print as a heading with nothing under it, and a capped list as twelve
+   of forty without saying which. So everything opens for the print and folds
+   back the way the reader had it. */
+let foldsBeforePrint = null;
+
+addEventListener("beforeprint", () => {
+  if (!document.getElementById("citations-part") || foldsBeforePrint) return;
+  foldsBeforePrint = {
+    shown: new Set(state.citationsShown),
+    open: new Map(state.citationsOpen),
+  };
+  for (const row of document.querySelectorAll("summary[data-group]")) {
+    state.citationsShown.add(row.dataset.group);
+    state.citationsOpen.set(row.dataset.group, true);
+  }
+  drawCitations();
+});
+
+addEventListener("afterprint", () => {
+  if (!foldsBeforePrint) return;
+  state.citationsShown = foldsBeforePrint.shown;
+  state.citationsOpen = foldsBeforePrint.open;
+  foldsBeforePrint = null;
+  drawCitations();
+});
+
 /** Redraw only the citations part; the cross table stays as it is. */
 function drawCitations() {
   const part = document.getElementById("citations-part");
@@ -3134,12 +3185,16 @@ async function drawAnalysis() {
     link("analysis.md", t("exportAnalysis")) +
     link("agreement.md", t("exportAgreement"));
 
+  /* Named by department, this row read "Kodiertabelle Marketing" three times in
+     a study with three interviews from marketing: three links to three
+     different documents, and nothing on any of them to say which. The title is
+     what names an interview everywhere else in the tool, so it names it here. */
   const forAppendix =
     data.progress
       .map((entry) =>
         link(
           `coding-table/${encodeURIComponent(entry.interview)}.md`,
-          `${t("exportCodingTable")} ${escapeHTML(entry.department)}`,
+          `${t("exportCodingTable")} · ${escapeHTML(entry.title)}`,
         ),
       )
       .join("") + link("notes.md", t("exportNotes"));
@@ -4701,6 +4756,14 @@ async function copyCitation(id) {
     if (rest) {
       state.citationsShown.add(rest.dataset.show);
       return drawCitations();
+    }
+    /* The browser folds the group itself; this only records the choice so the
+       next redraw — a filter, a requirement linked — keeps it that way. */
+    const group = event.target.closest("summary[data-group]");
+    if (group) {
+      const details = group.parentElement;
+      state.citationsOpen.set(group.dataset.group, !details.open);
+      return;
     }
     const copy = event.target.closest("[data-copy]");
     if (copy) return copyCitation(copy.dataset.copy);

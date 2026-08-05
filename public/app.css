@@ -717,6 +717,50 @@ button, select, input, textarea {
   font-weight: 600;
 }
 .citation-head .of { font-weight: 400; color: var(--ink-faint); }
+
+/* A category of citations folds, so that twenty of them are a list you can see
+   at once rather than five sixths of the page. */
+.citation-group + .citation-group { border-top: 1px solid var(--line); }
+.citation-group > summary.citation-head {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: .4rem;
+  /* Tight, because folded these are an index and an index is read by scanning
+     it. The airy heading spacing belongs to an open group, below. */
+  margin: 0;
+  padding: .5rem .1rem .5rem 1.1rem;
+  position: relative;
+}
+.citation-group[open] > summary.citation-head { margin-top: .5rem; }
+.citation-group > summary.citation-head::-webkit-details-marker { display: none; }
+/* The triangle is drawn rather than borrowed, so it turns with the group and
+   keeps the same weight as the rest of the type. */
+.citation-group > summary.citation-head::before {
+  content: "";
+  position: absolute;
+  left: .15rem;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: .3rem solid currentColor;
+  border-top: .26rem solid transparent;
+  border-bottom: .26rem solid transparent;
+  color: var(--ink-faint);
+  transition: transform .12s ease;
+  transform: translateY(-50%);
+}
+.citation-group[open] > summary.citation-head::before {
+  /* Around its own middle, so it turns in place rather than walking. */
+  transform: translateY(-50%) rotate(90deg);
+}
+.citation-group > summary.citation-head:hover { background: var(--sheet-soft, rgba(127, 127, 127, .07)); }
+.citation-group > summary.citation-head:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.citation-group[open] > .citations { margin-bottom: 1.2rem; }
 .citation-filter #slice-export { margin-left: .4rem; }
 
 /* From citation to requirement -------------------------------------------- */
@@ -1889,6 +1933,12 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 
   html, body { height: auto; overflow: visible; }
   body { font-size: 11pt; }
+
+  /* Whatever is folded on screen is unfolded on paper — a heading with nothing
+     under it is not a document, and nobody can click a sheet of paper. The
+     `open` attribute is set before printing; this hides the control. */
+  .citation-group > summary.citation-head::before { display: none; }
+  .citation-group > summary.citation-head { padding-left: .1rem; }
 
   .header,
   .views,

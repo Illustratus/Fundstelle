@@ -18,6 +18,17 @@ where it lies.
   one the exports write, so a quotation taken from the screen and one lifted
   from the appendix are the same string.
 
+- **The analysis screen holds up at the size of a real study.** Built out to
+  eighteen interviews, eight departments, twenty categories and 324 coded units,
+  the numbers and the charts held; the page did not. The citation list drew 240
+  cards — 30,808 pixels, five sixths of the screen — and put the notes below all
+  of it. Categories now fold: they open from the top until a budget of citations
+  is on the page, and a folded heading still carries its true count. 4,338 pixels
+  instead of 30,808. On paper everything opens again, past the per-category cap
+  as well, because a document cannot be clicked.
+- **Each coding table in the appendix names its interview.** With three
+  interviews from marketing the row read "Kodiertabelle Marketing" three times:
+  three links to three different documents with nothing to tell them apart.
 - **The example is a study, not one interview.** Somebody trying the tool wrote
   the example, coded four passages, opened the analysis and saw a bar chart of a
   single department: no cross table worth the name, no saturation curve — it
