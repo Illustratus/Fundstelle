@@ -18,6 +18,13 @@ where it lies.
   one the exports write, so a quotation taken from the screen and one lifted
   from the appendix are the same string.
 
+- **The example is a study, not one interview.** Somebody trying the tool wrote
+  the example, coded four passages, opened the analysis and saw a bar chart of a
+  single department: no cross table worth the name, no saturation curve — it
+  needs three interviews — and nothing for the categories to meet in, which is
+  most of what the tool is worth choosing for. It writes three interviews from
+  three departments now, which say overlapping things in different words. None
+  of it is coded for you.
 - **The first screen leads with what to do.** It opened with a folder path,
   fourteen lines of Markdown and a paragraph about asterisks and middle dots,
   and put the buttons under all of it — a lesson about a format the tool will

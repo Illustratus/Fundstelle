@@ -14,7 +14,7 @@ import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findInterviews, loadTranscript, withProblemText } from "./lib/transcript.js";
-import { EXAMPLE_FOLDER, exampleTranscript } from "./lib/example.js";
+import { EXAMPLE_FOLDER, exampleStudy } from "./lib/example.js";
 import { occurrences, trimStem } from "./public/search.js";
 import { Store } from "./lib/store.js";
 import { checkAnchors, withReasons, withoutCheckMarks } from "./lib/anchoring.js";
@@ -281,14 +281,23 @@ const server = createServer(async (request, response) => {
       if ((await findInterviews(TRANSCRIPTS)).length) {
         return send(response, 409, { error: t("errorExampleNotEmpty"), code: "errorExampleNotEmpty" });
       }
-      const folder = join(TRANSCRIPTS, EXAMPLE_FOLDER);
-      await mkdir(folder, { recursive: true });
-      try {
-        const file = await open(join(folder, "final.md"), "wx");
-        await file.writeFile(exampleTranscript(language), "utf8");
-        await file.close();
-      } catch (error) {
-        if (error.code !== "EEXIST") throw error;
+      /* Three interviews rather than one: with a single one the analysis has
+         a cross table of one column, no saturation curve — it needs three —
+         and nothing for the categories to meet in, which is most of what the
+         tool is worth choosing for. They arrive uncoded; the tool has never
+         invented a coding and should not start on the screen where somebody is
+         deciding whether to trust it. */
+      for (const one of exampleStudy(language)) {
+        const folder = join(TRANSCRIPTS, one.folder);
+        await mkdir(folder, { recursive: true });
+        try {
+          const file = await open(join(folder, "final.md"), "wx");
+          await file.writeFile(one.text, "utf8");
+          await file.close();
+        } catch (error) {
+          // Never over a file that is already there.
+          if (error.code !== "EEXIST") throw error;
+        }
       }
       return send(response, 201, { interview: EXAMPLE_FOLDER });
     }

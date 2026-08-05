@@ -156,7 +156,10 @@ test("the empty screen can write the example it is describing", async ({ page, r
   const write = page.locator("#onboarding-example");
   await expect(write).toBeVisible();
   // It says plainly what it will do before it does it.
-  await expect(page.locator(".onboarding")).toContainText("Vorhandene Dateien werden nicht angerührt");
+  await expect(page.locator(".onboarding")).toContainText("vorhandene Dateien werden nicht angerührt");
+  // Three interviews, not one — and none of them coded.
+  await expect(page.locator(".onboarding")).toContainText("drei erfundene Interviews");
+  await expect(page.locator(".onboarding")).toContainText("Kodiert wird nichts");
 
   // The suite's folder already holds interviews, so the tool declines rather
   // than writing into a study that is under way.
@@ -165,20 +168,71 @@ test("the empty screen can write the example it is describing", async ({ page, r
   expect((await refused.json()).code).toBe("errorExampleNotEmpty");
 });
 
-test("the example that gets written is a transcript the tool can read", async () => {
-  const { exampleTranscript, EXAMPLE_FOLDER } = await import("../lib/example.js");
+test("what gets written is a study the tool can read", async () => {
+  const { exampleStudy, EXAMPLE_FOLDER } = await import("../lib/example.js");
   expect(EXAMPLE_FOLDER).toBe("example-interview");
 
   for (const language of ["de", "en"]) {
-    const parsed = parseTranscript(exampleTranscript(language), EXAMPLE_FOLDER);
-    // Nothing it could not read, or the first screen would open on a complaint.
-    expect(parsed.problems, language).toEqual([]);
-    // Enough to code, to search and for the analysis to show something.
-    expect(parsed.turns.length, language).toBeGreaterThanOrEqual(6);
-    expect(parsed.sections.length, language).toBeGreaterThanOrEqual(2);
-    expect(parsed.turns.filter((turn) => !turn.interviewer).length, language).toBeGreaterThan(2);
-    expect(parsed.department, language).toBeTruthy();
-    // And it says of itself that it is invented.
-    expect(Object.values(parsed.meta).join(" "), language).toMatch(/Beispiel|example/);
+    const study = exampleStudy(language);
+    /* Three, not one. With a single interview the analysis has a cross table of
+       one column, no saturation curve — it needs three — and nothing for the
+       categories to meet in, which is most of what the tool is worth choosing
+       for. Somebody trying it out would see a bar chart of one department. */
+    expect(study.length, language).toBeGreaterThanOrEqual(3);
+    expect(study[0].folder).toBe(EXAMPLE_FOLDER);
+    expect(new Set(study.map((one) => one.folder)).size, "each in its own folder").toBe(study.length);
+
+    const departments = new Set();
+    for (const one of study) {
+      const parsed = parseTranscript(one.text, one.folder);
+      // Nothing it could not read, or the first screen would open on a complaint.
+      expect(parsed.problems, `${language} ${one.folder}`).toEqual([]);
+      // Enough to code, to search and for the analysis to show something.
+      expect(parsed.turns.length, one.folder).toBeGreaterThanOrEqual(6);
+      expect(parsed.sections.length, one.folder).toBeGreaterThanOrEqual(2);
+      expect(parsed.turns.filter((turn) => !turn.interviewer).length, one.folder).toBeGreaterThan(2);
+      expect(parsed.department, one.folder).toBeTruthy();
+      departments.add(parsed.department);
+      // And each says of itself that it is invented.
+      expect(Object.values(parsed.meta).join(" "), one.folder).toMatch(/Beispiel|example|Example/);
+    }
+    // Three departments, so the cross table has a shape to it.
+    expect(departments.size, language).toBeGreaterThanOrEqual(3);
+  }
+});
+
+test("the example study is written whole, and never over anything", async () => {
+  const { exampleStudy } = await import("../lib/example.js");
+  const { mkdtempSync, writeFileSync, mkdirSync, readFileSync, existsSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { spawn } = await import("node:child_process");
+  const { fileURLToPath } = await import("node:url");
+
+  const root = fileURLToPath(new URL("..", import.meta.url));
+  const work = mkdtempSync(join(tmpdir(), "fundstelle-example-"));
+  const transcripts = join(work, "transcripts");
+  const study = exampleStudy("de");
+  // A folder of one of them already there, with something in it.
+  mkdirSync(join(transcripts, study[1].folder), { recursive: true });
+  writeFileSync(join(transcripts, study[1].folder, "final.md"), "# Nicht anfassen\n");
+
+  const server = spawn(process.execPath, [join(root, "server.js")], {
+    env: { ...process.env, PORT: "4183", TRANSCRIPTS: transcripts, CATEGORIES: join(work, "categories.json"), START_LANGUAGE: "de" },
+    stdio: "ignore",
+  });
+  try {
+    for (let tries = 0; tries < 60; tries += 1) {
+      const up = await fetch("http://127.0.0.1:4183/api/interviews").then((a) => a.ok, () => false);
+      if (up) break;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    /* The folder is not empty — it holds that one file — so the tool declines,
+       which is the rule it has always kept. */
+    const refused = await fetch("http://127.0.0.1:4183/api/example", { method: "POST" });
+    expect(refused.status).toBe(409);
+    expect(readFileSync(join(transcripts, study[1].folder, "final.md"), "utf8")).toBe("# Nicht anfassen\n");
+  } finally {
+    server.kill();
   }
 });

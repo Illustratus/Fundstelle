@@ -574,8 +574,13 @@ export const TEXTS = {
     onboardingContract:
       "<code>## Section:</code> eröffnet einen Leitfadenblock, <code>**2 · Sprecher [0:15]**</code> einen Redebeitrag; sein Text folgt als eigener Absatz. Beiträge, deren Sprecher nicht <em>Interviewer</em> heißt, sind kodierbar; der Sprechername wird in der Auswertung zum Bereich.",
     reload: "Neu laden",
-    writeExample: "Beispiel-Interview anlegen",
-    writeExampleNote: "Legt ein erfundenes Interview im Transkriptordner an, damit sofort etwas zum Kodieren da ist. Vorhandene Dateien werden nicht angerührt; der Ordner lässt sich später einfach löschen.",
+    writeExample: "Beispielstudie anlegen",
+    writeExampleNote:
+      "Legt drei erfundene Interviews aus drei Bereichen im Transkriptordner an, " +
+      "damit sofort etwas zum Kodieren da ist — und damit Kreuztabelle, " +
+      "Sättigungskurve und Auswertung etwas zu zeigen haben. Kodiert wird nichts " +
+      "davon; vorhandene Dateien werden nicht angerührt, und die Ordner lassen " +
+      "sich später einfach löschen.",
     onboardingStartSystem:
       "Mehr in der README — ein eigenes deduktives Kategoriensystem sät die Umgebungsvariable <code>START_SYSTEM</code> beim ersten Start.",
   },
@@ -1099,8 +1104,13 @@ export const TEXTS = {
     onboardingContract:
       "<code>## Section:</code> opens a guide section, <code>**2 · Speaker [0:15]**</code> a turn whose text follows as its own paragraph. Turns by any speaker not named <em>Interviewer</em> are codable; the speaker name becomes the department in the analytics.",
     reload: "Reload",
-    writeExample: "Write an example interview",
-    writeExampleNote: "Puts an invented interview in the transcript folder, so there is something to code straight away. Nothing already there is touched, and the folder can simply be deleted later.",
+    writeExample: "Write an example study",
+    writeExampleNote:
+      "Puts three invented interviews from three departments in the transcript " +
+      "folder, so there is something to code straight away — and so the cross " +
+      "table, the saturation curve and the analysis have something to show. " +
+      "None of it is coded for you; nothing already there is touched, and the " +
+      "folders can simply be deleted later.",
     onboardingStartSystem:
       "More in the README — seed your own deductive category system with the <code>START_SYSTEM</code> environment variable on first start.",
   },

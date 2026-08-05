@@ -35,9 +35,10 @@ No login, no build step, no runtime dependencies. Node 18 or newer; the tool
 says so and stops rather than failing somewhere in the middle of a file read.
 `@playwright/test` is only needed for the test suite.
 
-With no transcripts yet, the first screen names the folder it reads from, shows
-the format, and offers to write an example interview into it so there is
-something to code straight away. It only does that on a folder that holds no
+With no transcripts yet, the first screen offers to read in what a recording
+produced, or to write an example study — three invented interviews from three
+departments, so that the cross table, the saturation curve and the analysis all
+have something to show. None of it is coded for you. It only does that on a folder that holds no
 interviews, and never over a file that is already there; the example folder can
 simply be deleted afterwards.
 
