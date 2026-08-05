@@ -6,7 +6,17 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.6.0 — 2026-08-05
+
+### Upgrading
+
+**Node 24 or newer is now required.** It was 18. Node 20 is out of support and 22
+is on its way there, and the Docker image ships 24 — so `docker compose up` needs
+nothing from you. Running from a checkout on an older Node, the tool says so at
+startup instead of failing somewhere later.
+
+Nothing else changes: no file changes shape, no setting changes meaning, and
+every study written by 0.1.0 onwards is read where it lies.
 
 ### Changed
 
