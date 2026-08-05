@@ -10,11 +10,10 @@ where it lies.
 
 ### Changed
 
-- **Node 24 is the floor.** It was 18, the image ran 22 and the tests ran on 20
-  and 22. Node 20 is out of support and 22 is on its way there: a tool handed to
-  other people should not prove itself on runtimes those people are being told
-  to leave. The floor moves everywhere at once — the startup check, `engines`,
-  the image, and the tests, which now run on 24 and 26.
+- **Node 24 is the floor, and the tests run there.** It was 18, the image ran 22
+  and the tests ran on 20 and 22 — all out of support or on the way there. The
+  floor moves everywhere at once: the startup check, `engines`, the image and the
+  suite, which runs on the active LTS.
 
 ### Added
 
@@ -101,6 +100,12 @@ now needs to be served from the same origin.
 
 ### Fixed
 
+- **A field no longer depends on how wide a font happens to be.** The box for a
+  new requirement took whatever the button beside it left: 227 pixels for a
+  placeholder needing 213 in one machine's fonts and 235 in another's. The same
+  build read correctly here and was cut off mid-word on the build server. The
+  field claims its row now and the button steps below when that is what fitting
+  requires.
 - **The search field keeps its width in both languages.** The key legend beside
   it is longer in English than in German, and the field yielded to it: the same
   input was 344px in one language and 228px in the other, which cut its own

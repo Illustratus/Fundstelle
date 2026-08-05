@@ -1699,8 +1699,15 @@ tbody tr:hover { background: var(--paper); }
 .cites { margin-top: .7rem; border-top: 1px solid var(--line); padding-top: .6rem; }
 .cites ul { list-style: none; margin: .3rem 0 0; padding: 0; display: grid; gap: .15rem; }
 .cites label { display: flex; gap: .35rem; align-items: baseline; font-size: .78rem; line-height: 1.3; }
-.cites form { display: flex; gap: .35rem; margin-top: .5rem; }
-.cites form input { flex: 1; min-width: 0; }
+/* The same lesson as the search bar, in a narrower place. With `min-width: 0`
+   the field took whatever the button left it — 227px of room for a placeholder
+   that needs 213 in the fonts on one machine and 235 in the fonts on another,
+   so the same build was fine here and cut off mid-word on the build server.
+   Text width is not something a layout may depend on. The field claims the row
+   and the button steps below it when that is what fitting requires. */
+.cites form { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+.cites form input { flex: 1 1 auto; min-width: 16rem; }
+.cites form button { margin-left: auto; }
 .cites .column-note { margin: .3rem 0 0; }
 
 /* Coding units that lost their place -------------------------------------- */

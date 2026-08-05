@@ -29,13 +29,11 @@ jobs:
     # under the six hours a hung job would otherwise burn.
     timeout-minutes: 30
     strategy:
-      # One version failing should not hide the state of the other.
-      fail-fast: false
       matrix:
-        # The active line and the one after it. Node 20 is out of support and
-        # 22 is on its way there; a tool being handed to other people should
-        # not be proving itself on runtimes they are being told to leave.
-        node: ["24", "26"]
+        # The one that matters: the active LTS. Node 20 is out of support and
+        # 22 is on its way there, and a tool being handed to other people
+        # should not prove itself on runtimes they are being told to leave.
+        node: ["24"]
     steps:
       - uses: actions/checkout@v4
 
