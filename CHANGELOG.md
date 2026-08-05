@@ -18,6 +18,15 @@ where it lies.
   one the exports write, so a quotation taken from the screen and one lifted
   from the appendix are the same string.
 
+### Changed
+
+- **Dissolving one requirement into another is folded away.** It stood open on
+  every card in the catalog — a select, a button and a label, two lines apiece —
+  between the title and the evidence, so at twenty requirements it was forty
+  lines of a control nobody reaches for except when two requirements turn out to
+  be one. It is a disclosure now, and it sits after what the requirement is
+  rather than in the middle of it: an action reads as an action there.
+
 ## 0.3.0 — 2026-08-05
 
 ### Upgrading

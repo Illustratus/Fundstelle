@@ -1638,6 +1638,12 @@ test("two requirements can be made into one", async ({ page, request }) => {
   const first = page.locator(".requirement").first();
   await first.locator('[data-blocked="filing"]').check();
   await expect(first.locator('[data-blocked="filing"]')).toBeChecked();
+
+  /* Folded away until it is wanted: dissolving one requirement into another is
+     done once, when two turn out to be one, and it used to stand open on every
+     card in the catalog. */
+  await expect(first.locator(".requirement-target")).toBeHidden();
+  await first.locator(".requirement-merge > summary").click();
   await first.locator(".requirement-target").selectOption({ index: 1 });
   await first.locator("[data-requirement-merge]").click();
 

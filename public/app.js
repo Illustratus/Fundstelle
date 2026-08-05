@@ -3779,17 +3779,6 @@ async function drawCatalog() {
         `<select class="level" aria-label="${escapeHTML(t("moscowAria"))}"><option value="">${t("open")}</option>${levels}</select>` +
         `<button type="button" class="button-quiet remove" data-remove>${t("remove")}</button>` +
         `</header>` +
-        (state.requirements.length > 1
-          ? `<div class="row requirement-merge"><span class="field-label">${t("mergeInto")}</span>` +
-            `<select class="requirement-target" aria-label="${escapeHTML(t("targetRequirementAria"))}">` +
-            `<option value="">${t("chooseTarget")}</option>` +
-            state.requirements
-              .filter((other) => other.id !== requirement.id)
-              .map((other) => `<option value="${other.id}">${escapeHTML(other.title)}</option>`)
-              .join("") +
-            `</select>` +
-            `<button type="button" class="button-quiet" data-requirement-merge>${t("merge")}</button></div>`
-          : "") +
         `<p class="numbers"><b>${requirement.departments.length}</b> ` +
         `${plural(requirement.departments.length, "departmentOne", "departmentMany")}` +
         `<span class="separator">·</span><b>${requirement.citations.length}</b> ` +
@@ -3801,6 +3790,28 @@ async function drawCatalog() {
         (categories ? `<p class="category-tags">${categories}</p>` : "") +
         `<div class="row blocked"><span class="field-label">${t("blocks")}</span>${operations}</div>` +
         `<textarea class="description" rows="2" placeholder="${escapeHTML(t("descriptionPlaceholder"))}">${escapeHTML(requirement.description ?? "")}</textarea>` +
+        /* Last on the card, after what the requirement is: an action reads as
+           an action there, and between the title and the figures it read as
+           part of the description of the thing. */
+        /* Folded away, the way the category panel folds its own merge.
+           Dissolving one requirement into another is the thing you do once,
+           when you notice two of them are one — and it stood open on every card
+           in the catalog, two lines apiece, pushing the evidence and the
+           description down the screen. At twenty requirements that is forty
+           lines of a control nobody was reaching for. */
+        (state.requirements.length > 1
+          ? `<details class="requirement-merge"><summary>${t("mergeInto")}</summary>` +
+            `<div class="row">` +
+            `<select class="requirement-target" aria-label="${escapeHTML(t("targetRequirementAria"))}">` +
+            `<option value="">${t("chooseTarget")}</option>` +
+            state.requirements
+              .filter((other) => other.id !== requirement.id)
+              .map((other) => `<option value="${other.id}">${escapeHTML(other.title)}</option>`)
+              .join("") +
+            `</select>` +
+            `<button type="button" class="button-quiet" data-requirement-merge>${t("merge")}</button>` +
+            `</div></details>`
+          : "") +
         (citations
           ? `<details class="citation-list"><summary>${requirement.citations.length} ` +
             `${plural(requirement.citations.length, "citationOne", "citationMany")}</summary><ul>${citations}</ul></details>`

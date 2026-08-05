@@ -442,6 +442,18 @@ button, select, input, textarea {
 .about .field-label { margin: 0; }
 
 /* The copy sits with the other handle on a citation, quieter than it. */
+/* The merge, folded until it is wanted. */
+.requirement-merge { margin: .2rem 0 .6rem; }
+.requirement-merge > summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.requirement-merge > .row { margin-top: .5rem; }
+
 .citation .copy { opacity: .75; }
 .citation:hover .copy,
 .citation .copy:focus-visible { opacity: 1; }
