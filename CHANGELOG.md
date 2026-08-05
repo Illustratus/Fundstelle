@@ -6,7 +6,16 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.5.0 — 2026-08-05
+
+### Upgrading
+
+Nothing to do, and one thing worth knowing. Anything that changes a study is now
+accepted only from this tool's own page — a browser tab on some other website
+could previously write into it. Requests that no browser sent are unaffected, so
+`curl`, your own scripts and the container health check work as before. If you
+drive the tool from a page you wrote yourself on a different address, that page
+now needs to be served from the same origin.
 
 ### Added
 
