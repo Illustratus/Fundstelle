@@ -244,6 +244,9 @@ function drawInterviewList() {
         `${open(i) ? ` · ${t("openMark", { n: open(i) })}` : ""}</option>`,
     )
     .join("");
+  // A dropdown with nothing in it is a control that cannot be used and a
+  // question the reader cannot answer.
+  choice.closest(".field").hidden = !state.interviews.length;
   if (state.current) choice.value = state.current;
 }
 
@@ -339,23 +342,27 @@ function apparatusHTML(turn) {
  * to a category system of one's own.
  */
 function drawOnboarding(root) {
+  /* What to do first, then how the files look — not the other way round.
+     The screen used to open with a folder path, fourteen lines of Markdown and
+     a paragraph about asterisks and middle dots, and put the buttons under all
+     of it. For the common arrival — somebody holding a WebVTT out of Teams —
+     that is a lesson about a format the tool will write for them, standing
+     between them and the thing that does it. The format still matters to
+     whoever writes files by hand, so it is one click away rather than gone. */
   root.innerHTML =
     `<div class="onboarding">` +
     `<h2>${t("onboardingTitle")}</h2>` +
-    `<p>${t("onboardingReads")}</p>` +
-    `<p class="onboarding-path"><code id="onboarding-path">…/my-interview/final.md</code></p>` +
-    `<pre class="onboarding-sample">${escapeHTML(t("onboardingSample"))}</pre>` +
-    `<p>${t("onboardingContract")}</p>` +
-    /* Everything above is a description of a file the reader now has to type
-       out by hand, in a folder they have to make, with the asterisks and the
-       middle dot in the right places — and that is where a tool gets put aside.
-       The one below writes it, since the tool knows the folder and is showing
-       the format already. */
+    `<p class="onboarding-lead">${t("onboardingLead")}</p>` +
     `<p class="onboarding-actions">` +
     `<button type="button" class="button" id="onboarding-import">${t("importFromFile")}</button>` +
     `<button type="button" class="button-quiet" id="onboarding-example">${t("writeExample")}</button>` +
     `<button type="button" class="button-quiet" id="onboarding-reload">${t("reload")}</button></p>` +
     `<p class="column-note">${t("writeExampleNote")}</p>` +
+    `<details class="onboarding-format"><summary>${t("onboardingFormat")}</summary>` +
+    `<p>${t("onboardingReads")}</p>` +
+    `<p class="onboarding-path"><code id="onboarding-path">…/my-interview/final.md</code></p>` +
+    `<pre class="onboarding-sample">${escapeHTML(t("onboardingSample"))}</pre>` +
+    `<p>${t("onboardingContract")}</p></details>` +
     `<p class="column-note">${t("onboardingStartSystem")}</p>` +
     `</div>`;
   api("/api/environment")
@@ -671,6 +678,15 @@ function drawDrift() {
 
 function drawSections() {
   const list = $("#sections");
+  /* With no interview at all the column stood there explaining percentages per
+     guide section, above two rules and a disclosure for a note on an interview
+     that does not exist. Furniture around nothing teaches the reader that parts
+     of this screen mean nothing, which is a poor first lesson. */
+  const column = $(".column-left");
+  column.dataset.empty = String(!state.transcript);
+  // Searching a transcript that is not there is a control with nothing behind
+  // it, and the first screen is a poor place to learn that some are.
+  $(".search-bar").hidden = !state.transcript;
   if (!state.transcript) return (list.innerHTML = "");
 
   /* A transcript that carries no guide sections is the ordinary case for one

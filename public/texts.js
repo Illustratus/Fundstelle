@@ -372,6 +372,12 @@ export const TEXTS = {
     /* Intercoder reliability ---------------------------------------------- */
     agreementTitle: "Übereinstimmung mit einer Zweitkodierung",
     exportAgreement: "Intercoderreliabilität",
+    onboardingLead:
+      "Leg eine Aufnahme-Abschrift ab — WebVTT aus Teams oder Zoom, SRT, " +
+      "Whisper-Ausgabe oder einen Text, dessen Zeilen mit einem Namen beginnen. " +
+      "Das Werkzeug liest sie, zeigt, wie es sie gelesen hat, und legt daraus " +
+      "das Transkript an.",
+    onboardingFormat: "Wie eine Transkriptdatei aussieht",
     howToCode:
       "<b>Eine Stelle kodieren:</b> mit der Maus über den Wortlaut ziehen — oder " +
       "<kbd>s</kbd> drücken, dann führen <kbd>↓</kbd> <kbd>↑</kbd> von Satz zu " +
@@ -893,6 +899,11 @@ export const TEXTS = {
     /* Intercoder reliability ---------------------------------------------- */
     agreementTitle: "Agreement with a second coding",
     exportAgreement: "Intercoder reliability",
+    onboardingLead:
+      "Drop in what a recording produced — WebVTT from Teams or Zoom, SRT, " +
+      "Whisper output, or a text whose lines begin with a name. The tool reads " +
+      "it, shows you how it read it, and makes the transcript from it.",
+    onboardingFormat: "What a transcript file looks like",
     howToCode:
       "<b>To code a passage:</b> drag across the words with the mouse — or press " +
       "<kbd>s</kbd>, and <kbd>↓</kbd> <kbd>↑</kbd> walk from sentence to " +

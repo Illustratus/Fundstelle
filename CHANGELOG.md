@@ -18,6 +18,16 @@ where it lies.
   one the exports write, so a quotation taken from the screen and one lifted
   from the appendix are the same string.
 
+- **The first screen leads with what to do.** It opened with a folder path,
+  fourteen lines of Markdown and a paragraph about asterisks and middle dots,
+  and put the buttons under all of it — a lesson about a format the tool will
+  write for you, standing between you and the thing that does it. The action
+  comes first now; the format is one click away, for whoever writes files by
+  hand.
+- **Nothing on that screen is a control over nothing.** A dropdown with no
+  interviews in it, a search over a transcript that is not there, and a column
+  explaining percentages per guide section: furniture around nothing teaches the
+  reader that parts of the screen mean nothing, which is a poor first lesson.
 - **The screen a transcript lands on says how to code.** Every key was in the
   sheet behind `?`, which is no use to somebody who does not yet know there is a
   sheet, and the mouse gesture was written nowhere at all — so the one act the

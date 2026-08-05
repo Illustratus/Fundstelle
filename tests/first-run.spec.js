@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { rmSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -21,7 +23,46 @@ import { join } from "node:path";
  * missing, leaving the reader to wonder what they had done wrong.
  */
 
-const SANDBOX = join(fileURLToPath(new URL("..", import.meta.url)), ".sandbox", "transcripts");
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
+const SANDBOX = join(ROOT, ".sandbox", "transcripts");
+
+/* The screen an empty folder opens on cannot be reached through the suite's own
+   server, which has fixtures in it — so these two drive one of their own, on a
+   folder with nothing in it. The same shape the git-history checks use, and the
+   reason is the same: the state under test is the absence of everything. */
+const BARE_PORT = 4184;
+const BARE = `http://127.0.0.1:${BARE_PORT}`;
+let bareServer;
+let bareFolder;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+test.beforeAll(async () => {
+  bareFolder = mkdtempSync(join(tmpdir(), "fundstelle-bare-"));
+  bareServer = spawn(process.execPath, [join(ROOT, "server.js")], {
+    env: {
+      ...process.env,
+      PORT: String(BARE_PORT),
+      TRANSCRIPTS: join(bareFolder, "transcripts"),
+      CATEGORIES: join(bareFolder, "categories.json"),
+      START_LANGUAGE: "de",
+    },
+    stdio: "ignore",
+  });
+  for (let tries = 0; tries < 60; tries += 1) {
+    const up = await fetch(`${BARE}/api/interviews`).then(
+      (answer) => answer.ok,
+      () => false,
+    );
+    if (up) break;
+    await wait(200);
+  }
+});
+
+test.afterAll(() => {
+  bareServer?.kill();
+  rmSync(bareFolder, { recursive: true, force: true });
+});
 
 const VTT = `WEBVTT
 
@@ -145,4 +186,60 @@ test("the whole path leaves a codable interview and an honest column", async ({ 
   // And the panel offers what belongs at this moment: the start system, since
   // nothing has been coded yet.
   await expect(page.locator("#inductive-summary")).toContainText("Startsystem");
+});
+
+/* And the screen before all of it: the one an empty folder opens on. */
+
+test("the first screen leads with what to do, not with a file format", async ({ page }) => {
+  const bare = await page.context().newPage();
+  await bare.goto(`${BARE}/?lang=de`);
+  await bare.waitForSelector(".onboarding");
+
+  /* It used to open with a folder path, fourteen lines of Markdown and a
+     paragraph about asterisks and middle dots, with the buttons underneath all
+     of it — a lesson about a format the tool will write for you, standing
+     between you and the thing that does it. */
+  const heading = bare.locator(".onboarding h2");
+  const lead = bare.locator(".onboarding-lead");
+  await expect(lead).toBeVisible();
+  await expect(lead).toContainText("WebVTT");
+  await expect(bare.locator("#onboarding-import")).toBeVisible();
+
+  // The format is one click away rather than gone: somebody writing files by
+  // hand still needs it.
+  const format = bare.locator(".onboarding-format");
+  await expect(format).toBeVisible();
+  await expect(bare.locator(".onboarding-sample")).toBeHidden();
+  await format.locator("summary").click();
+  await expect(bare.locator(".onboarding-sample")).toBeVisible();
+  await expect(bare.locator(".onboarding-sample")).toContainText("## Section:");
+
+  // The action comes before the lesson on the page, not only in the markup.
+  const order = await bare.evaluate(() => {
+    const button = document.querySelector("#onboarding-import");
+    const details = document.querySelector(".onboarding-format");
+    return button.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING;
+  });
+  expect(order, "the format sits after the buttons").toBeTruthy();
+  await bare.close();
+});
+
+test("nothing on the first screen is a control over nothing", async ({ page }) => {
+  const bare = await page.context().newPage();
+  await bare.goto(`${BARE}/?lang=de`);
+  await bare.waitForSelector(".onboarding");
+
+  /* A dropdown with no interviews in it, a search over a transcript that is not
+     there, and a column explaining percentages per guide section: furniture
+     around nothing, teaching the reader that parts of this screen mean nothing.
+     A poor first lesson. */
+  await expect(bare.locator("#interview-choice")).toBeHidden();
+  await expect(bare.locator(".search-bar")).toBeHidden();
+  await expect(bare.locator("#sections-note")).toBeHidden();
+  await expect(bare.locator("#note-shell")).toBeHidden();
+
+  // What does belong here stays: the category system can be built before any
+  // transcript exists.
+  await expect(bare.locator("#inductive-summary")).toBeVisible();
+  await bare.close();
 });

@@ -168,6 +168,9 @@ button, select, input, textarea {
 .header-right { display: flex; align-items: center; gap: .75rem; }
 
 .field { display: flex; flex-direction: column; gap: .2rem; }
+/* `display: flex` beats the browser's own rule for [hidden], so a field told to
+   go away stayed exactly where it was. */
+.field[hidden] { display: none; }
 .field-label {
   font-family: var(--mono);
   font-size: .62rem;
@@ -442,6 +445,24 @@ button, select, input, textarea {
 .about .field-label { margin: 0; }
 
 /* The copy sits with the other handle on a citation, quieter than it. */
+/* Nor anything to search in one. */
+.search-bar[hidden] { display: none; }
+
+/* Nothing to say about an interview that is not there. */
+.column-left[data-empty="true"] > *:not(.column-title) { display: none; }
+.column-left[data-empty="true"] > .column-title { display: none; }
+
+.onboarding-lead { max-width: 40rem; }
+.onboarding-format { margin: 1.4rem 0 .8rem; }
+.onboarding-format > summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: .64rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
 /* Said once, for the first coding, and gone after it. */
 .how-to-code {
   margin: 0 0 .8rem;
