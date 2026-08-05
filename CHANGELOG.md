@@ -10,20 +10,6 @@ where it lies.
 
 ### Added
 
-### Changed
-
-- **The figures are drawn at the size they were drawn for.** The charts are
-  authored 720 units wide with 10–11.5px type, against a page whose body text is
-  14px — and the stylesheet stretched them to the full column, 1.64× on a wide
-  screen, so labels came out at 18.9px and bars at 23px. Nothing was functionally
-  wrong, which is why nothing caught it: the figures simply read as a louder
-  document than the one they sit in, and a study of twenty units filled a screen
-  with three-unit bars. Each figure is now a block of its own at its own size,
-  with its Save-as-SVG button over the chart it saves. Narrower columns still
-  scale them down.
-
-### Added
-
 - **The whole study exports as REFI-QDA (`.qdpx`).** The claim has been that
   the work is not locked in here because everything is plain files — which is
   half an answer while the other half is "and to continue in MAXQDA you retype
@@ -41,6 +27,18 @@ where it lies.
   foot of the key sheet behind <kbd>?</kbd> shows it beside the Node version and
   the licence, and the image — which ships no `package.json` — carries the same
   string in its environment, so the label and the running tool cannot disagree.
+
+### Changed
+
+- **The figures are drawn at the size they were drawn for.** The charts are
+  authored 720 units wide with 10–11.5px type, against a page whose body text is
+  14px — and the stylesheet stretched them to the full column, 1.64× on a wide
+  screen, so labels came out at 18.9px and bars at 23px. Nothing was functionally
+  wrong, which is why nothing caught it: the figures simply read as a louder
+  document than the one they sit in, and a study of twenty units filled a screen
+  with three-unit bars. Each figure is now a block of its own at its own size,
+  with its Save-as-SVG button over the chart it saves. Narrower columns still
+  scale them down.
 
 ## 0.4.0 — 2026-08-05
 
