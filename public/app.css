@@ -1766,6 +1766,21 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .series-s7 { --series: var(--series-7); }
 .series-s8 { --series: var(--series-8); }
 
+/* A figure is drawn at a size, and that size is part of the drawing.
+   These charts are authored 720 units wide with 10–11.5px type against a 14px
+   page. Stretched to a 1312px column they came out at 1.64× — labels at 18.9px,
+   bars at 23px — so the figures read as a louder document than the one they sit
+   in, and a study of twenty units filled a screen. Drawn at their own size the
+   proportions are the ones they were given, two figures fit where one did, and
+   the page is one piece of work. Narrower columns still scale them down.
+
+   In pixels rather than rem on purpose: it has to agree with the unit the
+   drawing counts in, or the type inside it drifts against the type outside. */
+.chart-head,
+.chart-legend,
+.chart,
+.chart + .figures { max-width: 720px; }
+
 .chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .chart-head h3 { margin-bottom: 0; }
 .chart { margin: .6rem 0 1.6rem; position: relative; }
