@@ -595,6 +595,34 @@ export const TEXTS = {
     chartMoscowTitle: "Verteilung der MoSCoW-Stufen",
     chartMoscowCaption:
       "Eine Anforderung ohne Stufe ist noch nicht entschieden; sie steht als „offen“ am Ende.",
+    chartCloudTitle: "Wolke: drei Achsen aus derselben Tabelle",
+    chartCloudCaption:
+      "Dieselbe Rechnung wie die Karte, eine Achse mehr. Isometrisch statt perspektivisch, damit " +
+      "eine Strecke überall dasselbe bedeutet; Tiefe steckt in Größe, Blässe und darin, was was " +
+      "verdeckt. Jeder Punkt lässt eine Linie auf den Boden fallen — ohne die hat ein Punkt in " +
+      "der Luft keine Adresse. Nummern statt Namen, Schlüssel darunter. Kreis = Anforderung, " +
+      "Quadrat = Kategorie.",
+    summaryCloud:
+      "{rows} Anforderungen und {categories} Kategorien in drei Achsen: {first} %, {second} % " +
+      "und {third} % der Streuung, zusammen {total} %.",
+    chartCityTitle: "Stadtplan: Kategorie × Anforderung, Höhe = Belege",
+    chartCityCaption:
+      "Dein Modell wörtlich genommen: X sind die Kategorien, Y die Anforderungen, Z die Belege " +
+      "in dieser Zelle. Farbe = MoSCoW-Stufe. Von hinten nach vorn gezeichnet — was daran nicht " +
+      "aufgeht, sieht man am Bild: eine hohe Säule vorn verdeckt, was dahinter steht, und zwei " +
+      "gleich hohe Säulen wirken je nach Tiefe verschieden hoch.",
+    summaryCity:
+      "{rows} Anforderungen über {categories} Kategorien; die höchste Säule steht für {max} Belege.",
+    chartShareTitle: "Deckungsanteil: wie viel einer Kategorie eine Anforderung beansprucht",
+    chartShareCaption:
+      "Dieselbe Matrix wie oben, aber die Fläche eines Punktes ist nicht die Zahl der Belege, " +
+      "sondern ihr Anteil am gesamten Material dieser Kategorie. Zwölf von fünfzehn und zwölf " +
+      "von zweihundert sind nicht derselbe Befund: ein voller Punkt heißt, dass diese eine " +
+      "Anforderung fast alles trägt, was dazu gesagt wurde. Sonst wie oben — Zeile lesen für " +
+      "Reichweite, Spalte für Abdeckung, eingekreist = einzige Anforderung dazu.",
+    reachTipShare: "{title} — {category}: {n} Belege · {percent} % der Kategorie",
+    reachTipShareSole:
+      "{title} — {category}: {n} Belege · {percent} % der Kategorie · einzige Anforderung dazu",
     chartMapTitle: "Karte: Anforderungen und Kategorien in einer Ebene",
     chartMapCaption:
       "Jede Anforderung ist ein Vektor über die Kategorien — wie viele ihrer Belege in welcher " +
@@ -1225,6 +1253,34 @@ export const TEXTS = {
     chartMoscowTitle: "Distribution of MoSCoW levels",
     chartMoscowCaption:
       "A requirement without a level has not been decided yet; it sits at the end as “open”.",
+    chartCloudTitle: "Cloud: three axes out of the same table",
+    chartCloudCaption:
+      "The same arithmetic as the map with one axis more. Isometric rather than perspective, so " +
+      "a distance means the same thing everywhere; depth is carried by size, paleness and what " +
+      "covers what. Every point drops a line to the floor — without it a dot in the air has no " +
+      "address. Numbers instead of names, key underneath. Circle = requirement, square = " +
+      "category.",
+    summaryCloud:
+      "{rows} requirements and {categories} categories on three axes: {first} %, {second} % and " +
+      "{third} % of the variation, {total} % together.",
+    chartCityTitle: "City plot: category × requirement, height = citations",
+    chartCityCaption:
+      "Your model taken literally: X is the categories, Y the requirements, Z the citations in " +
+      "that cell. Colour = MoSCoW level. Drawn from the back forward — and what does not work " +
+      "about it is visible in the picture: a tall column in front hides what stands behind it, " +
+      "and two columns of the same height read differently depending on how far back they are.",
+    summaryCity:
+      "{rows} requirements across {categories} categories; the tallest column stands for {max} citations.",
+    chartShareTitle: "Coverage: how much of a category a requirement claims",
+    chartShareCaption:
+      "The same matrix as above, but the area of a dot is not the number of citations — it is " +
+      "their share of everything in that category. Twelve out of fifteen and twelve out of two " +
+      "hundred are not the same finding: a full dot means this one requirement carries almost " +
+      "all of what was said. Otherwise as above — read a row for reach, a column for coverage, " +
+      "circled = the only requirement for it.",
+    reachTipShare: "{title} — {category}: {n} citations · {percent} % of the category",
+    reachTipShareSole:
+      "{title} — {category}: {n} citations · {percent} % of the category · the only requirement for it",
     chartMapTitle: "Map: requirements and categories in one plane",
     chartMapCaption:
       "Every requirement is a vector over the categories — how many of its citations fall in " +

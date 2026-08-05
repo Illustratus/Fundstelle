@@ -10,6 +10,8 @@
 import {
   FONTS,
   categoryChart,
+  cityPlot,
+  cloudMap,
   clusterMap,
   coverageChart,
   estimateWidth,
@@ -3236,7 +3238,12 @@ function catalogFiguresHTML(rows, departments) {
        from the first requirement onwards — so it keeps the coverage chart
        company below rather than waiting with the two above. */
     chartHTML(reachChart(rows, state.categoryRows ?? [], t, shared)) +
-    chartHTML(clusterMap(rows, state.categoryRows ?? [], t, shared));
+    chartHTML(clusterMap(rows, state.categoryRows ?? [], t, shared)) +
+    /* Three ways of adding a third dimension, side by side for one round of
+       looking. Two of them will go. */
+    chartHTML(cloudMap(rows, state.categoryRows ?? [], t, shared)) +
+    chartHTML(cityPlot(rows, state.categoryRows ?? [], t, shared)) +
+    chartHTML(reachChart(rows, state.categoryRows ?? [], t, { ...shared, by: "share" }));
 
   return (
     (charts || `<p class="empty-state">${t("catalogChartsEmpty")}</p>`) +

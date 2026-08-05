@@ -2019,6 +2019,29 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   pointer-events: none;
 }
 .chart .map-label.category { fill: var(--ink-soft); font-style: italic; }
+
+/* The cloud and the city: floor, drop lines, numbers, key. Depth on paper needs
+   more than one signal, so size and paleness and covering all say it at once. */
+.chart .floor { stroke: var(--line); }
+.chart .drop { stroke: var(--line-strong); stroke-dasharray: 2 2; }
+.chart .foot { fill: var(--ink-faint); }
+.chart .map-number {
+  fill: var(--ink-soft);
+  font-size: 8.5px;
+  font-family: var(--mono);
+  pointer-events: none;
+}
+.chart .map-key { fill: var(--ink); font-size: 9px; font-family: var(--sans); }
+.chart .map-key.category { fill: var(--ink-soft); font-style: italic; }
+.chart .axis.city { font-size: 8.5px; }
+
+/* A column of the city, lit from the left: the same colour at three strengths,
+   which is what makes a box read as a box rather than as three flat shapes. */
+.chart .face { stroke: var(--sheet); stroke-width: .4; }
+.chart .face.top { fill: var(--moscow); }
+.chart .face.left { fill: var(--moscow); opacity: .78; }
+.chart .face.right { fill: var(--moscow); opacity: .58; }
+.chart .tower:hover .face { opacity: 1; }
 /* A category no requirement reaches. Quieter, not hidden — it is the finding,
    and --ink-faint is the tool's word for "a zero that means nothing is here".
    It clears 4.5:1 in both themes; `npm run test:contrast` keeps it there. */
