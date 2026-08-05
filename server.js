@@ -37,10 +37,10 @@ import {
 } from "./lib/analysis.js";
 
 /* The oldest runtime this is known to work on. Nothing here reaches beyond
-   what Node 18 offers, and saying so is worth a line: on an older one the tool
+   what Node 24 offers, and saying so is worth a line: on an older one the tool
    would otherwise fail somewhere in the middle of a file read, with a message
    about a function that does not exist rather than about the version. */
-const NEEDS_NODE = 18;
+const NEEDS_NODE = 24;
 /* Which version this is, answerable from inside the tool.
    From a checkout that is package.json; in the image there is none — the
    Dockerfile bakes the same string into the environment from its build

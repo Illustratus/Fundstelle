@@ -53,7 +53,7 @@ test("a runtime that is too old is named as the reason", async () => {
   child.stderr.on("data", (chunk) => (output += chunk));
   await new Promise((resolve) => child.on("exit", resolve));
 
-  expect(output).toContain("needs Node 18 or newer");
+  expect(output).toContain("needs Node 24 or newer");
   // It says which one it found, so the reader knows what to change.
   expect(output).toContain("16.20.2");
   expect(output).toContain("exit 1");

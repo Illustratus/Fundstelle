@@ -1,5 +1,5 @@
 # Fundstelle — runs without runtime dependencies, so the image stays small.
-FROM node:22-alpine
+FROM node:24-alpine
 
 # tini reaps the process tree and passes signals on, so `docker compose down`
 # stops the tool instead of waiting out the ten-second kill timer. su-exec drops

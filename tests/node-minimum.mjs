@@ -1,8 +1,8 @@
 /**
  * The tool on the oldest Node it claims to run on, with nothing installed.
  *
- * package.json says ">=18" and the server checks for it at startup, but nothing
- * ever ran there: Playwright needs Node 20 or newer, so the suite cannot say
+ * package.json says ">=24" and the server checks for it at startup, but nothing
+ * ever ran there: the suite runs on newer, so it cannot say
  * anything about 18. A matrix entry for it would have exercised the test runner
  * and called that a result.
  *

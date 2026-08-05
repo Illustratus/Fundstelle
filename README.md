@@ -31,7 +31,7 @@ you write stay in one provenance chain.
 node server.js          # http://127.0.0.1:4173
 ```
 
-No login, no build step, no runtime dependencies. Node 18 or newer; the tool
+No login, no build step, no runtime dependencies. Node 24 or newer; the tool
 says so and stops rather than failing somewhere in the middle of a file read.
 `@playwright/test` is only needed for the test suite.
 
@@ -436,7 +436,7 @@ suite needs stable anchors.
 ```sh
 npm run test:contrast             # measures the charts in both themes
 npm run test:docker               # needs Docker, builds the image
-npm run test:minimum              # the tool on Node 18, nothing installed
+npm run test:minimum              # the tool on Node 24, nothing installed
 ```
 
 Some of what the suite checks is worth naming, because it is what the feature
@@ -453,7 +453,7 @@ having if a change in it can be read.
 
 `test:minimum` is the one that checks the two claims made about a machine with
 nothing on it: that the tool runs on the oldest Node it declares, and that it
-needs no runtime dependencies. Playwright itself needs Node 20 or newer, so the
+needs no runtime dependencies. The suite runs on newer than the floor, so the
 suite cannot say anything about 18 — running it there would test the test runner
 and call that a result.
 

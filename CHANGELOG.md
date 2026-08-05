@@ -8,6 +8,14 @@ where it lies.
 
 ## Unreleased
 
+### Changed
+
+- **Node 24 is the floor.** It was 18, the image ran 22 and the tests ran on 20
+  and 22. Node 20 is out of support and 22 is on its way there: a tool handed to
+  other people should not prove itself on runtimes those people are being told
+  to leave. The floor moves everywhere at once — the startup check, `engines`,
+  the image, and the tests, which now run on 24 and 26.
+
 ### Added
 
 - **A second coding can be handed over as one file.** Intercoder reliability has
