@@ -1,0 +1,345 @@
+/* The API reference.
+
+   Everything visual comes from app.css: the paper, the ink, the two type faces,
+   the tables, the quiet buttons. What is here is only the difference between an
+   application and a document — the interface is a fixed grid that does not
+   scroll, and a reference is one long column that does nothing else.
+
+   Every class is prefixed `api-`, and that is not tidiness. Borrowing a
+   stylesheet means sharing its namespace: this page called a field's
+   explanation `.about`, which in the application is the metadata block beside
+   an interview and carries a rule above it and a lot of air. So every
+   explanation in the reference was drawn with a line through the middle of the
+   entry it belonged to, and the entries read as though each one explained the
+   next. Nothing was wrong in either stylesheet; they simply met. */
+
+body.api-page {
+  display: block;
+  overflow: auto;
+  height: auto;
+  min-height: 100%;
+  background: var(--paper);
+}
+
+.api-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.6rem 2rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--sheet);
+}
+.api-head h1 {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+.api-head .api-lead {
+  margin: 0.25rem 0 0;
+  color: var(--ink-soft);
+  max-width: 46rem;
+}
+.api-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.api-pill {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+}
+
+.api-body {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  align-items: start;
+  gap: 2rem;
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 1.6rem 2rem 5rem;
+}
+
+/* The contents follow the reader down; the reference is long by design. */
+.api-nav {
+  position: sticky;
+  top: 1.6rem;
+  max-height: calc(100vh - 3.2rem);
+  overflow: auto;
+  font-size: 0.86rem;
+}
+.api-nav h2 {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  margin: 1.1rem 0 0.35rem;
+}
+.api-nav h2:first-child {
+  margin-top: 0;
+}
+.api-nav a {
+  display: flex;
+  gap: 0.45rem;
+  align-items: baseline;
+  padding: 0.16rem 0.4rem;
+  border-radius: 4px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.api-nav a:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.api-nav .api-path {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.api-prose {
+  max-width: 46rem;
+  line-height: 1.6;
+}
+.api-prose h2 {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  margin: 1.6rem 0 0.4rem;
+}
+.api-prose p {
+  margin: 0.5rem 0;
+}
+.api-prose ul {
+  margin: 0.5rem 0;
+  padding-left: 1.1rem;
+}
+.api-prose code,
+.api-operation code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: color-mix(in srgb, var(--line) 45%, transparent);
+  border-radius: 3px;
+  padding: 0.05em 0.3em;
+}
+
+.api-tag {
+  margin: 2.6rem 0 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--line);
+}
+.api-tag h2 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+}
+.api-tag p {
+  margin: 0.2rem 0 0;
+  color: var(--ink-soft);
+}
+
+.api-operation {
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem 1.1rem 1.2rem;
+  margin: 0.8rem 0;
+  scroll-margin-top: 1.5rem;
+}
+.api-operation > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.api-method {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sheet);
+  background: var(--ink-soft);
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+}
+.api-method.get {
+  background: #2a78d6;
+}
+.api-method.post {
+  background: #19a06f;
+}
+.api-method.patch {
+  background: #bd8000;
+}
+.api-method.delete {
+  background: #e34948;
+}
+.api-operation .api-route {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+.api-operation .api-summary {
+  flex: 1 1 100%;
+  color: var(--ink-soft);
+}
+.api-operation .api-prose {
+  margin-top: 0.6rem;
+}
+
+.api-operation h4 {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  margin: 1.1rem 0 0.35rem;
+}
+
+/* Fixed, and nothing set `nowrap`. An enum of six figure names is a perfectly
+   ordinary cell, and left unbreakable it pushed the table out of its card and
+   squeezed the column that carries the meaning down to nothing. A reference
+   whose widest value decides the layout is a reference nobody can read. */
+.api-operation table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.api-operation th,
+.api-operation td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.35rem 0.6rem 0.35rem 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.api-operation th {
+  color: var(--ink-faint);
+  font-weight: 600;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.api-operation th:nth-child(1) { width: 22%; }
+.api-operation th:nth-child(2) { width: 8%; }
+.api-operation th:nth-child(3) { width: 28%; }
+.api-operation td.api-name {
+  font-family: var(--mono);
+}
+.api-operation td.api-type {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.api-operation td p:first-child { margin-top: 0; }
+.api-operation td p:last-child { margin-bottom: 0; }
+.api-required {
+  color: #e34948;
+}
+
+.api-status {
+  display: inline-block;
+  min-width: 2.4rem;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.api-status.ok {
+  color: #19a06f;
+}
+.api-status.bad {
+  color: #bd8000;
+}
+
+pre.api-sample {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--line) 35%, transparent);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  overflow-x: auto;
+  margin: 0.35rem 0 0;
+}
+
+.api-fields {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.api-fields li {
+  padding: 0.22rem 0 0.22rem 0.9rem;
+  border-left: 2px solid var(--line);
+}
+.api-fields .api-name {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+}
+.api-fields .api-type {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-left: 0.4rem;
+}
+.api-fields .api-about {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+/* A field list is a list, not a series of paragraphs: the page's paragraph
+   spacing turned twelve one-line explanations into a screen and a half. */
+.api-fields .api-about p {
+  margin: 0.1rem 0;
+}
+.api-answer {
+  margin: 0.3rem 0 0.6rem;
+}
+.api-answer > p {
+  margin: 0.2rem 0;
+}
+
+details.api-schema > summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  padding: 0.2rem 0;
+}
+
+.api-curl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.api-curl pre {
+  flex: 1;
+  margin: 0;
+}
+
+@media (max-width: 62rem) {
+  .api-body {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1.2rem 1rem 4rem;
+  }
+  .api-nav {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media print {
+  .api-nav,
+  .api-meta,
+  .api-curl button {
+    display: none;
+  }
+  .api-operation {
+    break-inside: avoid;
+  }
+}

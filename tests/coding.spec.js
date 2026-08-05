@@ -2324,10 +2324,19 @@ test("the chart saves as a standalone SVG file", async ({ page }) => {
   const file = await download;
   expect(file.suggestedFilename()).toBe("coding-units-per-category.svg");
 
-  // The file carries its colors itself, not through CSS variables.
+  /* The file carries its colours itself, not through custom properties. Which
+     is the property, not the mechanism: this used to insist on an inline
+     `fill: rgb(…)` per element, because that was how the file was made — by
+     asking the laid-out page what colour everything had come out. It is now
+     one declared stylesheet travelling with the picture, and a check written
+     against the old mechanism failed a file that was in every way better.
+     What actually has to hold is that no colour is left to be looked up
+     somewhere the file cannot reach, and that a segment does get one. */
   const content = readFileSync(await file.path(), "utf8");
   expect(content).toContain("xmlns");
-  expect(content).toMatch(/class="segment[^>]*fill:\s*rgb\(/);
+  expect(content).not.toContain("var(--");
+  expect(content).toMatch(/\.segment\.series-s1\s*\{\s*fill:\s*#[0-9a-f]{6}/i);
+  expect(content).toMatch(/class="segment series-s1"/);
 });
 
 /* At twenty requirements the catalog runs to several screens. The counts say

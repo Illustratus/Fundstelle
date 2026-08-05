@@ -392,6 +392,59 @@ stays where it is — another program's plain text is not this format's turns an
 guide prompts, and a transcript invented to carry their offsets would be a
 transcript nobody said.
 
+## The interface, over HTTP
+
+There is no second, private interface. The browser talks to the same routes
+anything else can, so a script that assembles a methods chapter, a lab pipeline,
+or a supervisor's dashboard has the whole study available to it.
+
+Two addresses describe the rest:
+
+```
+GET /api/docs          the reference, to read
+GET /api/openapi.json  the same thing as OpenAPI 3.1, for Swagger UI, Redoc,
+                       Bruno, Insomnia or a code generator
+```
+
+The reference page is written here rather than vendored: a megabyte and a half
+of somebody else's JavaScript would undo both the no-dependency rule and the
+promise that everything works with the network unplugged. The document it renders
+is the ordinary artefact, so point whatever you already use at it.
+
+Parts of that document are bound to the code instead of written out — the figure
+names, the themes, the languages, the MoSCoW levels, the version — and the suite
+compares the routes `server.js` answers against the paths the document claims. A
+route added without a paragraph fails the tests rather than quietly becoming
+folklore.
+
+### The figures
+
+Every chart is also a file:
+
+```
+GET /api/figures                      which six there are, titled
+GET /api/figures/saturation.svg       one of them
+    ?theme=light|dark  ?lang=de|en
+```
+
+Colours resolved, fonts carried, key drawn in, a ground laid down, nothing
+fetched from anywhere — an SVG that can go into a thesis, a slide or a static
+site without this tool being there. It is drawn by the same module the interface
+draws with, so it is not a second rendering that happens to agree: it is the
+picture on the screen, and the suite checks that element by element.
+
+The six are `coding-units-per-category`, `distribution-across-sections`,
+`saturation`, `moscow-distribution`, `prioritization` and
+`citations-per-requirement` — the names they have always been saved under.
+
+A figure that has nothing to draw yet answers `409` and names the condition that
+is missing, rather than `404` or an empty picture: the address is right, the
+study has not got there.
+
+```sh
+curl -o saturation.svg 'http://127.0.0.1:4173/api/figures/saturation.svg?theme=dark'
+```
+
 ## Upgrading from an earlier version
 
 Version 0.1 renamed the files and the keys inside them from German to English.

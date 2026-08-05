@@ -22,8 +22,12 @@ import { agreement, agreementMarkdown } from "./lib/agreement.js";
 import { codebookFrom, projectFile, readCodebook } from "./lib/refi.js";
 import { convert, folderName, readTranscript } from "./lib/import.js";
 import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
+import { SVG, drawFigure, figureIndex, viewOf } from "./lib/figures.js";
+import { openapiDocument } from "./lib/openapi.js";
+import { THEME_NAMES } from "./public/charts.js";
 import {
   MOSCOW,
+  OPERATIONS,
   analysis,
   analysisMarkdown,
   catalog,
@@ -329,6 +333,19 @@ const server = createServer(async (request, response) => {
 
   try {
     if (!path.startsWith("/api/")) return await staticFile(response, path);
+
+    /* The interface, described --------------------------------------------
+       Everything the browser does goes through these routes and there is no
+       second, private one — so the description is not a courtesy, it is the
+       whole surface. `/api/docs` renders it; `/api/openapi.json` is the
+       artefact every other tool reads. Both stand before the seeding below, because
+       reading the documentation should not create a category system. */
+    if (path === "/api/openapi.json" && request.method === "GET") {
+      return send(response, 200, openapiDocument({ version: VERSION }));
+    }
+    if (path === "/api/docs" && request.method === "GET") {
+      return await staticFile(response, "/docs.html");
+    }
 
     // The category system is seeded on first touch, and the language of that
     // touch decides its wording. Settling it here means every route below can
@@ -783,6 +800,47 @@ const server = createServer(async (request, response) => {
         categories,
         propositions,
       });
+    }
+
+    /* Figures ---------------------------------------------------------------
+       The pictures of the analysis and the catalog, as files. Everything behind
+       them was already fetchable as numbers; this is the picture itself, drawn
+       by the same module the interface draws with, so a report assembled by a
+       script gets the figure a reader would have saved by hand. */
+    if (path === "/api/figures" && request.method === "GET") {
+      return send(response, 200, {
+        figures: figureIndex(language),
+        themes: THEME_NAMES,
+        languages: LANGUAGES,
+      });
+    }
+    const oneFigure = path.match(/^\/api\/figures\/([a-z0-9-]+)\.svg$/);
+    if (oneFigure && request.method === "GET") {
+      const name = oneFigure[1];
+      // Only what this figure is drawn from: fetching the catalog to answer a
+      // question about the saturation curve is work nobody asked for.
+      const view = viewOf(name);
+      const all = view ? await allInterviews() : [];
+      const { categories } = view ? await store.categories(seedLanguage) : { categories: [] };
+      const requirements =
+        view === "catalog" ? (await store.requirements()).requirements : [];
+      const { svg } = drawFigure(name, {
+        analysis: view === "analysis" ? analysis(all, categories) : null,
+        catalog:
+          view === "catalog"
+            ? {
+                requirements: catalog(all, requirements, categories),
+                moscow: MOSCOW,
+                departments: [
+                  ...new Set(all.map((interview) => interview.transcript.department)),
+                ],
+                operationCount: OPERATIONS.length,
+              }
+            : null,
+        language,
+        theme: url.searchParams.get("theme"),
+      });
+      return send(response, 200, svg, SVG);
     }
 
     // Exports ---------------------------------------------------------------

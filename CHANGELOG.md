@@ -6,6 +6,49 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **Every figure can be fetched.** All six charts of the analysis and the catalog
+  are now files at `GET /api/figures/<name>.svg`, with `?theme=light|dark` and
+  `?lang=de|en`. Everything behind them was already available as numbers; the
+  picture was not, so a script assembling a report had to drive a browser to get
+  one and a figure in a thesis was a screenshot or nothing. `GET /api/figures`
+  lists the six with their titles.
+
+  A figure that has nothing to draw yet answers `409` and names the missing
+  condition — the address is right, the study has not got there — rather than a
+  `404` that sends people looking for a typo, or an empty picture that says
+  nothing at all.
+- **The interface is described.** `GET /api/openapi.json` is an OpenAPI 3.1
+  document covering every route: what it does, why it exists, what goes in, what
+  comes back, and which error codes it can name. `GET /api/docs` renders it as a
+  reference page in the tool's own hand, with a `curl` line per operation.
+
+  Parts of the document are bound to the code rather than written out — the
+  figure names, the themes, the languages, the MoSCoW levels, the version — and
+  the suite compares the routes `server.js` answers against the paths the
+  document claims, in both directions. A route added without a paragraph fails
+  the tests rather than quietly becoming folklore.
+
+### Changed
+
+- **The drawing moved out of the interface.** The geometry lived in `app.js` and
+  the colours in `app.css`, so a figure only existed where a browser had already
+  laid it out — and the saved file was made by asking that browser what colour
+  everything had come out. Both now come from `public/charts.js`, which declares
+  its own palette and returns markup, so the page, the save button and the
+  endpoint are one drawing rather than three that agree by inspection.
+
+  Nothing about a saved file changes for the reader except that it is now the
+  same bytes the endpoint serves. The existing check that opens every saved SVG
+  as a document of its own and compares it element by element against the page
+  still passes, which is what made the change safe to make.
+- The service worker now caches every module the interface imports. Three of
+  them had been missing since they were added, which meant the offline shell was
+  a page that failed at its first import.
+
 ## 0.6.0 — 2026-08-05
 
 ### Upgrading

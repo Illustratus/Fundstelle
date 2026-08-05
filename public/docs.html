@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fundstelle — API</title>
+    <link rel="icon" href="/icon.svg" />
+    <!-- The tool's own stylesheet, for the tokens, the type and the tables.
+         Only what makes this a document rather than an application is overridden:
+         the interface page is a fixed grid that does not scroll, and a reference
+         is a long column that does nothing else. -->
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/docs.css" />
+  </head>
+  <body class="api-page">
+    <header class="api-head">
+      <div>
+        <h1>Fundstelle</h1>
+        <p class="api-lead" id="lead"></p>
+      </div>
+      <div class="api-meta">
+        <span class="api-pill" id="version"></span>
+        <a class="button-quiet" href="/api/openapi.json" download="fundstelle-openapi.json"
+          >openapi.json</a
+        >
+        <a class="button-quiet" href="/" id="to-application">Back to the application</a>
+      </div>
+    </header>
+
+    <div class="api-body">
+      <nav class="api-nav" id="contents" aria-label="Contents">
+        <div id="toc"></div>
+      </nav>
+      <main class="api-main">
+        <section id="intro" class="api-prose"></section>
+        <div id="operations"></div>
+        <section id="schemas"></section>
+      </main>
+    </div>
+
+    <noscript>
+      <!-- English, as everywhere here when nobody has said which language they
+           want: this is the one line the interface cannot translate, because
+           translating it is the thing that is not running. -->
+      <p class="api-prose">
+        This page renders <a href="/api/openapi.json">/api/openapi.json</a>. Without JavaScript the
+        document itself is the documentation — it is complete, and written to be read.
+      </p>
+    </noscript>
+
+    <script type="module" src="/docs.js"></script>
+  </body>
+</html>

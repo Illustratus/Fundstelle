@@ -7,9 +7,19 @@
   them: highlight, apparatus, citation and export.
 */
 
+import {
+  FONTS,
+  categoryChart,
+  coverageChart,
+  estimateWidth,
+  heatmapChart,
+  moscowBand,
+  priorityField,
+  saturationChart,
+  standalone,
+} from "./charts.js";
 import { effectiveWord, matchesSlice, occurrences, trimStem } from "./search.js";
 import { sentenceAt, sentences } from "./sentences.js";
-import { layoutBucket } from "./scatter.js";
 import { language, plural, quoted, setLanguage, t } from "./texts.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -85,6 +95,9 @@ const state = {
   requirements: [],
   moscow: [],
   departments: [],
+  // The specification behind each figure on screen, so the save button has the
+  // picture to write out rather than the picture to read back off the page.
+  charts: {},
   reanchoring: null,
   view: "code",
   // Letters typed while the coding bar is open.
@@ -2344,62 +2357,14 @@ function colorFrom(data) {
 }
 
 /* Charts ------------------------------------------------------------------
-   The cross table stays the citable number; the chart is the overview. Series
-   color follows the department in a fixed order (validated palette in app.css),
-   never its rank — a change in the data recolors no department. */
+   The cross table stays the citable number; the chart is the overview.
 
-const SERIES_COUNT = 8;
-
-/**
- * Map departments onto the eight series colors. From the ninth department on,
- * the rest collapses into „others": a ninth color could no longer be told apart
- * from the first eight reliably.
- */
-function seriesFrom(departments) {
-  if (departments.length <= SERIES_COUNT) {
-    return departments.map((name, index) => ({
-      name,
-      className: `series-s${index + 1}`,
-      sources: [name],
-    }));
-  }
-  const series = departments.slice(0, SERIES_COUNT - 1).map((name, index) => ({
-    name,
-    className: `series-s${index + 1}`,
-    sources: [name],
-  }));
-  series.push({
-    name: t("seriesMore"),
-    className: `series-s${SERIES_COUNT}`,
-    sources: departments.slice(SERIES_COUNT - 1),
-  });
-  return series;
-}
-
-/** A round axis step (1, 2, 5, 10, …) that leads to at most five ticks. */
-function axisStep(max) {
-  if (max <= 5) return 1;
-  const raw = max / 5;
-  const decade = 10 ** Math.floor(Math.log10(raw));
-  for (const factor of [1, 2, 5, 10]) if (raw <= factor * decade) return factor * decade;
-  return 10 * decade;
-}
-
-/** Rectangle path; the right end is rounded when `round` is set. */
-function segmentPath(x, y, width, height, round) {
-  const r = round ? Math.min(3, width / 2) : 0;
-  return (
-    `M ${x} ${y} h ${width - r} ` +
-    (r
-      ? `a ${r} ${r} 0 0 1 ${r} ${r} v ${height - 2 * r} a ${r} ${r} 0 0 1 ${-r} ${r} `
-      : `v ${height} `) +
-    `h ${-(width - r)} z`
-  );
-}
-
-function shorten(text, limit = 30) {
-  return text.length > limit ? text.slice(0, limit - 1).trimEnd() + "…" : text;
-}
+   The drawing itself is not here. It lives in `charts.js`, where it is plain
+   arithmetic over the data the API already serves, so that the same figure can
+   be had from the screen, from the save button and from `/api/figures/…`
+   without three drawings that agree only by accident. What is here is the
+   wrapping: the heading, the key as HTML, the summary a screen reader hears,
+   and the figures behind it as a table. */
 
 /**
  * What a chart says, in a sentence, for whoever cannot see it.
@@ -2455,141 +2420,58 @@ function chartFiguresHTML(id, { caption, columns, rows }) {
   );
 }
 
-/** The largest row, named — the one thing a reader takes from a bar chart. */
-function largestRow(rows) {
-  return rows.reduce((best, row) => (row.sum > (best?.sum ?? -1) ? row : best), null);
-}
-
-const chartLegend = (series) =>
-  series.length > 1
-    ? `<div class="chart-legend">` +
-      series
-        .map((one) => `<span><i class="${one.className}"></i>${escapeHTML(one.name)}</span>`)
-        .join("") +
-      `</div>`
-    : "";
-
 /**
- * A horizontal stacked bar chart: one row per entry, segments per department.
+ * A figure on the page: heading, key, summary, picture, caption, figures.
  *
- * Shared by the analysis (categories) and the catalog (requirements), because
- * both answer the same question — how much of this comes from where — and a
- * second visual idiom for the same question would only cost the reader.
+ * The picture comes from `charts.js` as a body and a size; everything around it
+ * is HTML, because everything around it is interface — a key that can be read
+ * by a screen reader, a disclosure that opens the numbers, a button that saves
+ * the file. `null` for a chart there is nothing to draw yet.
  */
-/**
- * Where the material stopped producing anything new.
- *
- * Every qualitative study is asked how it knows it had enough interviews, and
- * the answer expected is that the categories stopped arriving. That is a claim
- * about the coding, and the coding is right here — so it is drawn rather than
- * asserted: how many categories turn up for the first time in each interview,
- * and how many are in play by then.
- *
- * It stops at showing. Where a curve has flattened far enough is a judgement
- * about the material, and no arithmetic makes it — a tool that printed
- * "saturated" would be putting words in a supervisor's mouth.
- */
-function saturationChartHTML(data) {
-  const points = data.saturation ?? [];
-  /* Two interviews cannot show a curve flattening, and a chart that suggests
-     one on two points invites a claim the material does not carry. */
-  if (points.length < 3 || !points.some((one) => one.total)) return "";
-
-  const WIDTH = 720;
-  const LEFT = 42;
-  const RIGHT = 16;
-  const TOP = 12;
-  const PLOT = 150;
-  const LABELS = 30;
-  const height = TOP + PLOT + LABELS;
-
-  const end = Math.max(1, Math.ceil(Math.max(...points.map((one) => one.total))));
-  const step = axisStep(end);
-  // One step of headroom, always: the last point carries a "+2" above it, and a
-  // curve drawn against the ceiling reads as clipped even when it is not.
-  const top = Math.ceil(end / step) * step + (Math.ceil(end / step) * step === end ? step : 0);
-  const track = WIDTH - LEFT - RIGHT;
-  const gap = points.length > 1 ? track / (points.length - 1) : 0;
-  const x = (index) => LEFT + index * gap;
-  const y = (value) => TOP + PLOT - (value / top) * PLOT;
-
-  let grid = "";
-  for (let tick = 0; tick <= top; tick += step) {
-    grid +=
-      `<line class="grid" x1="${LEFT}" y1="${y(tick)}" x2="${WIDTH - RIGHT}" y2="${y(tick)}"></line>` +
-      `<text class="axis" x="${LEFT - 8}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>`;
-  }
-
-  /* A step rather than a straight line between the points: the count changes at
-     an interview, not gradually across the space between two of them. */
-  let path = `M ${x(0)} ${y(points[0].total)}`;
-  points.forEach((one, index) => {
-    if (!index) return;
-    path += ` L ${x(index)} ${y(points[index - 1].total)} L ${x(index)} ${y(one.total)}`;
-  });
-
-  const dots = points
-    .map((one, index) => {
-      const tip = t("saturationTip", {
-        title: one.title,
-        fresh: one.fresh,
-        total: one.total,
-        names: one.names.join(", ") || t("summaryNone"),
-      });
-      return (
-        `<circle class="point saturation-point" cx="${x(index)}" cy="${y(one.total)}" r="${one.fresh ? 5 : 3.5}"` +
-        ` data-tip="${escapeHTML(tip)}"></circle>` +
-        (one.fresh
-          ? `<text class="value" x="${x(index)}" y="${y(one.total) - 10}" text-anchor="middle">+${one.fresh}</text>`
-          : "")
-      );
-    })
-    .join("");
-
-  /* Numbered, not named. Two interviews in the same department are ordinary,
-     and a department name on the axis twice says nothing about which of them
-     stopped adding categories. The position is unambiguous, always fits, and
-     the title travels with the dot and stands in the figures below. */
-  const marks = points
-    .map(
-      (one, index) =>
-        `<text class="axis" x="${x(index)}" y="${TOP + PLOT + 18}" text-anchor="middle">${index + 1}</text>`,
-    )
-    .join("");
-
-  const last = points[points.length - 1];
-  const quiet = [...points].reverse().findIndex((one) => one.fresh);
-  const summary = t("summarySaturation", {
-    interviews: points.length,
-    total: last.total,
-    since: quiet > 0 ? quiet : 0,
-  });
-
+function chartHTML(spec) {
+  if (!spec) return "";
+  state.charts[spec.id] = spec;
+  const legend = spec.legend ? keyHTML(spec.legend) : "";
   return (
-    `<div class="chart-head"><h3 id="saturation-title">${t("chartSaturationTitle")}</h3>` +
-    `<button type="button" class="button-quiet" data-svg="saturation" data-file="saturation.svg">${t("saveAsSvg")}</button></div>` +
-    chartSummaryHTML("saturation", summary) +
-    `<figure class="chart" id="saturation">` +
-    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="saturation-title"` +
-    ` aria-describedby="saturation-summary" preserveAspectRatio="xMinYMin meet">` +
-    grid +
-    `<path class="saturation-line" d="${path}" fill="none"></path>` +
-    dots +
-    marks +
+    `<div class="chart-head"><h3 id="${spec.id}-title">${escapeHTML(spec.title)}</h3>` +
+    `<button type="button" class="button-quiet" data-svg="${spec.id}" data-file="${spec.file}">` +
+    `${t("saveAsSvg")}</button></div>` +
+    legend +
+    chartSummaryHTML(spec.id, spec.summary) +
+    `<figure class="chart" id="${spec.id}"${spec.figuresRef ? ` data-figures="${spec.figuresRef}"` : ""}>` +
+    `<svg viewBox="0 0 ${spec.width} ${spec.height}" role="img" aria-labelledby="${spec.id}-title"` +
+    ` aria-describedby="${spec.id}-summary"` +
+    (spec.angle ? ` data-angle="${spec.angle}" data-baseline="${spec.baseline}"` : "") +
+    ` preserveAspectRatio="xMinYMin meet">` +
+    spec.body +
     `</svg>` +
     `<div class="chart-tip" hidden></div>` +
-    `<figcaption class="column-note">${t("chartSaturationCaption")}</figcaption>` +
+    `<figcaption class="column-note">${escapeHTML(spec.caption)}</figcaption>` +
     `</figure>` +
-    chartFiguresHTML("saturation", {
-      caption: t("saturationFiguresCaption"),
-      columns: [
-        t("interview"),
-        t("saturationFresh"),
-        t("saturationTotal"),
-        t("saturationWhich"),
-      ],
-      rows: points.map((one) => [one.title, one.fresh, one.total, one.names.join(", ") || "·"]),
-    })
+    (spec.figures ? chartFiguresHTML(spec.id, spec.figures) : "")
+  );
+}
+
+/** The key beside a figure. A ramp is two ends and the steps between them. */
+function keyHTML(legend) {
+  if (legend.kind === "ramp") {
+    return (
+      `<div class="chart-legend ramp"><span>${legend.from}</span>` +
+      legend.entries.map((entry) => `<i class="${entry.paint}"></i>`).join("") +
+      `<span>${legend.to}</span><span class="ramp-label">${escapeHTML(legend.note)}</span></div>`
+    );
+  }
+  const classed = legend.kind === "moscow";
+  return (
+    `<div class="chart-legend${classed ? " moscow" : ""}">` +
+    legend.entries
+      .map(
+        (entry) =>
+          `<span${classed ? ` class="${entry.paint}"` : ""}>` +
+          `<i${classed ? "" : ` class="${entry.paint}"`}></i>${escapeHTML(entry.label)}</span>`,
+      )
+      .join("") +
+    `</div>`
   );
 }
 
@@ -2651,427 +2533,57 @@ function cooccurrenceHTML(data) {
   );
 }
 
-function stackedBarsHTML({
-  id,
-  title,
-  caption,
-  file,
-  rows,
-  departments,
-  summaryKey,
-  figuresCaption,
-  figuresRef,
-}) {
-  if (!rows.length || !departments.length) return "";
-  const series = seriesFrom(departments);
-
-  const values = rows.map((row) =>
-    series.map((one) =>
-      one.sources.reduce((n, name) => n + (row.values[departments.indexOf(name)] ?? 0), 0),
-    ),
-  );
-
-  const max = Math.max(1, ...rows.map((row) => row.sum));
-  const step = axisStep(max);
-  const end = Math.ceil(max / step) * step;
-
-  const LABEL = 200;
-  const VALUE = 34;
-  const WIDTH = 720;
-  const ROW = 26;
-  const BAR = 14;
-  const TOP = 6;
-  const track = WIDTH - LABEL - VALUE - 8;
-  const height = TOP + rows.length * ROW + 22;
-  const scale = (value) => (value / end) * track;
-
-  let grid = "";
-  for (let tick = 0; tick <= end; tick += step) {
-    const x = LABEL + scale(tick);
-    if (tick > 0) {
-      grid += `<line class="grid" x1="${x}" y1="${TOP}" x2="${x}" y2="${height - 20}"></line>`;
-    }
-    grid += `<text class="axis" x="${x}" y="${height - 7}" text-anchor="middle">${tick}</text>`;
-  }
-
-  const bars = rows
-    .map((row, index) => {
-      const y = TOP + index * ROW + (ROW - BAR) / 2;
-      const label = (row.child ? "… " : "") + row.name;
-      let x = LABEL;
-      let last = -1;
-      values[index].forEach((value, k) => {
-        if (value > 0) last = k;
-      });
-      const segments = values[index]
-        .map((value, k) => {
-          if (!value) return "";
-          const full = scale(value);
-          // 2px of air between the segments; the last one ends rounded.
-          const width = Math.max(1, full - (k === last ? 0 : 2));
-          const part =
-            `<path class="segment ${series[k].className}" d="${segmentPath(x, y, width, BAR, k === last)}"` +
-            ` data-department="${escapeHTML(series[k].name)}" data-row="${escapeHTML(row.name)}"` +
-            ` data-value="${value}" data-tip="${escapeHTML(`${row.name} — ${series[k].name}: ${value}`)}"></path>`;
-          x += full;
-          return part;
-        })
-        .join("");
-      return (
-        `<text class="row-label${row.child ? " child" : ""}" x="${LABEL - 8}" y="${y + BAR - 3}" text-anchor="end">${escapeHTML(shorten(label))}</text>` +
-        segments +
-        `<text class="value${row.sum ? "" : " empty"}" x="${x + 6}" y="${y + BAR - 3}">${row.sum}</text>`
-      );
-    })
-    .join("");
-
-  const largest = largestRow(rows);
-  const summary = t(summaryKey ?? "summaryBars", {
-    rows: rows.length,
-    total: rows.reduce((n, row) => n + row.sum, 0),
-    departments: departments.length,
-    top: largest?.name ?? "—",
-    topValue: largest?.sum ?? 0,
-  });
-
-  return (
-    `<div class="chart-head"><h3 id="${id}-title">${escapeHTML(title)}</h3>` +
-    `<button type="button" class="button-quiet" data-svg="${id}" data-file="${file}">${t("saveAsSvg")}</button></div>` +
-    chartLegend(series) +
-    chartSummaryHTML(id, summary) +
-    // A chart either carries its own figures or names the table that already
-    // holds them; the category chart is followed by the cross table anyway.
-    `<figure class="chart" id="${id}"${figuresRef ? ` data-figures="${figuresRef}"` : ""}>` +
-    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="${id}-title"` +
-    ` aria-describedby="${id}-summary" preserveAspectRatio="xMinYMin meet">` +
-    `<line class="baseline" x1="${LABEL}" y1="${TOP}" x2="${LABEL}" y2="${height - 20}"></line>` +
-    grid +
-    bars +
-    `</svg>` +
-    `<div class="chart-tip" hidden></div>` +
-    `<figcaption class="column-note">${escapeHTML(caption)}</figcaption>` +
-    `</figure>` +
-    // The category chart is followed by the cross table anyway; only the charts
-    // that stand on their own need the figures spelled out again.
-    (figuresCaption
-      ? chartFiguresHTML(id, {
-          caption: figuresCaption,
-          columns: [title, ...departments, t("total")],
-          rows: rows.map((row) => [row.name, ...row.values, row.sum]),
-        })
-      : "")
-  );
-}
-
-function categoryChartHTML(data) {
-  return stackedBarsHTML({
-    id: "chart",
-    figuresRef: "matrix-table",
-    title: t("chartTitle"),
-    caption: t("chartCaption"),
-    file: "coding-units-per-category.svg",
-    departments: data.departments,
-    rows: data.rows.map((row) => ({
-      name: row.name,
-      child: Boolean(row.parent),
-      values: row.values,
-      sum: row.sum,
-    })),
-  });
+/**
+ * The chart, saved as a file that stands on its own.
+ *
+ * It used to be built by scraping: the laid-out picture was cloned, every
+ * element was asked what colour, face and size it had come out, and the answers
+ * were written onto the copy as inline styles. That worked, and it was the only
+ * way to get a file out of a drawing whose colours lived in custom properties —
+ * but it meant the file existed only where a browser had already drawn it, and
+ * that a second drawing for the API would have been a second drawing.
+ *
+ * Now the picture declares its own paint in `charts.js`, so the same
+ * `standalone()` that answers `/api/figures/…` builds the file here. What the
+ * browser still contributes is measurement: real glyph widths, for where the
+ * key wraps and how far the angled headings of the heatmap reach down. The
+ * server can only estimate those, and estimates there run wide on purpose.
+ */
+function currentTheme() {
+  const chosen = document.documentElement.dataset.theme;
+  if (chosen === "light" || chosen === "dark") return chosen;
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 /**
- * Distribution across the guide sections: category by section as a heatmap. It
- * answers the question whether a category sticks to its section or spreads
- * across the conversation — magnitude, so a sequential ramp from one hue, not
- * category colors.
+ * How wide a piece of text is, in the font the file will be set in.
+ *
+ * Not the font of the page: the figure carries its own stack, and measuring in
+ * one face to lay out another is how a key comes out overlapping.
  */
-function heatmapHTML(data) {
-  const sections = data.sections ?? [];
-  if (!data.rows.length || sections.length < 2) return "";
-
-  const counts = new Map();
-  for (const [categoryId, citations] of Object.entries(data.citations)) {
-    for (const citation of citations) {
-      if (!citation.sectionName) continue;
-      const key = `${categoryId}|${citation.sectionName}`;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-  }
-  const max = Math.max(0, ...counts.values());
-  if (!max) return "";
-  const levelOf = (n) => Math.max(1, Math.ceil((n / max) * 5));
-
-  const LABEL = 200;
-  const WIDTH = 720;
-  const CELL = 22;
-  const track = WIDTH - LABEL - 8;
-  const width = track / sections.length;
-
-  /* Guide sections are named, not numbered, and the names are sentences: a
-     column barely wider than a thumbnail cannot hold "Zusammenarbeit über
-     Bereiche" horizontally. Set upright they were cut to eight characters and
-     eight of nine columns read as an ellipsis — legible only on hover, which is
-     no help at all in the exported SVG or on paper.
-
-     So the headings are set at an angle, ascending to the left into the space
-     above the row labels, which is empty anyway. That space is what bounds
-     them: a heading may reach as far left as the row labels start. */
-  const ANGLE = 45;
-  const RADIANS = (ANGLE * Math.PI) / 180;
-  const CHARACTER = 5.1; // 10px sans, measured across the section names
-  const TOP = 2;
-
-  /* An angled heading ends at its column and trails away behind it. Rising to
-     the right it would trail down-left; set below the grid that is exactly the
-     free space — under the row labels, where nothing else is. Rising labels
-     placed above would instead trail off the right edge of the widest ones. */
-  const room = LABEL + width / 2 - 6; // how far the first column may trail left
-  const maxCharacters = Math.max(8, Math.min(30, Math.floor(room / Math.cos(RADIANS) / CHARACTER)));
-  const headings = sections.map((section) => shorten(section.short, maxCharacters));
-  const longest = Math.max(...headings.map((heading) => heading.length));
-  const FOOT = Math.ceil(longest * CHARACTER * Math.sin(RADIANS)) + 12;
-
-  const grid = TOP + data.rows.length * CELL;
-  const height = grid + FOOT;
-
-  const heads = sections
-    .map((section, k) => {
-      const x = LABEL + k * width + width / 2;
-      const y = grid + 10;
-      return (
-        `<text class="axis heading" x="${x}" y="${y}" text-anchor="end"` +
-        ` transform="rotate(-${ANGLE} ${x} ${y})">` +
-        `<title>${escapeHTML(section.short)}</title>${escapeHTML(headings[k])}</text>`
-      );
-    })
-    .join("");
-
-  const cells = data.rows
-    .map((row, index) => {
-      const y = TOP + index * CELL;
-      const label = (row.parent ? "… " : "") + row.name;
-      const line = sections
-        .map((section, k) => {
-          const x = LABEL + k * width;
-          const n = counts.get(`${row.category}|${section.name}`) ?? 0;
-          if (!n) {
-            return `<rect class="cell-empty" x="${x + 1}" y="${y + 1}" width="${width - 2}" height="${CELL - 2}"></rect>`;
-          }
-          const level = levelOf(n);
-          return (
-            `<rect class="cell level-${level}" x="${x + 1}" y="${y + 1}" width="${width - 2}" height="${CELL - 2}" rx="3"` +
-            ` data-row="${escapeHTML(row.name)}" data-section="${escapeHTML(section.short)}" data-value="${n}"` +
-            ` data-tip="${escapeHTML(`${row.name} — ${section.short}: ${n}`)}"></rect>` +
-            `<text class="cell-value${level >= 4 ? " inverse" : ""}" x="${x + width / 2}" y="${y + CELL / 2 + 3.5}" text-anchor="middle">${n}</text>`
-          );
-        })
-        .join("");
-      return (
-        `<text class="row-label${row.parent ? " child" : ""}" x="${LABEL - 8}" y="${y + CELL / 2 + 4}" text-anchor="end">${escapeHTML(shorten(label))}</text>` +
-        line
-      );
-    })
-    .join("");
-
-  const ramp =
-    `<div class="chart-legend ramp"><span>1</span>` +
-    [1, 2, 3, 4, 5].map((level) => `<i class="level-${level}"></i>`).join("") +
-    `<span>${max}</span><span class="ramp-label">${t("rampLabel")}</span></div>`;
-
-  // The strongest cell is the one finding of the heatmap: this category is
-  // concentrated in that section rather than spread across the conversation.
-  let strongest = { value: 0, row: "—", section: "—" };
-  for (const row of data.rows) {
-    for (const section of sections) {
-      const n = counts.get(`${row.category}|${section.name}`) ?? 0;
-      if (n > strongest.value) strongest = { value: n, row: row.name, section: section.short };
-    }
-  }
-  const summary = t("summaryHeatmap", {
-    rows: data.rows.length,
-    sections: sections.length,
-    top: strongest.row,
-    section: strongest.section,
-    value: strongest.value,
-  });
-
-  return (
-    `<div class="chart-head"><h3 id="heatmap-title">${t("heatmapTitle")}</h3>` +
-    `<button type="button" class="button-quiet" data-svg="heatmap" data-file="distribution-across-sections.svg">${t("saveAsSvg")}</button></div>` +
-    ramp +
-    chartSummaryHTML("heatmap", summary) +
-    `<figure class="chart" id="heatmap">` +
-    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="heatmap-title"` +
-    ` aria-describedby="heatmap-summary"` +
-    ` data-angle="${ANGLE}" data-baseline="${grid + 10}" preserveAspectRatio="xMinYMin meet">` +
-    heads +
-    cells +
-    `</svg>` +
-    `<div class="chart-tip" hidden></div>` +
-    `<figcaption class="column-note">${t("heatmapCaption")}</figcaption>` +
-    `</figure>` +
-    chartFiguresHTML("heatmap", {
-      caption: t("heatmapFiguresCaption"),
-      columns: [t("category"), ...sections.map((section) => section.short)],
-      rows: data.rows.map((row) => [
-        (row.parent ? "… " : "") + row.name,
-        ...sections.map((section) => counts.get(`${row.category}|${section.name}`) ?? 0),
-      ]),
-    })
-  );
-}
-
-/** The chart with its colors resolved, saved as a standalone SVG file. */
-/**
- * The key of a chart, read off the legend beside it.
- *
- * The legend is HTML above the picture, so the saved file had three colours and
- * nothing saying which department each one is — a stacked bar chart without a
- * key is not a figure anybody can put in a paper. It is drawn into the copy
- * instead, in the order it stands on screen: an `i` is a swatch, a `span` is
- * what it means, and the ramp of the heatmap is both in turn.
- */
-function legendEntriesFor(figure) {
-  // Not the immediate sibling: the summary for a screen reader sits between the
-  // legend and the picture, and looking only one step back found nothing.
-  let legend = figure?.previousElementSibling ?? null;
-  while (legend && !legend.classList.contains("chart-legend")) {
-    legend = legend.classList.contains("chart-head") ? null : legend.previousElementSibling;
-  }
-  if (!legend) return [];
-  const entries = [];
-  for (const child of legend.children) {
-    if (child.tagName === "I") {
-      entries.push({ colour: getComputedStyle(child).backgroundColor, label: "", width: 14 });
-      continue;
-    }
-    const swatch = child.querySelector("i");
-    entries.push({
-      colour: swatch ? getComputedStyle(swatch).backgroundColor : null,
-      label: child.textContent.trim(),
-      width: Math.ceil(child.getBoundingClientRect().width),
-    });
-  }
-  return entries.filter((entry) => entry.colour || entry.label);
-}
-
-/**
- * The key drawn into the copy, and how much room it took.
- *
- * Built as elements rather than as a string of markup: a font stack carries
- * quotation marks of its own, and putting one inside a `style="…"` attribute
- * tears the attribute in half — which is exactly what happened, and showed up
- * as a legend set in the wrong face at the wrong size.
- *
- * The widths come from the legend on screen, which has already been laid out by
- * the browser, rather than from a guess at how wide a character is.
- */
-function drawLegendInto(copy, entries, width, ink, font) {
-  if (!entries.length) return 0;
-  const SVG = "http://www.w3.org/2000/svg";
-  const SIZE = 9;
-  const GAP = 14;
-  const LINE = 18;
-  let x = 0;
-  let y = 12;
-
-  for (const entry of entries) {
-    if (x && x + entry.width > width) {
-      x = 0;
-      y += LINE;
-    }
-    if (entry.colour) {
-      const swatch = document.createElementNS(SVG, "rect");
-      swatch.setAttribute("x", x);
-      swatch.setAttribute("y", y - SIZE + 1);
-      swatch.setAttribute("width", SIZE);
-      swatch.setAttribute("height", SIZE);
-      swatch.setAttribute("rx", 2);
-      swatch.style.setProperty("fill", entry.colour);
-      copy.append(swatch);
-      x += SIZE + 5;
-    }
-    if (entry.label) {
-      const text = document.createElementNS(SVG, "text");
-      text.setAttribute("x", x);
-      text.setAttribute("y", y);
-      text.style.setProperty("fill", ink);
-      text.style.setProperty("font-family", font);
-      text.style.setProperty("font-size", "10px");
-      text.textContent = entry.label;
-      copy.append(text);
-      x += entry.width - (entry.colour ? SIZE + 5 : 0);
-    }
-    x += GAP;
-  }
-  return y + 8;
-}
-
-/**
- * What a stylesheet can change about a drawn element.
- *
- * The saved file used to carry a hand-picked six — fill, stroke, stroke width
- * and three font properties — and a hand-picked list is exactly the kind of
- * thing that falls behind the stylesheet it was written for. It had:
- * `stroke-linejoin` was not on it, so a line drawn with round joins was saved
- * with mitred ones, and nothing about the file looked wrong.
- *
- * This is the closed set from the SVG specification instead of the set this
- * stylesheet happens to use today, so a rule added tomorrow is carried without
- * anyone remembering to add it here.
- */
-const PAINTED = [
-  "fill", "fill-opacity", "fill-rule",
-  "stroke", "stroke-opacity", "stroke-width", "stroke-linecap", "stroke-linejoin",
-  "stroke-dasharray", "stroke-dashoffset", "stroke-miterlimit",
-  "opacity", "color", "visibility", "display", "mix-blend-mode", "paint-order",
-  "font-family", "font-size", "font-weight", "font-style", "font-variant",
-  "letter-spacing", "word-spacing",
-  "text-anchor", "text-decoration", "text-transform", "dominant-baseline",
-];
+const measureText = (() => {
+  let context;
+  return (text, { size = 10, mono = false } = {}) => {
+    context = context ?? document.createElement("canvas").getContext("2d");
+    if (!context) return estimateWidth(text, { size, mono });
+    context.font = `${size}px ${mono ? FONTS.mono : FONTS.sans}`;
+    return context.measureText(String(text)).width;
+  };
+})();
 
 function saveChart(id, file) {
-  const svg = document.querySelector(`#${id} svg`);
-  if (!svg) return;
-  const copy = svg.cloneNode(true);
-  const originals = svg.querySelectorAll("*");
-  const copies = copy.querySelectorAll("*");
-  originals.forEach((element, index) => {
-    const style = getComputedStyle(element);
-    /* Every one of them on every element, rather than only where the value
-       looks unusual. Leaving a property out is safe only if nothing in the
-       saved file would give the element a different one, and inheritance makes
-       that a question about ancestors — a cleverness that would be one more
-       thing to get subtly wrong in a file nobody checks by eye. */
-    for (const property of PAINTED) {
-      const value = style.getPropertyValue(property);
-      if (value) copies[index].style.setProperty(property, value);
-    }
-  });
-  /* The key goes into the file, because it is not in the picture: it is HTML
-     next to it, and a saved chart has to say what its colours mean on its own.
-     What was already drawn moves down to make room. */
-  const page = getComputedStyle(document.body);
-  const [, , width, height] = copy.getAttribute("viewBox").split(/\s+/).map(Number);
-  const entries = legendEntriesFor(document.getElementById(id));
-  if (entries.length) {
-    const moved = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    while (copy.firstChild) moved.append(copy.firstChild);
-    const used = drawLegendInto(copy, entries, width, page.color, page.fontFamily);
-    moved.setAttribute("transform", `translate(0 ${used})`);
-    copy.append(moved);
-    copy.setAttribute("viewBox", `0 0 ${width} ${height + used}`);
-  }
-
-  // A ground plane in the theme color, so that the file is readable on its own.
-  const ground = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  ground.setAttribute("width", "100%");
-  ground.setAttribute("height", "100%");
-  ground.setAttribute("fill", page.backgroundColor);
-  copy.insertBefore(ground, copy.firstChild);
-  copy.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: "image/svg+xml" });
+  const spec = state.charts[id];
+  if (!spec) return;
+  /* The height as drawn, not as reckoned: the foot under the heatmap's angled
+     headings is grown after layout by `fitAngledHeadings`, which knows how wide
+     the headings really came out. The file inherits that answer instead of
+     working it out a second time. */
+  const drawn = document.querySelector(`#${id} svg`);
+  const height = drawn ? Number(drawn.getAttribute("viewBox").split(/\s+/)[3]) : undefined;
+  const blob = new Blob(
+    [standalone(spec, { theme: currentTheme(), measure: measureText, height })],
+    { type: "image/svg+xml" },
+  );
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -3080,6 +2592,7 @@ function saveChart(id, file) {
   URL.revokeObjectURL(url);
   notify(t("svgSaved"));
 }
+
 
 /* Paper is a document, and nothing on it can be clicked open. A folded group
    would print as a heading with nothing under it, and a capped list as twelve
@@ -3324,11 +2837,11 @@ async function drawAnalysis() {
   root.innerHTML =
     heading +
     metrics +
-    categoryChartHTML(data) +
-    heatmapHTML(data) +
+    chartHTML(categoryChart(data, t)) +
+    chartHTML(heatmapChart(data, t, { measure: measureText })) +
     matrix +
     progress +
-    saturationChartHTML(data) +
+    chartHTML(saturationChart(data, t)) +
     cooccurrenceHTML(data) +
     `<section id="agreement-part"></section>` +
     exports +
@@ -3659,268 +3172,6 @@ const moscowClass = (level) => `moscow-${MOSCOW_ORDER.includes(level) ? level : 
 const moscowName = (level) =>
   state.moscow.find((one) => one.id === level)?.name ?? t("open");
 
-/**
- * The MoSCoW distribution as a single band.
- *
- * Not a pie and not five bars: the question is how the catalog divides up, and
- * a hundred percent split into four steps reads fastest as one bar. Whatever
- * carries no level yet sits at the end in the unfilled step — a catalog is only
- * decided when that step has disappeared.
- */
-function moscowBandHTML(rows) {
-  const levels = [
-    ...MOSCOW_ORDER.map((id) => ({ id, name: moscowName(id) })),
-    { id: "open", name: t("open") },
-  ]
-    .map((level) => ({
-      ...level,
-      count: rows.filter(
-        (row) => (MOSCOW_ORDER.includes(row.moscow) ? row.moscow : "open") === level.id,
-      ).length,
-    }))
-    .filter((level) => level.count > 0);
-  if (!levels.length) return "";
-
-  const WIDTH = 720;
-  const HEIGHT = 34;
-  const total = rows.length;
-  let x = 0;
-  const bands = levels
-    .map((level) => {
-      const width = (level.count / total) * WIDTH;
-      const band =
-        `<rect class="moscow-band ${moscowClass(level.id)}" x="${x}" y="0" width="${Math.max(1, width - 2)}"` +
-        ` height="${HEIGHT}" rx="3" data-tip="${escapeHTML(`${level.name}: ${level.count}`)}"></rect>` +
-        (width > 26
-          ? `<text class="band-value${level.id === "open" ? " dim" : ""}" x="${x + width / 2 - 1}" y="${HEIGHT / 2 + 3.5}"` +
-            ` text-anchor="middle">${level.count}</text>`
-          : "");
-      x += width;
-      return band;
-    })
-    .join("");
-
-  const legend =
-    `<div class="chart-legend moscow">` +
-    levels
-      .map(
-        (level) =>
-          `<span class="${moscowClass(level.id)}"><i></i>${escapeHTML(level.name)}</span>`,
-      )
-      .join("") +
-    `</div>`;
-
-  const summary = t("summaryMoscow", {
-    total,
-    levels: levels.map((level) => `${level.name}: ${level.count}`).join(", "),
-  });
-
-  return (
-    `<div class="chart-head"><h3 id="moscow-title">${t("chartMoscowTitle")}</h3>` +
-    `<button type="button" class="button-quiet" data-svg="moscow" data-file="moscow-distribution.svg">${t("saveAsSvg")}</button></div>` +
-    legend +
-    chartSummaryHTML("moscow", summary) +
-    `<figure class="chart" id="moscow">` +
-    `<svg viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-labelledby="moscow-title"` +
-    ` aria-describedby="moscow-summary" preserveAspectRatio="xMinYMin meet">` +
-    bands +
-    `</svg>` +
-    `<div class="chart-tip" hidden></div>` +
-    `<figcaption class="column-note">${t("chartMoscowCaption")}</figcaption>` +
-    `</figure>` +
-    chartFiguresHTML("moscow", {
-      caption: t("moscowFiguresCaption"),
-      columns: [t("columnLevel"), t("columnRequirements")],
-      rows: levels.map((level) => [level.name, level.count]),
-    })
-  );
-}
-
-/**
- * The prioritization as a field.
- *
- * Both halves of the MoSCoW decision are quantities: how many departments name
- * a requirement, counted from the citations, and how many operations its
- * absence blocks, entered by the author. Plotted against each other they make
- * the decision checkable — a „Must have" in the lower left corner is one that
- * wants explaining, and a requirement in the upper right without a level is one
- * that has been overlooked.
- *
- * Requirements that share a coordinate are laid out side by side instead of on
- * top of each other, because a hidden dot is a lost requirement.
- */
-function priorityFieldHTML(rows, departmentCount) {
-  if (!rows.length) return "";
-
-  const WIDTH = 720;
-  const LEFT = 150;
-  const TOP = 16;
-  const BOTTOM = 42;
-  const maxX = Math.max(1, departmentCount);
-  const maxY = OPERATIONS.length;
-
-  // Group by coordinate. Both axes count whole things, so several requirements
-  // sharing one point is the normal case rather than the exception.
-  const buckets = new Map();
-  for (const row of rows) {
-    const cx = Math.min(maxX, row.departments.length);
-    const cy = Math.min(maxY, (row.blockedOperations ?? []).length);
-    const key = `${cx}|${cy}`;
-    if (!buckets.has(key)) buckets.set(key, []);
-    buckets.get(key).push({ row, cx, cy });
-  }
-
-  const maxCitations = Math.max(1, ...rows.map((row) => row.citations.length));
-  const radius = (count) => 5 + Math.round((count / maxCitations) * 5);
-  // One slot for the widest dot in the chart plus a gap, so the packing is the
-  // same everywhere and two piles can be compared by eye.
-  const slot = radius(maxCitations) * 2 + 3;
-
-  /* The right-hand margin has to hold whatever sits on the last gridline, and
-     that is the common case rather than the exception: a requirement every
-     department named lands exactly there. The margin and the step depend on
-     each other — a pile may be no wider than its own cell — so they are settled
-     by running the layout twice, which is enough to converge. */
-  let RIGHT = Math.ceil(10 + radius(maxCitations));
-  let stepX = (WIDTH - LEFT - RIGHT) / maxX;
-  let placed = new Map();
-  for (let pass = 0; pass < 2; pass += 1) {
-    stepX = (WIDTH - LEFT - RIGHT) / maxX;
-    placed = new Map(
-      [...buckets].map(([key, bucket]) => [key, layoutBucket(bucket.length, { slot, stepX })]),
-    );
-    const onLastLine = [...buckets.keys()].filter((key) => Number(key.split("|")[0]) === maxX);
-    const reach = Math.max(0, ...onLastLine.map((key) => placed.get(key).width / 2));
-    RIGHT = Math.ceil(10 + radius(maxCitations) + reach);
-  }
-
-  // A pile that wrapped into rows needs the room to do it in; the cell grows
-  // rather than the dots being drawn on top of each other.
-  const tallest = Math.max(0, ...[...placed.values()].map((one) => one.height));
-  const CELL = Math.max(46, Math.ceil(tallest + 8));
-  const height = TOP + maxY * CELL + BOTTOM;
-
-  const track = WIDTH - LEFT - RIGHT;
-  const x = (value) => LEFT + value * stepX;
-  const y = (value) => TOP + (maxY - value) * CELL;
-
-  let grid = "";
-  for (let value = 0; value <= maxX; value++) {
-    grid +=
-      `<line class="grid" x1="${x(value)}" y1="${TOP}" x2="${x(value)}" y2="${y(0)}"></line>` +
-      // A requirement blocking nothing sits on the baseline, so the labels keep
-      // a dot's distance from it instead of being drawn through.
-      `<text class="axis" x="${x(value)}" y="${y(0) + 22}" text-anchor="middle">${value}</text>`;
-  }
-  for (let value = 0; value <= maxY; value++) {
-    grid +=
-      `<line class="grid" x1="${LEFT}" y1="${y(value)}" x2="${WIDTH - RIGHT}" y2="${y(value)}"></line>` +
-      `<text class="axis" x="${LEFT - 8}" y="${y(value) + 4}" text-anchor="end">${value}</text>`;
-  }
-
-  const points = [...buckets.entries()]
-    .flatMap(([key, bucket]) =>
-      bucket.map((entry, index) => {
-        const place = placed.get(key).places[index];
-        const cx = x(entry.cx) + place.dx;
-        const cy = y(entry.cy) + place.dy;
-        const tip = t("priorityTip", {
-          title: entry.row.title,
-          departments: entry.row.departments.length,
-          blocked: (entry.row.blockedOperations ?? []).length,
-          citations: entry.row.citations.length,
-        });
-        return (
-          `<circle class="point ${moscowClass(entry.row.moscow)}" cx="${cx}" cy="${cy}"` +
-          ` r="${radius(entry.row.citations.length)}" data-tip="${escapeHTML(tip)}"></circle>`
-        );
-      }),
-    )
-    .join("");
-
-  const axisTitles =
-    `<text class="axis-title" x="${LEFT + track / 2}" y="${height - 8}" text-anchor="middle">${escapeHTML(t("axisDepartmentsNaming"))}</text>` +
-    `<text class="axis-title" x="${-(TOP + (maxY * CELL) / 2)}" y="14" text-anchor="middle" transform="rotate(-90)">` +
-    `${escapeHTML(t("axisBlockedOperations"))}</text>`;
-
-  const legend =
-    `<div class="chart-legend moscow">` +
-    [...MOSCOW_ORDER, "open"]
-      .map(
-        (level) =>
-          `<span class="${moscowClass(level)}"><i></i>${escapeHTML(level === "open" ? t("open") : moscowName(level))}</span>`,
-      )
-      .join("") +
-    `</div>`;
-
-  // Upper right is the point of the field: named by many, blocking much.
-  const urgent = rows.filter(
-    (row) => row.departments.length >= Math.max(2, maxX) && (row.blockedOperations ?? []).length >= 2,
-  );
-  const summary = t("summaryPriority", {
-    rows: rows.length,
-    departments: maxX,
-    urgent: urgent.length,
-    names: urgent.map((row) => row.title).join(", ") || t("summaryNone"),
-  });
-
-  return (
-    `<div class="chart-head"><h3 id="priority-title">${t("chartPriorityTitle")}</h3>` +
-    `<button type="button" class="button-quiet" data-svg="priority" data-file="prioritization.svg">${t("saveAsSvg")}</button></div>` +
-    legend +
-    chartSummaryHTML("priority", summary) +
-    `<figure class="chart" id="priority">` +
-    `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="priority-title"` +
-    ` aria-describedby="priority-summary" preserveAspectRatio="xMinYMin meet">` +
-    grid +
-    axisTitles +
-    points +
-    `</svg>` +
-    `<div class="chart-tip" hidden></div>` +
-    `<figcaption class="column-note">${t("chartPriorityCaption")}</figcaption>` +
-    `</figure>` +
-    chartFiguresHTML("priority", {
-      caption: t("priorityFiguresCaption"),
-      columns: [
-        t("columnRequirement"),
-        t("axisDepartmentsNaming"),
-        t("axisBlockedOperations"),
-        t("metricCitations"),
-        t("columnLevel"),
-      ],
-      rows: rows.map((row) => [
-        row.title,
-        row.departments.length,
-        (row.blockedOperations ?? []).length,
-        row.citations.length,
-        MOSCOW_ORDER.includes(row.moscow) ? moscowName(row.moscow) : t("open"),
-      ]),
-    })
-  );
-}
-
-function coverageChartHTML(rows, departments) {
-  const withCitations = rows.filter((row) => row.citations.length);
-  if (!withCitations.length || !departments.length) return "";
-  return stackedBarsHTML({
-    id: "coverage",
-    summaryKey: "summaryCoverage",
-    figuresCaption: t("coverageFiguresCaption"),
-    title: t("chartCoverageTitle"),
-    caption: t("chartCoverageCaption"),
-    file: "citations-per-requirement.svg",
-    departments,
-    rows: withCitations.map((row) => ({
-      name: row.title,
-      child: false,
-      values: departments.map(
-        (department) =>
-          row.citations.filter((citation) => citation.department === department).length,
-      ),
-      sum: row.citations.length,
-    })),
-  });
-}
 
 /**
  * The counts, which belong at the top, and the figures, which do not.
@@ -3957,9 +3208,15 @@ function catalogFiguresHTML(rows, departments) {
 
      The third counts citations, which exist from the first one, so it stays. */
   const judged = rows.some((row) => row.moscow || (row.blockedOperations ?? []).length);
+  const shared = { moscow: state.moscow, operationCount: OPERATIONS.length };
   const charts =
-    (judged ? moscowBandHTML(rows) + priorityFieldHTML(rows, departments.length) : "") +
-    coverageChartHTML(rows, departments);
+    (judged
+      ? chartHTML(moscowBand(rows, t, shared)) +
+        chartHTML(
+          priorityField(rows, t, { ...shared, departmentCount: departments.length }),
+        )
+      : "") +
+    chartHTML(coverageChart(rows, departments, t));
 
   return (
     (charts || `<p class="empty-state">${t("catalogChartsEmpty")}</p>`) +
