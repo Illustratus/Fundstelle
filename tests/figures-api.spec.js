@@ -36,6 +36,7 @@ const NAMES = [
   "prioritization",
   "citations-per-requirement",
   "requirement-reach",
+  "catalog-city",
 ];
 
 const TITLES = [
@@ -87,7 +88,7 @@ async function addThirdInterview(request) {
   });
 }
 
-/** Coded interviews and a catalog carried by them: all six figures drawable. */
+/** Coded interviews and a catalog carried by them: every figure drawable. */
 async function buildStudy(request) {
   const { requirements } = await (await request.get("/api/requirements")).json();
   for (const one of requirements) await request.delete(`/api/requirements/${one.id}`);
@@ -97,7 +98,7 @@ async function buildStudy(request) {
     const body = await answer.json();
     made.push(body.id ?? body.requirement?.id);
   }
-  /* A judgment on each axis, because two of the six figures are deliberately
+  /* A judgment on each axis, because two of the figures are deliberately
      not drawn before somebody has made one — and a check that only ever sees
      them undrawn would be checking the wrong thing. */
   await request.patch(`/api/requirements/${made[0]}`, { data: { moscow: "must" } });
@@ -149,7 +150,7 @@ test("the endpoint says which figures there are, in the language asked for", asy
   const german = await (await request.get("/api/figures?lang=de")).json();
   expect(german.figures.map((one) => one.name)).toEqual(NAMES);
   expect(german.themes).toEqual(["light", "dark"]);
-  // Named, not only addressed: six titles are the index of a report.
+  // Named, not only addressed: the titles are the index of a report.
   for (const one of german.figures) {
     expect(one.title, `${one.name} carries a title`).toBeTruthy();
     expect(one.url).toBe(`/api/figures/${one.name}.svg`);

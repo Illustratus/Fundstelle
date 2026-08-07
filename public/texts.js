@@ -101,7 +101,27 @@ export const TEXTS = {
     fieldName: "Name",
     fieldDefinition: "Definition",
     fieldParent: "Untergeordnet",
+    fieldProposition: "Proposition",
     standalone: "eigenständig",
+
+    /* Propositionen — was das Kategoriensystem behauptet, und die Farbe jeder
+       Abbildung der Studie. */
+    propositionsSummary: "Propositionen",
+    propositionsNote:
+      "Was das Kategoriensystem behauptet, und die Farbe, in der jede Abbildung der Studie " +
+      "gezeichnet wird. Eine Oberkategorie trägt eine Proposition, ihre Unterkategorien tragen dieselbe.",
+    propositionPlaceholder: "Proposition in einem Satz",
+    propositionNameAria: "Wortlaut der Proposition",
+    propositionColorAria: "Farbe der Proposition",
+    propositionColorOf: "Farbe von „{name}“",
+    propositionRemoveTitle: "Proposition auflösen",
+    propositionRemoveAria: "Proposition „{name}“ auflösen",
+    propositionFromParent: "Trägt die Proposition der Oberkategorie: {name}",
+    propositionAdded: "Proposition „{name}“ angelegt.",
+    propositionRenamed: "Proposition lautet jetzt „{name}“.",
+    propositionRecoloured: "Farbe der Proposition geändert. Jede Abbildung folgt.",
+    propositionRemoved: "„{name}“ aufgelöst. Die Kategorien sind jetzt aus dem Erkenntnisinteresse abgeleitet.",
+    categoryNowArgues: "„{name}“ trägt jetzt: {proposition}",
     add: "Anlegen",
     dragNote: "Induktive Kategorien lassen sich auf eine Startkategorie ziehen.",
     dragAria: "{name} an eine andere Stelle im Kategoriensystem ziehen",
@@ -388,6 +408,79 @@ export const TEXTS = {
     definitionSaved: "Definition festgehalten.",
     noteSaved: "Notiz festgehalten.",
     categoryRenamed: "Kategorie umbenannt.",
+
+    /* Was an einer Kodiereinheit geändert wurde. Das Detailfeld hat bis dahin
+       still gespeichert, und ein Feld, das nichts antwortet, sieht genauso aus
+       wie eines, das nicht gespeichert hat. */
+    anchorSet: "Als Ankerbeispiel vorgemerkt.",
+    anchorUnset: "Ankerbeispiel zurückgenommen.",
+    unitReviewed: "Als geprüft vermerkt.",
+    unitUnreviewed: "Wieder als Vorschlag geführt.",
+    citationLinked: "Belegt jetzt „{title}“.",
+    citationUnlinked: "Beleg für „{title}“ gelöst.",
+    recut: "Stelle ändern",
+    recutMark: "Markiere die Stelle, die diese Kodiereinheit tragen soll.",
+    recutWaiting: "Wartet auf die neue Stelle.",
+    recutDone: "Kodiereinheit sitzt auf der neuen Stelle. Notiz, Ankerbeispiel und Belege bleiben.",
+
+    /* Was an einer Anforderung geändert wurde. */
+    requirementSaved: "Anforderung festgehalten.",
+    requirementRenamed: "Anforderung lautet jetzt „{title}“.",
+    requirementLevelSet: "Stufe: {level}.",
+    requirementDefinitionSaved: "Definition der Anforderung festgehalten.",
+    requirementBlocks: "Blockiert: {operations}.",
+    requirementBlocksNothing: "Keine Operation mehr als blockiert vermerkt.",
+
+    /* Die Operationen, deren Blockade eine Anforderung wiegt. */
+    operationsSummary: "Blockierbare Operationen ({n})",
+    operationsNote:
+      "Woran gemessen wird, was das Fehlen einer Anforderung kostet. Die Zahl daneben sagt, wie viele " +
+      "Anforderungen die Operation nennen; wird eine aufgelöst, fällt sie überall dort weg.",
+    operationNameAria: "Name der Operation",
+    operationPlaceholder: "Weitere Operation",
+    operationNewAria: "Neue blockierbare Operation",
+    operationRemoveTitle: "Operation auflösen",
+    operationRemoveAria: "Operation „{name}“ auflösen",
+    operationRemoveConfirm:
+      "„{name}“ auflösen? {n} Anforderungen nennen sie; dort fällt sie weg. " +
+      "Die Anforderungen selbst bleiben.",
+    operationAdded: "Operation „{name}“ angelegt.",
+    operationRenamed: "Operation heißt jetzt „{name}“.",
+    operationRemoved: "Operation „{name}“ aufgelöst.",
+    operationRemovedFrom: "„{name}“ aufgelöst und aus {n} Anforderungen genommen.",
+
+    /* Die Kopfdaten des Interviews. */
+    aboutSummary: "Kopfdaten des Interviews",
+    aboutNote:
+      "Titel, Bereich und die Zeilen, die das Interview beschreiben — sie tragen die " +
+      "Stichprobentabelle der Arbeit. Das Transkript selbst bleibt unberührt, keine Fundstelle verschiebt sich.",
+    fieldTitle: "Titel",
+    fieldDepartment: "Bereich",
+    departmentNote:
+      "Der Bereich steht im Titel hinter dem Doppelpunkt; er wird dort geschrieben und trägt jede " +
+      "Kreuztabelle und jeden Beleg.",
+    headerLines: "Zeilen im Kopf",
+    headerFieldAria: "Feldname",
+    headerValueAria: "Wert",
+    headerFieldPlaceholder: "Feld",
+    headerValuePlaceholder: "Wert",
+    headerRemoveTitle: "Zeile entfernen",
+    headerRemoveAria: "Zeile „{field}“ entfernen",
+    headerSaved: "Kopfzeilen festgehalten.",
+    headerRemoved: "Zeile „{field}“ entfernt.",
+    interviewRenamed: "Interview heißt jetzt „{title}“.",
+    departmentSet: "Bereich: {department}. Jede Kreuztabelle folgt.",
+    fieldFolder: "Ordner",
+    folderNote:
+      "Der Ordnername ist das Kennzeichen des Interviews: Er steht in der Kodierdatei daneben, in " +
+      "jeder Ausgabe und in der Versionsgeschichte. Die Kodierungen ziehen mit um.",
+    renameFolder: "Ordner umbenennen",
+    folderRenamed: "Interview liegt jetzt in {folder}.",
+    removeInterview: "Interview löschen",
+    removeInterviewConfirm:
+      "„{title}“ mit {n} Kodiereinheiten löschen? Transkript und Kodierungen gehen zusammen; " +
+      "zurückholen lassen sie sich nur aus der Versionsgeschichte.",
+    interviewRemoved: "Interview {title} gelöscht.",
     definitionResetDone: "Definition auf den Ausgangswortlaut zurückgesetzt.",
     errorGeneric: "Fehler",
     locationOne: "Fundstelle",
@@ -558,7 +651,7 @@ export const TEXTS = {
 
     catalogTitle: "Anforderungskatalog",
     catalogLead:
-      "Eine Anforderung bündelt Kodiereinheiten über Interviews hinweg. Wie viele Bereiche sie nennen, zählt das Werkzeug aus den Belegen; wie stark ihr Fehlen Ablage, Abruf oder Transfer blockiert, trägst du ein. Beides zusammen trägt die MoSCoW-Stufe.",
+      "Eine Anforderung bündelt Kodiereinheiten über Interviews hinweg. Wie viele Bereiche sie nennen, zählt das Werkzeug aus den Belegen; welche Operationen ihr Fehlen blockiert, trägst du ein. Beides zusammen trägt die MoSCoW-Stufe.",
     requirementSentencePlaceholder: "Anforderung in einem Satz",
     requirementTitleAria: "Titel der Anforderung",
     withoutLevel: "noch ohne Stufe",
@@ -598,33 +691,55 @@ export const TEXTS = {
     cityFiguresCaption: "Belege je Anforderung und Kategorie",
     chartCityTitle: "Stadtplan: Kategorie × Anforderung, Höhe = Belege",
     chartCityCaption:
-      "Dein Modell wörtlich genommen: X sind die Kategorien, Y die Anforderungen, Z die Belege " +
-      "in dieser Zelle. Farbe = MoSCoW-Stufe. Von hinten nach vorn gezeichnet — was daran nicht " +
-      "aufgeht, sieht man am Bild: eine hohe Säule vorn verdeckt, was dahinter steht, und zwei " +
-      "gleich hohe Säulen wirken je nach Tiefe verschieden hoch.",
+      "Dieselbe Matrix wie „Welche Kategorien eine Anforderung berührt“, in drei Dimensionen: " +
+      "X sind die Kategorien, Y die Anforderungen. Ein Turm zählt die Kodiereinheiten, die diese " +
+      "Anforderung belegen und in dieser Kategorie liegen — je eine Einheit, eine Kategorie, " +
+      "aber ein Beleg kann mehrere Anforderungen tragen und dann in mehreren Reihen stehen. Die " +
+      "Höhe misst am höchsten Turm dieser Abbildung; die Farbe trägt die MoSCoW-Stufe. Die Zahl " +
+      "an einer Anforderung sagt, wie viele Kategorien sie berührt, die an einer Kategorie, wie " +
+      "viele Anforderungen sie berühren; eine Null dort ist eine Kategorie, aus der noch nichts " +
+      "geworden ist. Die Reihen stehen in der Reihenfolge des Katalogs, die Kategorien in der " +
+      "des Leitfadens, induktive dahinter. " +
+      "Von hinten nach vorn gezeichnet — was daran nicht aufgeht, sieht man am Bild: eine hohe " +
+      "Säule vorn verdeckt, was dahinter steht, und zwei gleich hohe Säulen wirken je nach Tiefe " +
+      "verschieden hoch. Die Tabelle darunter nennt jede Zahl einzeln.",
+    cityHeightKey: "Turmhöhe in Belegen: 1 bis {n}",
     summaryCity:
-      "{rows} Anforderungen über {categories} Kategorien; die höchste Säule steht für {max} Belege.",
+      "{rows} Anforderungen über {categories} Kategorien, in der Reihenfolge des Katalogs. " +
+      "Am weitesten reicht „{top}“ mit {touched} Kategorien; {narrow} Anforderungen berühren nur " +
+      "eine. {only} Anforderungen sind für mindestens eine Kategorie die einzige; {unmet} " +
+      "Kategorien berührt bisher keine. Der höchste Turm steht für {max} Belege in einer " +
+      "Kategorie; die Tabelle darunter nennt jede Zahl einzeln.",
     chartReachTitle: "Welche Kategorien eine Anforderung berührt",
     chartReachCaption:
       "Eine Zeile lesen: erfüllst du diese Anforderung, spricht sie diese Kategorien an. Eine " +
       "Spalte lesen: das wurde gesagt, und das sind die Anforderungen, die es beantworten. " +
-      "Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. " +
+      "Ein Punkt zählt die Kodiereinheiten, die diese Anforderung belegen und in dieser " +
+      "Kategorie liegen — je eine Einheit, eine Kategorie, aber ein Beleg kann mehrere " +
+      "Anforderungen tragen und dann in mehreren Zeilen stehen. Die Größe misst am größten " +
+      "Punkt dieser Abbildung und vergleicht nur innerhalb von ihr; die Farbe trägt die " +
+      "MoSCoW-Stufe. " +
       "Die Zahl rechts sagt, wie viele Kategorien eine Anforderung berührt, die Zahl über einem " +
       "Kategorienamen, wie viele Anforderungen sie berühren; eine Null dort ist eine Kategorie, " +
       "aus der noch nichts geworden ist. " +
-      "Sortiert ist nach Reichweite — oben, was viel von der Studie trägt, unten, was eine Ecke " +
-      "davon berührt; die Spalten folgen den Zeilen, damit Anforderungen mit gemeinsamen " +
-      "Kategorien nebeneinander stehen.",
+      "Die Zeilen stehen in der Reihenfolge des Katalogs — nach MoSCoW-Stufe gruppiert, innerhalb " +
+      "einer Stufe zuerst, was mehr Bereiche nennen —, die Spalten in der Reihenfolge des " +
+      "Leitfadens, induktive Kategorien dahinter. Dieselbe Anforderung steht hier, in der Liste " +
+      "und in der Ausgabe an derselben Stelle.",
     reachSoleKey: "einzige Anforderung für diese Kategorie",
+    reachSizeKey: "Punktgröße in Belegen:",
+    reachSizeOne: "1",
+    reachSizeMany: "{n}",
     reachTipSole: "{title} — {category}: {n} Belege · einzige Anforderung dazu",
     reachTip: "{title} — {category}: {n} Belege",
     reachFiguresCaption: "Belege je Anforderung und Kategorie",
     columnReaches: "Kategorien",
     summaryReach:
-      "{rows} Anforderungen über {categories} Kategorien, nach Reichweite sortiert. Am weitesten " +
-      "reicht „{top}“ mit {touched} Kategorien; {narrow} Anforderungen berühren nur eine. " +
+      "{rows} Anforderungen über {categories} Kategorien, in der Reihenfolge des Katalogs. " +
+      "Am weitesten reicht „{top}“ mit {touched} Kategorien; {narrow} Anforderungen berühren nur eine. " +
       "{only} Anforderungen sind für mindestens eine Kategorie die einzige; {unmet} Kategorien " +
-      "berührt bisher keine.",
+      "berührt bisher keine. Der größte Punkt steht für {most} Belege in einer Kategorie; die " +
+      "Tabelle darunter nennt jede Zahl einzeln.",
     chartCoverageTitle: "Belege je Anforderung und Bereich",
     chartCoverageCaption:
       "Segmentfarbe = Bereich, Reihenfolge wie im Katalog. Eine Anforderung, die nur ein Bereich nennt, trägt einen einfarbigen Balken.",
@@ -735,6 +850,24 @@ export const TEXTS = {
     fieldName: "Name",
     fieldDefinition: "Definition",
     fieldParent: "Parent",
+    fieldProposition: "Proposition",
+
+    propositionsSummary: "Propositions",
+    propositionsNote:
+      "What the category system argues, and the colour every figure of the study is drawn in. " +
+      "A top-level category carries a proposition, and its subcategories carry the same one.",
+    propositionPlaceholder: "The proposition in one sentence",
+    propositionNameAria: "Wording of the proposition",
+    propositionColorAria: "Colour of the proposition",
+    propositionColorOf: "Colour of “{name}”",
+    propositionRemoveTitle: "Dissolve the proposition",
+    propositionRemoveAria: "Dissolve the proposition “{name}”",
+    propositionFromParent: "Carries the parent category's proposition: {name}",
+    propositionAdded: "Proposition “{name}” added.",
+    propositionRenamed: "The proposition now reads “{name}”.",
+    propositionRecoloured: "Colour of the proposition changed. Every figure follows.",
+    propositionRemoved: "“{name}” dissolved. Its categories are now derived from the research interest.",
+    categoryNowArgues: "“{name}” now carries: {proposition}",
     standalone: "independent",
     add: "Add",
     dragNote: "Inductive categories can be dragged onto a start category.",
@@ -1017,6 +1150,73 @@ export const TEXTS = {
     definitionSaved: "Definition saved.",
     noteSaved: "Note saved.",
     categoryRenamed: "Category renamed.",
+
+    anchorSet: "Marked as an anchor example.",
+    anchorUnset: "No longer an anchor example.",
+    unitReviewed: "Marked as reviewed.",
+    unitUnreviewed: "Back to being a suggestion.",
+    citationLinked: "Now evidence for “{title}”.",
+    citationUnlinked: "No longer evidence for “{title}”.",
+    recut: "Change the passage",
+    recutMark: "Select the passage this coding unit should carry.",
+    recutWaiting: "Waiting for the new passage.",
+    recutDone: "The coding unit sits on the new passage. Note, anchor example and evidence stay.",
+
+    requirementSaved: "Requirement saved.",
+    requirementRenamed: "The requirement now reads “{title}”.",
+    requirementLevelSet: "Level: {level}.",
+    requirementDefinitionSaved: "Definition of the requirement saved.",
+    requirementBlocks: "Blocks: {operations}.",
+    requirementBlocksNothing: "No operation recorded as blocked any more.",
+
+    operationsSummary: "Blockable operations ({n})",
+    operationsNote:
+      "What the absence of a requirement is measured against. The number beside each says how many " +
+      "requirements name it; dissolving one takes it off all of them.",
+    operationNameAria: "Name of the operation",
+    operationPlaceholder: "Another operation",
+    operationNewAria: "New blockable operation",
+    operationRemoveTitle: "Dissolve the operation",
+    operationRemoveAria: "Dissolve the operation “{name}”",
+    operationRemoveConfirm:
+      "Dissolve “{name}”? {n} requirements name it and will lose it. " +
+      "The requirements themselves stay.",
+    operationAdded: "Operation “{name}” added.",
+    operationRenamed: "The operation is now called “{name}”.",
+    operationRemoved: "Operation “{name}” dissolved.",
+    operationRemovedFrom: "“{name}” dissolved and taken off {n} requirements.",
+
+    aboutSummary: "What this interview says about itself",
+    aboutNote:
+      "Title, department and the lines that describe the interview — they carry the sample table " +
+      "of the paper. The transcript itself is left alone, so no citation moves.",
+    fieldTitle: "Title",
+    fieldDepartment: "Department",
+    departmentNote:
+      "The department stands in the title behind the colon; it is written there and carries every " +
+      "cross table and every citation.",
+    headerLines: "Header lines",
+    headerFieldAria: "Field name",
+    headerValueAria: "Value",
+    headerFieldPlaceholder: "Field",
+    headerValuePlaceholder: "Value",
+    headerRemoveTitle: "Remove the line",
+    headerRemoveAria: "Remove the line “{field}”",
+    headerSaved: "Header lines saved.",
+    headerRemoved: "Line “{field}” removed.",
+    interviewRenamed: "The interview is now called “{title}”.",
+    departmentSet: "Department: {department}. Every cross table follows.",
+    fieldFolder: "Folder",
+    folderNote:
+      "The folder name is the interview's identifier: it stands in the coding file beside it, in " +
+      "every export and in the version history. The codings move along with it.",
+    renameFolder: "Rename the folder",
+    folderRenamed: "The interview now lives in {folder}.",
+    removeInterview: "Delete the interview",
+    removeInterviewConfirm:
+      "Delete “{title}” with {n} coding units? Transcript and codings go together; " +
+      "they can only be got back from the version history.",
+    interviewRemoved: "Interview {title} deleted.",
     definitionResetDone: "Definition reset to the wording it started from.",
     errorGeneric: "Error",
     locationOne: "location",
@@ -1181,7 +1381,7 @@ export const TEXTS = {
 
     catalogTitle: "Requirements catalog",
     catalogLead:
-      "A requirement bundles coding units across interviews. How many departments name it is counted from the citations; how strongly its absence blocks filing, retrieval, or transfer is your judgment. Both together carry the MoSCoW level.",
+      "A requirement bundles coding units across interviews. How many departments name it is counted from the citations; which operations its absence blocks is your judgment. Both together carry the MoSCoW level.",
     requirementSentencePlaceholder: "The requirement in one sentence",
     requirementTitleAria: "Requirement title",
     withoutLevel: "no level yet",
@@ -1221,33 +1421,55 @@ export const TEXTS = {
     cityFiguresCaption: "Citations per requirement and category",
     chartCityTitle: "City plot: category × requirement, height = citations",
     chartCityCaption:
-      "Your model taken literally: X is the categories, Y the requirements, Z the citations in " +
-      "that cell. Colour = MoSCoW level. Drawn from the back forward — and what does not work " +
-      "about it is visible in the picture: a tall column in front hides what stands behind it, " +
-      "and two columns of the same height read differently depending on how far back they are.",
+      "The same matrix as “Which categories a requirement reaches”, in three dimensions: X is " +
+      "the categories, Y the requirements. A tower counts the coding units that cite this " +
+      "requirement and sit in this category — one unit, one category, but a citation can carry " +
+      "several requirements and then stands in several rows. The height is measured against the " +
+      "tallest tower of this figure; the colour carries the MoSCoW level. The number beside a " +
+      "requirement is how many categories it reaches, the one beside a category how many " +
+      "requirements reach it; a zero there is a category nothing has been made of yet. The rows " +
+      "stand in the order of the catalog, the categories in the order of the interview guide, " +
+      "the inductive ones behind them. " +
+      "Drawn from the back forward — and what does not work about it is visible in the picture: " +
+      "a tall column in front hides what stands behind it, and two columns of the same height " +
+      "read differently depending on how far back they are. The table below names every figure " +
+      "one by one.",
+    cityHeightKey: "Tower height in citations: 1 to {n}",
     summaryCity:
-      "{rows} requirements across {categories} categories; the tallest column stands for {max} citations.",
+      "{rows} requirements across {categories} categories, in the order of the catalog. " +
+      "“{top}” reaches furthest with {touched} categories; {narrow} requirements touch only one. " +
+      "{only} requirements are the only one for at least one category; {unmet} categories no " +
+      "requirement reaches yet. The tallest tower stands for {max} citations in one category; " +
+      "the table below names every figure one by one.",
     chartReachTitle: "Which categories a requirement reaches",
     chartReachCaption:
       "Read across a row: meet this requirement, and these are the categories it speaks to. Read " +
       "down a column: this is what people said, and these are the requirements that would answer " +
-      "it. Dot size = citations, dot colour = MoSCoW level. " +
+      "it. A dot counts the coding units that cite this requirement and sit in this category — " +
+      "one unit, one category, but a citation can carry several requirements and then stands in " +
+      "several rows. The size is measured against the largest dot of this figure and compares " +
+      "within it only; the colour carries the MoSCoW level. " +
       "The number on the right is how many categories a requirement reaches, the number above a " +
       "category name how many requirements reach it; a zero there is a category nothing has been " +
       "made of yet. " +
-      "Sorted by reach — at the top what carries much of the study, at the bottom what touches a " +
-      "corner of it; the columns follow the rows, so requirements sharing categories stand " +
-      "together.",
+      "The rows stand in the order of the catalog — grouped by MoSCoW level, and inside a level " +
+      "the one more departments name first — and the columns in the order of the interview " +
+      "guide, the inductive categories behind them. A requirement stands in the same place " +
+      "here, in the list and in the export.",
     reachSoleKey: "the only requirement for this category",
+    reachSizeKey: "Dot size in citations:",
+    reachSizeOne: "1",
+    reachSizeMany: "{n}",
     reachTipSole: "{title} — {category}: {n} citations · the only requirement for it",
     reachTip: "{title} — {category}: {n} citations",
     reachFiguresCaption: "Citations per requirement and category",
     columnReaches: "Categories",
     summaryReach:
-      "{rows} requirements across {categories} categories, sorted by reach. “{top}” reaches " +
-      "furthest with {touched} categories; {narrow} requirements touch only one. {only} " +
+      "{rows} requirements across {categories} categories, in the order of the catalog. " +
+      "“{top}” reaches furthest with {touched} categories; {narrow} requirements touch only one. {only} " +
       "requirements are the only one for at least one category; {unmet} categories no " +
-      "requirement reaches yet.",
+      "requirement reaches yet. The largest dot stands for {most} citations in one category; " +
+      "the table below names every figure one by one.",
     chartCoverageTitle: "Citations per requirement and department",
     chartCoverageCaption:
       "Segment color = department, order as in the catalog. A requirement named by one department only carries a single-color bar.",

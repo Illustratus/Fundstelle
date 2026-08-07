@@ -1563,6 +1563,99 @@ tbody tr:hover { background: var(--paper); }
 .inductive .field input, .inductive .field textarea, .inductive .field select { max-width: none; width: 100%; }
 .inductive > div { padding-top: .7rem; }
 
+/* A proposition: its colour, its wording, how many categories carry it. The
+   colour swatch comes first because that is what the reader recognizes it by —
+   in the list here and in every figure of the study. */
+.proposition,
+.operation {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  margin-bottom: .35rem;
+}
+.proposition input[type="text"],
+.operation input[type="text"] { flex: 1; min-width: 0; }
+.proposition input[type="color"] {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: none;
+  cursor: pointer;
+}
+.proposition .count,
+.operation .count {
+  flex: none;
+  min-width: 1.4rem;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: .68rem;
+  color: var(--ink-faint);
+}
+.proposition .remove,
+.operation .remove { flex: none; padding: 0 .3rem; line-height: 1.6; }
+#proposition-new,
+#operation-new,
+#meta-new { display: flex; gap: .35rem; margin-top: .5rem; }
+#proposition-new input[type="text"],
+#operation-new input,
+#meta-new input { flex: 1; min-width: 0; }
+#proposition-new input[type="color"] {
+  flex: none;
+  width: 1.6rem;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: none;
+  cursor: pointer;
+}
+
+/* The vocabulary of blocked operations, folded above the catalog: settled once
+   for a study, and until now not settleable at all. */
+.operations { margin: .6rem 0 1.2rem; max-width: 32rem; }
+.operations > summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: .64rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  list-style: none;
+}
+.operations > summary::-webkit-details-marker { display: none; }
+.operations > summary::before { content: "+ "; }
+.operations[open] > summary::before { content: "− "; }
+.operations > summary:hover { color: var(--ink); }
+.operations .column-note { margin: .6rem 0 .7rem; }
+
+/* The header of the interview, as fields rather than as a reading. */
+#about-form .field { margin-bottom: .5rem; }
+#about-form .field input { width: 100%; max-width: none; }
+#about-form .column-note { margin: -.25rem 0 .6rem; }
+#about-form .field-label { display: block; margin-top: .7rem; }
+/* The field over its value rather than beside it. The column is narrow and the
+   values are sentences — „28. Juli 2026, Dauer 52:41" in a box six characters
+   wide is a field one edits blind. */
+.meta-line {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: .25rem .35rem;
+  margin-top: .5rem;
+}
+.meta-line input { min-width: 0; }
+.meta-line input[data-meta-key] { grid-area: 1 / 1; }
+.meta-line .remove { grid-area: 1 / 2; padding: 0 .3rem; line-height: 1.6; }
+.meta-line input[data-meta-value] { grid-area: 2 / 1 / 3 / -1; }
+#meta-new { flex-wrap: wrap; }
+#meta-new input { flex: 1 1 5rem; }
+#about-rename, #about-remove { margin-top: .5rem; margin-right: .4rem; }
+
+/* While a coding unit is waiting for its new passage. */
+.detail .recutting { margin: .5rem 0 0; }
+
 .jump {
   margin-top: .7rem;
   width: 100%;
@@ -2042,6 +2135,20 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   border-radius: 50%;
 }
 
+/* The two ends of the size scale, drawn at the size they mean — held against
+   the picture rather than read as a sentence about it. Grey on purpose: the
+   size says one thing and the colour says another, and a coloured scale dot
+   would be read as a level. */
+.chart-legend .dot-key { display: inline-flex; align-items: center; gap: .3rem; }
+.chart-legend .dot-key svg { overflow: visible; }
+.chart-legend .dot-key circle { fill: var(--ink-soft); }
+/* What the scale beside it is a scale of. No swatch, so no empty square. */
+.chart-legend .key-note { color: var(--ink-soft); }
+/* Entries that are one statement wrap as one: the label and both ends of the
+   scale, never the small dot at the end of a line and the large one alone on
+   the next. */
+.chart-legend .key-run { display: inline-flex; align-items: center; gap: .9rem; }
+
 /* Onboarding without transcripts: the instructions on the edition sheet. */
 .onboarding {
   max-width: 34rem;
@@ -2148,6 +2255,14 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   [data-remove],
   [data-catalog-filter],
   [data-unlink],
+  /* Three panels that are nothing but controls. Everything they set is printed
+     elsewhere as what it says: the header lines beside the transcript, the
+     propositions in the key of every figure, the blocked operations on the
+     requirement card. A row of input boxes on paper is a form nobody can fill
+     in. */
+  #about-shell,
+  #propositions-shell,
+  .operations,
   .exports-part { display: none !important; }
 
   .view,

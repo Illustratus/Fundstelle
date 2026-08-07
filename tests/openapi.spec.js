@@ -35,6 +35,9 @@ const SERVER = readFileSync(join(ROOT, "server.js"), "utf8");
  */
 const PATTERNS = {
   single: "/api/interviews/{id}",
+  interviewRename: "/api/interviews/{id}/rename",
+  proposition: "/api/propositions/{id}",
+  operation: "/api/operations/{id}",
   categoryMerge: "/api/categories/{id}/merge",
   category: "/api/categories/{id}",
   newCoding: "/api/interviews/{id}/codings",

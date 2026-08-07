@@ -281,8 +281,85 @@ export function wrapLabel(text, { room, size, maxLines = 3 }) {
  * invisible, a few too few cut a word off. The factors are the widest the
  * stacks in `FONTS` get for ordinary prose, not their average.
  */
-export function estimateWidth(text, { size = 10, mono = false } = {}) {
-  return String(text).length * size * (mono ? 0.62 : 0.58);
+export function estimateWidth(text, { size = 10, mono = false, tight = false } = {}) {
+  return String(text).length * size * (mono ? 0.62 : tight ? TIGHT : 0.58);
+}
+
+/**
+ * The other estimate, for deciding whether something fits rather than how much
+ * room to keep for it.
+ *
+ * The two fail in opposite directions and were the same number, which is the
+ * mistake. Reserving space, too wide is a little unused white and too narrow is
+ * a word cut in half — so the reserve runs wide. Deciding a wrap, too wide is
+ * the damage: a key that fits on one line is broken onto two because the
+ * arithmetic thinks it is fuller than it is. The key of the reach figure came
+ * out at 722 reckoned pixels of a 720-pixel line and wrapped, while the same
+ * words measure 640.
+ *
+ * Measured across the wordings that actually appear in a key — German and
+ * English, at ten pixels, in the font stack the figures carry — the widest ran
+ * at .562 of the size per character and most at half. This sits just above the
+ * widest of them: still an over-estimate, and no longer one by a fifth.
+ */
+const TIGHT = 0.57;
+
+/** As much of a name as fits in the room it has, the ellipsis counted in. */
+export function shortenToWidth(text, room, { size = 10 } = {}) {
+  const name = String(text);
+  if (estimateWidth(name, { size }) <= room) return name;
+  const fits = Math.floor(room / (size * 0.58)) - 1;
+  return fits < 2 ? "…" : shorten(name, fits);
+}
+
+/**
+ * The categories of a figure's axis, in the order the written work has them.
+ *
+ * Which is: the deductive system in the order of the interview guide, and
+ * behind it what the material added. Both come out of the file as the author
+ * built it — the start system is written in guide order, and the tool only ever
+ * adds to the end — with one exception this puts right: a category that came
+ * from the material and was then subordinated to a start category is spliced
+ * directly behind its parent in `categories.json`, because that is where a
+ * two-level system wants it.
+ *
+ * What is appended is therefore what stands on its own. A category *under* a
+ * start category is a distinction inside that branch and belongs where the
+ * branch is — moving it to the end would separate it from the thing it
+ * subdivides, which says something about the system that is not true. One that
+ * stands on its own is a heading the start system does not have, and putting it
+ * among them says the study went in with it.
+ *
+ * Its own subcategories travel with it: they are judged by the branch they sit
+ * in, not by themselves.
+ *
+ * Only for the flat axes — the two catalog figures. Where categories are drawn
+ * with their parents, the file order is the right order and stays.
+ */
+export function categoryAxis(categories) {
+  const idOf = (one) => one.category ?? one.id;
+  const byId = new Map(categories.map((one) => [idOf(one), one]));
+  const branch = (one) => (one.parent ? (byId.get(one.parent) ?? one) : one);
+  const added = (one) => (branch(one).origin === "inductive" ? 1 : 0);
+  return [...categories].sort((a, b) => added(a) - added(b));
+}
+
+/**
+ * The MoSCoW key, holding the levels the figure actually draws and no others.
+ *
+ * A key entry for something not drawn is worse than none: it sends the reader
+ * hunting for a colour that is not there and, in a catalog where nothing has
+ * been postponed, quietly suggests that something has. The band of the
+ * distribution has dropped its empty levels from the beginning — it is built
+ * from counts, so it could hardly do otherwise — while the three figures that
+ * draw one mark per requirement listed all five whatever they held.
+ */
+export function moscowKey(rows, t, nameOf) {
+  const level = (row) => (MOSCOW_ORDER.includes(row.moscow) ? row.moscow : "open");
+  const present = new Set(rows.map(level));
+  return [...MOSCOW_ORDER, "open"]
+    .filter((id) => present.has(id))
+    .map((id) => ({ paint: moscowClass(id), label: id === "open" ? t("open") : nameOf(id) }));
 }
 
 /** The largest row, named — the one thing a reader takes from a bar chart. */
@@ -759,12 +836,17 @@ export function heatmapChart(data, t, { measure } = {}) {
   const maxCharacters = Math.max(8, Math.min(30, Math.floor(room / Math.cos(RADIANS) / CHARACTER)));
   const headings = sections.map((section) => shorten(section.short, maxCharacters));
   /* How far the longest heading reaches down. Measured where somebody can
-     measure, estimated where nobody can — and the estimate runs wide, because
-     a foot a little too deep is white space and a foot too shallow is a
-     heading with its tail cut off. */
+     measure, estimated where nobody can — and where nobody can, with a margin
+     on top, because the estimate is not the safe side it was taken for: a
+     heading of umlauts and wide letters came out four pixels past what it
+     reserved, and in the browser `fitAngledHeadings` grew the drawing to catch
+     it while the endpoint had no such net and cut the tail off. A foot a
+     little too deep is white space; a foot too shallow is a figure with a word
+     sliced through. */
+  const SAFETY = 1.08;
   const reach = Math.max(
     ...headings.map((heading) =>
-      measure ? measure(heading, { size: 10 }) : estimateWidth(heading, { size: 10 }),
+      measure ? measure(heading, { size: 10 }) : estimateWidth(heading, { size: 10 }) * SAFETY,
     ),
   );
   const FOOT = Math.ceil(reach * Math.sin(RADIANS)) + 12;
@@ -946,7 +1028,10 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
   const TOP = 16;
   const BOTTOM = 42;
   const maxX = Math.max(1, departmentCount);
-  const maxY = operationCount;
+  // At least one line to stand on. The operations are the study's own now, so a
+  // catalog may hold none at all — and an axis of height nought is not a
+  // smaller figure, it is a picture with nothing to read in it.
+  const maxY = Math.max(1, operationCount);
 
   // Group by coordinate. Both axes count whole things, so several requirements
   // sharing one point is the normal case rather than the exception.
@@ -1045,13 +1130,7 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
     width: WIDTH,
     height,
     body: grid + axisTitles + points,
-    legend: {
-      kind: "moscow",
-      entries: [...MOSCOW_ORDER, "open"].map((level) => ({
-        paint: moscowClass(level),
-        label: level === "open" ? t("open") : nameOf(level),
-      })),
-    },
+    legend: { kind: "moscow", entries: moscowKey(rows, t, nameOf) },
     summary: t("summaryPriority", {
       rows: rows.length,
       departments: maxX,
@@ -1110,8 +1189,10 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
  * noticed and postponed.
  */
 export function reachChart(rows, categories, t, { moscow = [] } = {}) {
-  let columns = categories.filter((one) => one.sum > 0);
-  let withCitations = rows.filter((row) => row.citations.length);
+  // Ordered before it is filtered: a category with no coding of its own is
+  // still the branch its subcategories belong to.
+  const columns = categoryAxis(categories).filter((one) => one.sum > 0);
+  const withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !columns.length) return null;
 
   const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
@@ -1129,47 +1210,29 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     withCitations.filter((row) => counts.has(`${row.id}|${column.category}`)).length;
 
   /**
-   * The order, which is the whole difference between a picture of the links and
-   * a picture of the structure.
+   * The order: the one the catalog already has, on both axes.
    *
-   * A matrix says what it has in it whatever order its rows and columns are in,
-   * and shows *shape* only in one of them. Left in catalog order the figure was
-   * a scatter of correct dots in which nothing was legible at a glance: which
-   * requirements carry a lot of the study and which touch one corner of it, and
-   * which of them keep turning up in the same company.
+   * This figure used to sort itself. Rows by how many categories they reach,
+   * widest first, and then columns by where their topmost dot sat — a cheap
+   * seriation that made the picture read as a staircase, with a break in the
+   * staircase for a group. It was a real reading, and it cost more than it was
+   * worth: the same twenty requirements stood in one order in the catalog list,
+   * in another in this figure, and in a third in the export. A reader who finds
+   * a requirement in the list and then looks for it in the picture has to hunt
+   * for it, and a figure whose axis nobody can predict is one nobody trusts to
+   * be about the same study as the list above it.
    *
-   * Two sorts, and they have to be done in this order.
+   * So the rows are the catalog's own order — grouped by MoSCoW level, and
+   * inside a level the requirement more departments name first — which is what
+   * `/api/requirements` answers, what the cards show, and what the export
+   * writes. And the columns are the order of the category system, which every
+   * cross table and every bar chart in the tool already uses.
    *
-   * Rows by how many categories they reach, widest first. That alone is the
-   * reading somebody wants from this figure — the top of it is what a study
-   * turns on, the bottom is what is local — and it is the input to how much a
-   * requirement is worth, which is a judgement the tool must not make but should
-   * put the material for in front of whoever does.
-   *
-   * Then columns by where their topmost dot is, and by how many they hold. Now
-   * that the rows are ordered, that is the cheapest seriation there is, and it
-   * is enough: categories a broad requirement carries move left, the ones only
-   * one narrow requirement speaks to fall to the right, and requirements sharing
-   * categories end up in the same block instead of scattered across the width.
-   * The result reads as a staircase, and a break in the staircase is a group.
-   *
-   * The cost is that the columns are no longer in the order of the category
-   * system. That order is meaningful elsewhere and is not what this figure is
-   * about; the caption says so, and every name is written out.
+   * What is given up: the staircase. Which requirements keep turning up in the
+   * same company is no longer legible from the shape — it is still in the
+   * figure, dot by dot, and the numbers under the columns still say which
+   * categories the catalog has not answered.
    */
-  withCitations = [...withCitations].sort(
-    (a, b) =>
-      links(b) - links(a) ||
-      b.citations.length - a.citations.length ||
-      a.title.localeCompare(b.title, "de"),
-  );
-  const topmost = (column) =>
-    withCitations.findIndex((row) => counts.has(`${row.id}|${column.category}`));
-  columns = [...columns].sort((a, b) => {
-    const first = topmost(a) < 0 ? withCitations.length : topmost(a);
-    const other = topmost(b) < 0 ? withCitations.length : topmost(b);
-    return first - other || answers(b) - answers(a) || a.name.localeCompare(b.name, "de");
-  });
 
   /* A category only one requirement reaches. Worth marking, because it turns
      breadth into an argument: drop that requirement and nothing in the catalog
@@ -1201,11 +1264,67 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
   const ANGLE = 45;
   const RADIANS = (ANGLE * Math.PI) / 180;
   const grid = TOP + withCitations.length * CELL;
-  const room = LABEL + width / 2 - 6;
-  const maxCharacters = Math.max(8, Math.min(34, Math.floor(room / Math.cos(RADIANS) / 5.1)));
-  const headings = columns.map((one) => shorten(one.name, maxCharacters));
-  const reach = Math.max(...headings.map((one) => estimateWidth(one, { size: 10 })));
-  const FOOT = Math.ceil(reach * Math.sin(RADIANS)) + 12;
+  /* How much name a column may show, column by column.
+     A heading is anchored under its column and runs down and to the left at
+     45°, so what limits it is the distance from its own anchor to the left edge
+     of the drawing — which the first column has little of and the last one has
+     nearly the whole width. Measured once for the first column and applied to
+     all, as it was, every heading was cut to what the narrowest place allowed,
+     and a thirty-four character ceiling on top of that cut the rest: „Erwartung
+     & Vertrauen in KI-Inhal…" in a column with room for the whole name.
+     A name is what a category *is*, and a figure that will not print it is a
+     figure somebody annotates by hand afterwards. */
+  const roomFor = (k) => (LABEL + k * width + width / 2 - 6) / Math.cos(RADIANS);
+
+  /* And broken over two lines rather than run out to its full length.
+     A heading at forty-five degrees costs height by its width: „Erwartung und
+     Vertrauen in KI-Inhalte" written on one line reaches two hundred pixels
+     down the page, and the foot of the drawing has to hold all of it — so the
+     longest category name in a study decides how much white space every other
+     column stands in. Wrapped, the same name costs a good deal less, and
+     nothing is given up: what is shortened is a line, not the name.
+
+     Two lines, and the line is widened until they are enough. A fixed line
+     width broke that name into three — „Erwartung und / Vertrauen in /
+     KI-Inhalte" — which is a stack, not a label: three short lines are harder
+     to read than two long ones, and they buy only a few pixels of height,
+     because every line after the first is offset down the slope again. So each
+     heading is given the room its own name needs to come out in two, as far as
+     its column has any. A third line is the last resort before anything is
+     shortened, and shortening is the last resort of all. */
+  const HEAD_SIZE = 10;
+  const HEAD_LINE = 11;
+  const TARGET = 120;
+  const headingLines = (name, k) => {
+    const whole = estimateWidth(name, { size: HEAD_SIZE });
+    /* Half the name, then more of it. Wrapping is greedy, so a line of exactly
+       half often leaves a word over; widening in a few steps finds the width
+       two lines actually need without measuring every break. */
+    for (const share of [0.5, 0.6, 0.72]) {
+      const room = Math.min(roomFor(k), Math.max(TARGET, Math.ceil(whole * share) + 2));
+      const tried = wrapLabel(name, { room, size: HEAD_SIZE, maxLines: 2 });
+      if (!tried.truncated) return tried.lines;
+    }
+    return wrapLabel(name, { room: roomFor(k), size: HEAD_SIZE, maxLines: 3 }).lines;
+  };
+  const wrapped = columns.map((one, k) => headingLines(one.name, k));
+
+  /* How deep the block of headings goes. A line reaches its own width down the
+     slope, and every line after the first is offset perpendicular to it — down
+     and to the right — so the deepest point is not necessarily the longest
+     line. Taken over all of them rather than guessed at. */
+  const reach = Math.max(
+    ...wrapped.flatMap((lines) =>
+      lines.map(
+        (line, index) =>
+          // With the same margin the heatmap keeps, and for the same reason:
+          // nobody measures here at all, and a tail cut off is not a rounding.
+          estimateWidth(line, { size: HEAD_SIZE }) * 1.08 * Math.sin(RADIANS) +
+          index * HEAD_LINE * Math.cos(RADIANS),
+      ),
+    ),
+  );
+  const FOOT = Math.ceil(reach) + 12;
   const height = grid + TALLY + FOOT;
 
   const perCategory = columns.map(answers);
@@ -1214,10 +1333,18 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     .map((one, k) => {
       const x = LABEL + k * width + width / 2;
       const y = grid + TALLY + 8;
+      // Every line carries the anchor again: without it the second one would
+      // start where the first ended rather than under the same column.
+      const lines = wrapped[k]
+        .map(
+          (line, index) =>
+            `<tspan x="${x}"${index ? ` dy="${HEAD_LINE}"` : ""}>${escape(line)}</tspan>`,
+        )
+        .join("");
       return (
         `<text class="axis heading${perCategory[k] ? "" : " unmet"}" x="${x}" y="${y}"` +
         ` text-anchor="end" transform="rotate(-${ANGLE} ${x} ${y})">` +
-        `<title>${escape(one.name)}</title>${escape(headings[k])}</text>`
+        `<title>${escape(one.name)}</title>${lines}</text>`
       );
     })
     .join("");
@@ -1248,9 +1375,12 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
             ? t("reachTipSole", { title: row.title, category: one.name, n })
             : t("reachTip", { title: row.title, category: one.name, n });
           return (
-            // The ring first, so the dot sits on top of it rather than inside it.
+            // The ring first, so the dot sits on top of it rather than inside
+            // it. It carries the same tip: it is drawn wider than the dot, and
+            // the band standing out beyond it is a place the mouse lands.
             (only
-              ? `<circle class="reach-sole" cx="${cx}" cy="${middle}" r="${(r + 2.6).toFixed(2)}"></circle>`
+              ? `<circle class="reach-sole" cx="${cx}" cy="${middle}"` +
+                ` r="${(r + 2.6).toFixed(2)}" data-tip="${escape(tip)}"></circle>`
               : "") +
             `<circle class="reach ${level}" cx="${cx}" cy="${middle}"` +
             ` r="${r.toFixed(2)}" data-row="${escape(row.title)}"` +
@@ -1269,9 +1399,13 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     .join("");
 
   const unmet = perCategory.filter((n) => !n).length;
-  // Sorted widest first, so the first row is the answer to "which requirement
-  // carries the most of this study".
-  const widest = { title: withCitations[0].title, touched: links(withCitations[0]) };
+  /* Which requirement carries the most of the study. It used to be the first
+     row, because the figure sorted itself; the rows follow the catalog now, so
+     it is found rather than read off the top. */
+  const widest = withCitations.reduce(
+    (best, row) => (links(row) > best.touched ? { title: row.title, touched: links(row) } : best),
+    { title: withCitations[0].title, touched: links(withCitations[0]) },
+  );
   const onlyOne = withCitations.filter((row) =>
     columns.some((one) => sole.has(one.category) && counts.has(`${row.id}|${one.category}`)),
   ).length;
@@ -1287,16 +1421,38 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     legend: {
       kind: "moscow",
       entries: [
-        ...[...MOSCOW_ORDER, "open"].map((id) => ({
-          paint: moscowClass(id),
-          label: id === "open" ? t("open") : nameOf(id),
-        })),
+        ...moscowKey(withCitations, t, nameOf),
         /* The ring belongs in the key, not in a sentence at the end of a long
            caption. A mark that has to be explained and is explained only in
            prose is a mark nobody reads — it was there, said what it meant, and
            read as decoration anyway. It is only offered when there is one on
            the figure: a key entry for something not drawn is worse than none. */
         ...(sole.size ? [{ paint: "sole", shape: "ring", label: t("reachSoleKey") }] : []),
+        /* And the size, drawn at the size it means. It was named in the caption
+           as „Punktgröße = Belege", which is three words for something that had
+           to be asked about to be understood: *which* citations, counted how,
+           against what largest. A scale nobody can read off the picture is not
+           a scale, it is a claim that the picture is quantitative.
+           So the two ends of it stand in the key as two dots — this figure's
+           own, since the scale is relative to the largest cell in it and says
+           nothing across two figures. Left out when the largest cell is one:
+           every dot is then the same size and a scale from one to one is
+           furniture. */
+        ...(max > 1
+          ? [
+              { label: t("reachSizeKey") },
+              // One statement, so it is never broken across two lines: a small
+              // dot at the right edge and a large one alone on the next reads
+              // as two scales rather than as the two ends of one.
+              { shape: "dot", radius: radius(1), label: t("reachSizeOne"), keepWith: true },
+              {
+                shape: "dot",
+                radius: radius(max),
+                label: t("reachSizeMany", { n: max }),
+                keepWith: true,
+              },
+            ]
+          : []),
       ],
     },
     summary: t("summaryReach", {
@@ -1307,6 +1463,8 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
       narrow: withCitations.filter((row) => links(row) === 1).length,
       only: onlyOne,
       unmet,
+      // The one thing the size says at a glance, for whoever cannot see it.
+      most: max,
     }),
     figures: {
       caption: t("reachFiguresCaption"),
@@ -1347,7 +1505,9 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
  * an absence.
  */
 export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
-  const columns = categories.filter((one) => one.sum > 0);
+  // Ordered before it is filtered: a category with no coding of its own is
+  // still the branch its subcategories belong to.
+  const columns = categoryAxis(categories).filter((one) => one.sum > 0);
   const withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !columns.length) return null;
 
@@ -1361,6 +1521,20 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
   const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
 
   const max = Math.max(1, ...counts.values());
+
+  /* The same two readings the flat figure prints beside its rows and columns.
+     This is the same matrix; a number that is worth saying there is worth
+     saying here. */
+  const links = (row) => columns.filter((one) => counts.has(`${row.id}|${one.category}`)).length;
+  const answers = (column) =>
+    withCitations.filter((row) => counts.has(`${row.id}|${column.category}`)).length;
+  const sole = new Set(
+    columns.filter((one) => answers(one) === 1).map((one) => one.category),
+  );
+  const widest = withCitations.reduce(
+    (best, row) => (links(row) > best.touched ? { title: row.title, touched: links(row) } : best),
+    { title: withCitations[0].title, touched: links(withCitations[0]) },
+  );
 
   const COS = Math.cos(Math.PI / 6);
   const SIN = Math.sin(Math.PI / 6);
@@ -1439,24 +1613,59 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
      nudging saves it. The near-left edge belongs to the categories and its
      outside is to the left; the near-right edge belongs to the requirements and
      its outside is to the right. Written flat, consecutive labels are a whole
-     cell apart in the vertical, which is what keeps them off each other. */
-  const letters = Math.max(8, Math.floor((NAMES - 14) / 4.7));
+     cell apart in the vertical, which is what keeps them off each other.
+
+     Each carries the same count the flat figure prints at the same place: how
+     many categories a requirement reaches, how many requirements answer a
+     category. They are the reading of a row and of a column, and this is the
+     same matrix — a reader who takes the two figures for the same thing and
+     finds a number in one of them and not in the other is right to wonder
+     which one is holding something back.
+
+     One line each: consecutive labels are only half a cell apart in the
+     vertical here, so a second line would land on the neighbour. What does not
+     fit is shortened, and the whole name stays in the element's title. */
+  /* `NAMES` is the least a name may have — it is what the cell size was worked
+     out against. What a name actually gets is what the drawing leaves: the
+     diamond is centred and its half-width is known once the cell is, so a small
+     city gives its labels three times the reserve and a large one falls back to
+     it. The reserve was being spent whether the city needed it or not, and
+     „Erwartung an das…" stood cut beside a third of a page of white. */
+  const NUMBER = 20;
+  const half = ((columns.length + withCitations.length) * CELL * COS) / 2;
+  const room = Math.max(60, WIDTH / 2 - half - 9 - NUMBER - 6);
+  const named = (text) => escape(shortenToWidth(text, room, { size: 8.5 }));
+
   const categoryNames = columns
     .map((one, j) => {
       const spot = foot(withCitations.length, j + 0.5);
+      const answered = answers(one);
+      // A category no requirement answers is the finding, here as there: the
+      // count says nought and the name is set quietly rather than hidden.
       return (
-        `<text class="axis city" x="${(spot.x - 9).toFixed(1)}" y="${(spot.y + 3).toFixed(1)}"` +
-        ` text-anchor="end"><title>${escape(one.name)}</title>` +
-        `${escape(shorten(one.name, letters))}</text>`
+        `<text class="axis city${answered ? "" : " unmet"}" x="${(spot.x - 9 - NUMBER).toFixed(1)}"` +
+        ` y="${(spot.y + 3).toFixed(1)}" text-anchor="end">` +
+        `<title>${escape(one.name)}</title>${named(one.name)}</text>` +
+        `<text class="value${answered ? "" : " empty"}" x="${(spot.x - 11).toFixed(1)}"` +
+        ` y="${(spot.y + 3).toFixed(1)}" text-anchor="end">${answered}</text>` +
+        // The category only one requirement answers, marked as it is marked in
+        // the flat figure, so one key entry covers both.
+        (sole.has(one.category)
+          ? `<circle class="reach-sole" cx="${(spot.x - 4).toFixed(1)}"` +
+            ` cy="${spot.y.toFixed(1)}" r="4"></circle>`
+          : "")
       );
     })
     .join("");
+
   const requirementNames = withCitations
     .map((row, i) => {
       const spot = foot(i + 0.5, columns.length);
       return (
         `<text class="axis city" x="${(spot.x + 9).toFixed(1)}" y="${(spot.y + 3).toFixed(1)}">` +
-        `<title>${escape(row.title)}</title>${escape(shorten(row.title, letters))}</text>`
+        `<title>${escape(row.title)}</title>${named(row.title)}</text>` +
+        `<text class="value" x="${(spot.x + 9 + room + 6).toFixed(1)}"` +
+        ` y="${(spot.y + 3).toFixed(1)}">${links(row)}</text>`
       );
     })
     .join("");
@@ -1471,30 +1680,43 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
     body: lattice + towers + categoryNames + requirementNames,
     legend: {
       kind: "moscow",
-      entries: [...MOSCOW_ORDER, "open"].map((id) => ({
-        paint: moscowClass(id),
-        label: id === "open" ? t("open") : nameOf(id),
-      })),
+      entries: [
+        ...moscowKey(withCitations, t, nameOf),
+        ...(sole.size ? [{ paint: "sole", shape: "ring", label: t("reachSoleKey") }] : []),
+        /* The height, named. The flat figure can draw the two ends of its scale
+           as two dots and let the reader hold them against the picture; two
+           towers in a key would be a second little drawing, and a tower is read
+           against the lattice it stands on rather than against a swatch. So it
+           is said in words — but said, which it was not. */
+        ...(max > 1 ? [{ label: t("cityHeightKey", { n: max }) }] : []),
+      ],
     },
     /* Every chart carries its numbers as a table as well. Here it matters more
        than usual: a tower hidden behind a taller one is unreadable in the
-       picture by construction, and the table is where it is still readable. */
+       picture by construction, and the table is where it is still readable.
+
+       The same table the flat figure carries, to the column: the two are one
+       matrix drawn twice, and two tables that differ would make a reader ask
+       which of the two figures is about something else. */
     figures: {
       caption: t("cityFiguresCaption"),
-      columns: [
-        t("columnRequirement"),
-        ...columns.map((one) => one.name),
-        t("total"),
-      ],
+      columns: [t("columnRequirement"), ...columns.map((one) => one.name), t("columnReaches")],
       rows: withCitations.map((row) => [
         row.title,
         ...columns.map((one) => counts.get(`${row.id}|${one.category}`) ?? 0),
-        row.citations.length,
+        links(row),
       ]),
     },
     summary: t("summaryCity", {
       rows: withCitations.length,
       categories: columns.length,
+      top: widest.title,
+      touched: widest.touched,
+      narrow: withCitations.filter((row) => links(row) === 1).length,
+      only: withCitations.filter((row) =>
+        columns.some((one) => sole.has(one.category) && counts.has(`${row.id}|${one.category}`)),
+      ).length,
+      unmet: columns.filter((one) => !answers(one)).length,
       max,
     }),
   };
@@ -1589,6 +1811,18 @@ export const FIGURES = {
     draw: ({ analysis, catalog, t }) =>
       reachChart(catalog.requirements, analysis.rows, t, { moscow: catalog.moscow }),
   },
+  "catalog-city": {
+    view: "catalog",
+    /* The same matrix as the reach figure and drawn from the same two bodies of
+       data, so it needs both for the same reason. It was on the screen and
+       nowhere else: the one figure a script could not fetch, which made it the
+       one figure a report had to screenshot. */
+    needs: ["catalog", "analysis"],
+    titleKey: "chartCityTitle",
+    emptyKey: "figureNeedsCitations",
+    draw: ({ analysis, catalog, t }) =>
+      cityPlot(catalog.requirements, analysis.rows, t, { moscow: catalog.moscow }),
+  },
 };
 
 export const FIGURE_NAMES = Object.keys(FIGURES);
@@ -1671,6 +1905,9 @@ export function stylesheet(theme = "light") {
     `.saturation-point{fill:${c.accent}}` +
     `.key-label{fill:${c.ink};font-size:10px;font-family:${FONTS.sans}}` +
     `.key-ring{fill:none;stroke:${c.inkSoft};stroke-width:1.4}` +
+    // Neutral: the size says one thing and the colour says another, and a
+    // coloured scale dot would be read as a level.
+    `.key-dot{fill:${c.inkSoft}}` +
     swatches
   );
 }
@@ -1688,8 +1925,14 @@ function drawKey(legend, width, measure) {
   const SIZE = 9;
   const GAP = 14;
   const LINE = 18;
+  /* Fitting, not reserving: the key is laid out into a line of known width, so
+     an estimate that runs wide breaks a line that had room left. */
   const widthOf = (text) =>
-    text ? Math.ceil(measure ? measure(text, { size: 10 }) : estimateWidth(text, { size: 10 })) : 0;
+    text
+      ? Math.ceil(
+          measure ? measure(text, { size: 10 }) : estimateWidth(text, { size: 10, tight: true }),
+        )
+      : 0;
 
   /* A ramp is one continuous scale, so it reads as its two ends with the steps
      between them, rather than as five things with five names. */
@@ -1703,18 +1946,52 @@ function drawKey(legend, width, measure) {
         ]
       : legend.entries;
 
+  // A dot is drawn at the size it stands for, so it takes the room that size
+  // needs rather than a swatch's.
+  const markOf = (entry) =>
+    entry.shape === "dot"
+      ? Math.ceil(entry.radius * 2) + 5
+      : entry.paint || entry.shape
+        ? SIZE + 5
+        : 0;
+  const boxOf = (entry) => markOf(entry) + widthOf(entry.label ?? "");
+
+  /* What must not be broken across two lines.
+     „Punktgröße in Belegen:" and the two dots after it are one statement, and
+     the line broke between them: the small dot sat at the right edge of the
+     first line and the large one alone at the left of the second, which reads
+     as two scales rather than as one — and reads as a mistake, which it was.
+     An entry can say it belongs with the one before it, and the run is measured
+     and wrapped whole. */
+  const runs = [];
+  for (const entry of entries) {
+    if (entry.keepWith && runs.length) runs[runs.length - 1].push(entry);
+    else runs.push([entry]);
+  }
+
   let markup = "";
   let x = 0;
   let y = 12;
-  for (const entry of entries) {
-    const label = entry.label ?? "";
-    const box = (entry.paint || entry.shape ? SIZE + 5 : 0) + widthOf(label);
-    if (!box) continue;
-    if (x && x + box > width) {
+  for (const run of runs) {
+    const total = run.reduce((sum, entry) => sum + boxOf(entry) + GAP, 0) - GAP;
+    if (x && x + total > width) {
       x = 0;
       y += LINE;
     }
-    if (entry.shape === "ring") {
+    for (const entry of run) draw(entry);
+  }
+
+  function draw(entry) {
+    const label = entry.label ?? "";
+    const mark = markOf(entry);
+    const box = mark + widthOf(label);
+    if (!box) return;
+    if (entry.shape === "dot") {
+      markup +=
+        `<circle class="key-dot" cx="${(x + entry.radius).toFixed(2)}"` +
+        ` cy="${y - SIZE / 2 + 1}" r="${entry.radius.toFixed(2)}"></circle>`;
+      x += mark;
+    } else if (entry.shape === "ring") {
       markup +=
         `<circle class="key-ring" cx="${x + SIZE / 2}" cy="${y - SIZE / 2 + 1}"` +
         ` r="${SIZE / 2}"></circle>`;

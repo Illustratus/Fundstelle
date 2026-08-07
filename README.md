@@ -121,7 +121,18 @@ quietly dropping the other's work.
   and everything new is inductive, because "fixed before the survey" is a
   statement about a moment and the tool can tell which side of it you are on.
   Definitions can be refined on the material, and the wording you started with is
-  kept and reported.
+  kept and reported. The propositions the categories hang on — what the system
+  argues, and the colour every figure of the study is drawn in — are worded,
+  coloured, added and dissolved like the categories under them; a study about
+  something other than the bundled example should not carry the example's claims
+  into its own appendix.
+- **Nothing is settled by having been entered once** — a coding unit that begins
+  one sentence too early is cut differently rather than deleted and made again,
+  so its note, its anchor mark and every requirement it is evidence for stay on
+  it. The same goes for what the study is made of: propositions, the operations
+  a requirement is judged to block, and what a transcript says about itself in
+  its header. Every save says so; a field that answers nothing looks exactly
+  like a field that did not save.
 - **Anchor examples and coding rules, with the gaps named** — both are recorded
   as they emerge. A category that has citations but no anchor example is named in
   the analysis, and its gap is written into the coding guide rather than left out
@@ -149,7 +160,9 @@ quietly dropping the other's work.
   name a requirement is counted from the material, never typed in. A MoSCoW band,
   a prioritization field (naming departments × blocked operations) and a coverage
   chart make the prioritization checkable at a glance, and at twenty requirements
-  the list cuts down to what is still unfinished.
+  the list cuts down to what is still unfinished. Which operations there are to
+  block is the study's own vocabulary: filing, retrieval and transfer are what a
+  fresh catalog is seeded with, not what it is stuck with.
 - **Production-grade analytics** — a stacked bar chart per category and
   department, a category × guide-section heatmap, cross tables, per-interview
   progress, and a saturation curve: how many categories turned up for the first
@@ -272,6 +285,13 @@ records about that interview — a role, a tenure, a site, the date. They are
 shown beside the transcript and become the columns of the sample table the tool
 writes for the methods chapter, so a field one interview carries and another
 does not is left blank rather than filled in.
+
+They can also be written from the tool. „Kopfdaten des Interviews" in the left
+column edits the title, the department and those lines, and renames or deletes
+the whole interview. Only the header is rewritten — the turns are handed back
+exactly as they were, which is what keeps every citation where it was. The
+department is not a line of its own: it is read off the title behind the colon,
+so setting it writes the title.
 
 `## Section:` opens a guide section, `**2 · Speaker [0:15]**` a turn whose text
 follows below it. A turn runs until something else begins — the next turn, a

@@ -27,7 +27,6 @@ import { openapiDocument } from "./lib/openapi.js";
 import { THEME_NAMES } from "./public/charts.js";
 import {
   MOSCOW,
-  OPERATIONS,
   analysis,
   analysisMarkdown,
   catalog,
@@ -622,11 +621,48 @@ const server = createServer(async (request, response) => {
         lost: codings.filter((coding) => coding.state === "lost").length,
       });
     }
+    /* What an interview says about itself: the note beside it, and the header
+       of its transcript. The header was readable and not writable — the format
+       has parsed those lines from the first version and the sample table of the
+       paper is built from them, so a department spelled wrong had to be
+       corrected in an editor. The turns are not touched, so no citation moves. */
     if (single && request.method === "PATCH") {
       const id = decodeURIComponent(single[1]);
-      const { memo } = await body(request);
-      await store.setInterviewMemo(id, memo);
-      return send(response, 200, { memo });
+      const fields = await body(request);
+      if ("memo" in fields) await store.setInterviewMemo(id, fields.memo);
+      const header = {};
+      for (const field of ["title", "department", "meta"]) {
+        if (field in fields) header[field] = fields[field];
+      }
+      if ("meta" in header && (typeof header.meta !== "object" || header.meta === null)) {
+        return send(response, 400, { error: t("errorMetaObject"), code: "errorMetaObject" });
+      }
+      const transcript = Object.keys(header).length
+        ? await store.setTranscriptHeader(id, header)
+        : null;
+      return send(response, 200, {
+        memo: fields.memo,
+        title: transcript?.title,
+        department: transcript?.department,
+        meta: transcript?.meta,
+      });
+    }
+
+    /* The folder name is the identifier, and it is made from a working title at
+       the moment one knows least about the study. Renaming moves the folder;
+       the codings live in it and travel along. */
+    const interviewRename = path.match(/^\/api\/interviews\/([^/]+)\/rename$/);
+    if (interviewRename && request.method === "POST") {
+      const from = decodeURIComponent(interviewRename[1]);
+      const wanted = folderName(String((await body(request)).to ?? "").trim());
+      if (!wanted) return send(response, 400, { error: t("errorFieldMissing", { field: "to" }) });
+      return send(response, 200, await store.renameInterview(from, wanted));
+    }
+
+    if (single && request.method === "DELETE") {
+      const id = decodeURIComponent(single[1]);
+      await store.removeInterview(id);
+      return send(response, 204, "");
     }
 
     // Categories ------------------------------------------------------------
@@ -675,6 +711,28 @@ const server = createServer(async (request, response) => {
         back += await store.recategorise(interview, ids, undo.source.category.id);
       }
       return send(response, 200, { restored: undo.source.category, moved: back });
+    }
+
+    /* Propositions -----------------------------------------------------------
+       What the category system argues, and the colour every figure of the study
+       is drawn in. They came with the seed and could not be touched afterwards,
+       so a study about something other than the bundled example carried two
+       headings it never made. They are read with the categories — one file, one
+       request — and written here. */
+    if (path === "/api/propositions" && request.method === "POST") {
+      return send(response, 201, await store.addProposition(await body(request)));
+    }
+    const proposition = path.match(/^\/api\/propositions\/([^/]+)$/);
+    if (proposition && request.method === "PATCH") {
+      return send(
+        response,
+        200,
+        await store.updateProposition(decodeURIComponent(proposition[1]), await body(request)),
+      );
+    }
+    if (proposition && request.method === "DELETE") {
+      await store.removeProposition(decodeURIComponent(proposition[1]));
+      return send(response, 204, "");
     }
 
     const category = path.match(/^\/api\/categories\/([^/]+)$/);
@@ -733,11 +791,14 @@ const server = createServer(async (request, response) => {
     // Requirements ----------------------------------------------------------
     if (path === "/api/requirements" && request.method === "GET") {
       const all = await allInterviews();
-      const { requirements } = await store.requirements();
+      const { requirements, operations } = await store.requirements(seedLanguage);
       const { categories, propositions } = await store.categories(seedLanguage);
       return send(response, 200, {
         requirements: catalog(all, requirements, categories),
         moscow: MOSCOW,
+        // Which operations there are to block is the study's vocabulary, not
+        // the tool's, and the catalog draws its checkboxes from this.
+        operations,
         // The same department order as the analysis, so that a department keeps
         // its series color across both views.
         departments: [...new Set(all.map((interview) => interview.transcript.department))],
@@ -758,6 +819,27 @@ const server = createServer(async (request, response) => {
       }
       const { target: merged } = await store.mergeRequirements(source, target);
       return send(response, 200, { target: merged, moved });
+    }
+
+    /* Blocked operations -----------------------------------------------------
+       The other half of the prioritization. How many departments name a
+       requirement is counted from the material; what its absence blocks is the
+       author's judgement — and against what it is judged used to be three words
+       compiled into the tool. */
+    if (path === "/api/operations" && request.method === "POST") {
+      return send(response, 201, await store.addOperation(await body(request)));
+    }
+    const operation = path.match(/^\/api\/operations\/([^/]+)$/);
+    if (operation && request.method === "PATCH") {
+      return send(
+        response,
+        200,
+        await store.updateOperation(decodeURIComponent(operation[1]), await body(request)),
+      );
+    }
+    if (operation && request.method === "DELETE") {
+      const { dropped } = await store.removeOperation(decodeURIComponent(operation[1]));
+      return send(response, 200, { dropped });
     }
 
     const requirement = path.match(/^\/api\/requirements\/([^/]+)$/);
@@ -824,9 +906,9 @@ const server = createServer(async (request, response) => {
       const { categories } = needs.length
         ? await store.categories(seedLanguage)
         : { categories: [] };
-      const requirements = needs.includes("catalog")
-        ? (await store.requirements()).requirements
-        : [];
+      const { requirements, operations } = needs.includes("catalog")
+        ? await store.requirements(seedLanguage)
+        : { requirements: [], operations: [] };
       const { svg } = drawFigure(name, {
         analysis: needs.includes("analysis") ? analysis(all, categories) : null,
         catalog:
@@ -837,7 +919,7 @@ const server = createServer(async (request, response) => {
                 departments: [
                   ...new Set(all.map((interview) => interview.transcript.department)),
                 ],
-                operationCount: OPERATIONS.length,
+                operationCount: operations.length,
               }
             : null,
         language,
@@ -922,12 +1004,12 @@ const server = createServer(async (request, response) => {
     }
     if (path === "/api/export/requirements-catalog.md") {
       const all = await allInterviews();
-      const { requirements } = await store.requirements();
+      const { requirements, operations } = await store.requirements(seedLanguage);
       const { categories } = await store.categories(seedLanguage);
       return send(
         response,
         200,
-        catalogMarkdown(catalog(all, requirements, categories), language),
+        catalogMarkdown(catalog(all, requirements, categories), language, operations),
         MARKDOWN,
       );
     }

@@ -59,6 +59,12 @@
       <textarea id="note" rows="6" data-t-aria="noteAria" aria-label="Notiz zum Interview"
                 data-t-placeholder="notePlaceholder" placeholder="Frei zu schreiben. Läuft in die Ausgabe „Notizen“ mit ein."></textarea>
     </details>
+
+    <details class="note-shell" id="about-shell">
+      <summary data-t="aboutSummary">Kopfdaten des Interviews</summary>
+      <p class="column-note" data-t="aboutNote">Titel, Bereich und die Zeilen, die das Interview beschreiben — sie tragen die Stichprobentabelle der Arbeit. Das Transkript selbst bleibt unberührt, keine Fundstelle verschiebt sich.</p>
+      <div id="about-form"></div>
+    </details>
   </aside>
 
   <section class="edition" data-t-aria="ariaTranscript" aria-label="Transkript">
@@ -89,6 +95,23 @@
     <h2 class="column-title" data-t="categorySystem">Kategoriensystem</h2>
     <p class="column-note" data-t="categorySystemNote">Farbe zeigt die verankernde Proposition, nicht die Kategorie.</p>
     <ul class="categories" id="categories"></ul>
+
+    <details class="inductive" id="propositions-shell">
+      <summary data-t="propositionsSummary">Propositionen</summary>
+      <div>
+        <p class="column-note" data-t="propositionsNote">Was das Kategoriensystem behauptet, und die Farbe, in der jede Abbildung der Studie gezeichnet wird. Eine Oberkategorie trägt eine Proposition, ihre Unterkategorien tragen dieselbe.</p>
+        <div id="propositions"></div>
+        <form id="proposition-new">
+          <input type="text" id="proposition-name" required autocomplete="off"
+                 data-t-placeholder="propositionPlaceholder" placeholder="Proposition in einem Satz"
+                 data-t-aria="propositionNameAria" aria-label="Wortlaut der Proposition">
+          <input type="color" id="proposition-color" value="#6C8EBF"
+                 data-t-title="propositionColorAria" title="Farbe der Proposition"
+                 data-t-aria="propositionColorAria" aria-label="Farbe der Proposition">
+          <button type="submit" class="button-quiet">＋</button>
+        </form>
+      </div>
+    </details>
 
     <details class="inductive" id="inductive-shell">
       <summary id="inductive-summary" data-t="inductiveSummary">Induktive Kategorie anlegen</summary>

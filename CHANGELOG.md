@@ -8,7 +8,70 @@ where it lies.
 
 ## Unreleased
 
+### Upgrading
+
+Nothing to do, and nothing that changes what a study says. `requirements.json`
+gains an `operations` list on the first start after this — the three the tool
+has always used, written down where they can now be changed. `categories.json`
+gains the proposition every category without one of its own has always pointed
+at, `none`, the next time anything in that file is written; it is read as
+present either way. A study written by an earlier version is read where it
+lies, as every earlier shape still is.
+
 ### Added
+
+- **What the study is made of can be changed, not only what is coded into it.**
+  Coding units, categories and requirements could be made, read and unmade from
+  the start; changing them was where the tool thinned out, and it thinned out at
+  exactly the places one is most likely to be wrong at the beginning.
+
+  **A coding unit can be cut differently.** A citation that begins one sentence
+  too early was a delete and a fresh coding — which threw away the note on it,
+  the anchor-example mark and every requirement it was evidence for. The move
+  itself already existed: a unit that loses its place after a transcript edit is
+  handed back and put down again by hand. It was simply never offered for a unit
+  that still had a place, although the passage most likely to need cutting again
+  is the one just worked on. „Stelle ändern" on the unit, and everything except
+  the place stays.
+
+  **Propositions are the author's.** They are what a branch of the category
+  system argues and the colour every figure of the study is drawn in — and they
+  arrived with the seed, worded for the bundled example, editable only by
+  opening `categories.json` in an editor. A study about something else carried
+  two claims it never made into its own coding guide and its own appendix. They
+  can now be worded, coloured, added and dissolved, and a top-level category is
+  put on one where the category is worked on; a subcategory keeps following its
+  parent, because the distinction is drawn under the proposition above it. One
+  cannot be dissolved: „aus dem Erkenntnisinteresse abgeleitet" is what a
+  category falls back to when its heading goes, and something has to be there to
+  fall to.
+
+  **So are the operations a requirement blocks.** Ablage, Abruf and Transfer
+  were three constants compiled into the tool: one study's vocabulary, handed to
+  every other one, on every card, in the export and on the axis of the
+  prioritisation field. A fresh catalog is seeded with them and owns them from
+  then on. An operation that is dissolved comes off every requirement that named
+  it — the field counts blocked operations, and a count including something
+  nobody can see is a count nobody can check — and the interface says how many
+  that will be before it happens.
+
+  **An interview can say something else about itself.** The transcript format
+  has parsed a title and a block of `- Feld: Wert` lines since the first
+  version; they carry the department every cross table is cut by and build the
+  sample table of the paper, and all of it was readable and none of it writable.
+  A department spelled two ways across eighteen folders meant editing the files
+  every citation hangs on. „Kopfdaten des Interviews" writes them back, renames
+  the folder — the codings live in it and travel along — and deletes the
+  interview outright, which is the one place the tool asks first: transcript and
+  codings go together and there is no copy anywhere, which is what the version
+  history beside them is for. Only the header is rewritten. The turns are handed
+  back exactly as they were, so no citation moves.
+
+- **Every saved change says so.** The category panel has confirmed each one
+  since it existed; the requirement card and the coding-unit panel saved in
+  silence. A field that answers nothing looks exactly like a field that did not
+  save, which is very likely why "update is missing" was the impression even
+  where it was not.
 
 - **A new figure in the catalog: which categories a requirement reaches.** The
   catalog could say how *many* categories a requirement rests on and never which
@@ -41,7 +104,111 @@ where it lies.
   category answered only by pale dots is one the catalog has noticed and
   postponed. Fetchable like the others, at `GET /api/figures/requirement-reach.svg`.
 
+### Fixed
+
+- **A key that fits on one line is no longer broken onto two.** The file lays
+  its own key out by arithmetic, and the estimate it measured with runs wide on
+  purpose — which is right for *reserving* room, where too wide is a little
+  unused white and too narrow is a word cut in half, and exactly wrong for
+  *deciding a wrap*, where too wide breaks a line that had room left. The key of
+  the reach figure came to 722 reckoned pixels of a 720-pixel line and went onto
+  two, while the same words measure 640: the interface showed them on one line
+  and the saved file on two, from the same figure at the same moment. The two
+  estimates are now two numbers, and the one that decides whether something fits
+  is held to what the font really does.
+
+- **What the save button writes and what the endpoint answers are one file
+  again.** They call the same drawing code — that is the whole point of the
+  arrangement — but the button handed the layout the browser's real measurement
+  of the text and the endpoint an estimate. Only the key is laid out that way,
+  and only its wrapping depends on it, so a key near the width of the figure
+  wrapped in one file and not in the other: „Punktgröße in Belegen" on the
+  second line here and on the first there, from the same study at the same
+  moment. Both estimate now. A few pixels of unused white space in a key is the
+  cheapest thing in the tool to give up for a figure that is one figure.
+
+  The heatmap stays the exception, and says so: it is the one figure whose own
+  layout depends on how wide its headings really are, so in the browser it
+  measures them and grows its foot to fit. Which turned up the second half of
+  this — the estimate it falls back to was taken for the safe side and is not:
+  a heading of umlauts and wide letters came out four pixels past what it
+  reserved, and the browser grew the drawing to catch it while the endpoint cut
+  the tail off. The estimate now reserves a margin, in both angled-heading
+  figures.
+
+- **The city plot can be fetched like every other figure**, at
+  `GET /api/figures/catalog-city.svg`. It was on the screen and nowhere else —
+  the one figure a report had to screenshot.
+
+- **The MoSCoW key holds the levels a figure actually draws.** The prioritised
+  field, the reach figure and the city listed all five whatever they held, so a
+  catalog in which nothing had been postponed still carried „Won't have" in its
+  key — a colour to hunt for that is not on the picture, and a quiet suggestion
+  that something had been postponed. The band of the distribution has dropped
+  its empty levels from the beginning; it is built from counts and could hardly
+  do otherwise. The other three now say the same thing the ring in the reach
+  figure already said: a key entry for something not drawn is worse than none.
+
+- **A column heading in the reach figure is written whole, over as many lines
+  as it needs.** The headings run down and to the left at forty-five degrees,
+  so a heading costs height by its width, and the longest category name in a
+  study decided how much white space every other column stood in. That was
+  answered by cutting: measured once for the narrowest place, applied to every
+  column, and a thirty-four-character ceiling on top — so „Erwartung &
+  Vertrauen in KI-Inhal…" was cut in a column with room for twice that. It is
+  wrapped now, and what is shortened is a line rather than the name.
+
+  Two lines, and the line is widened until they are enough — a fixed line width
+  broke that name into three, and three short lines are a stack rather than a
+  label: harder to read than two long ones, and they buy almost no height,
+  because every line after the first is offset down the slope again. A third
+  line is the last resort before anything is shortened, and shortening the last
+  resort of all.
+
+- **The key of a saved figure no longer breaks a scale in two.** On screen the
+  key is HTML and the browser wraps it; in the file there is nobody to ask, so
+  it is measured by estimate and wrapped by arithmetic — and with a full key
+  that arithmetic put the small dot of the size scale at the right edge of the
+  first line and the large one alone at the left of the second. Two ends of one
+  scale, read as two scales. Entries that are one statement now wrap as one, in
+  the file and in the browser alike. It never showed on screen, which is why it
+  went unnoticed until somebody put the figure in a document.
+
+- **The dots of the reach figure and the towers of the city show their
+  tooltips.** Both carry one on every mark and both light up under the mouse —
+  they have a `:hover` rule — and neither said a word: the tip is written where
+  the mark is drawn and the mouse was wired to it by a list of class names three
+  hundred lines away, which the two newest figures were never added to. A mark
+  that reacts to the mouse and then withholds the number is worse than one that
+  ignores it. Anything carrying a tip is hoverable now, and the suite checks
+  that as a rule rather than figure by figure, so the next one cannot fall out
+  of it.
+
 ### Changed
+
+- **The catalog figures take the order the catalog already has, on both axes.**
+  The reach figure sorted itself: rows by how many categories they reach, then
+  columns by where their topmost dot sat. It made a staircase one could read
+  groups off, and it cost more than it was worth — the same twenty requirements
+  stood in one order in the list of cards, in another in the figure and in a
+  third in the export, so finding a requirement in the list and then in the
+  picture was a hunt.
+
+  The rows are the catalog's own order now: grouped by MoSCoW level, and inside
+  a level the requirement more departments name first. That is what
+  `/api/requirements` answers, what the cards show and what the export writes.
+
+  The columns are the interview guide's: the deductive system as its author
+  built it, and behind it what the material added. What is appended is what
+  stands on its own — a category *under* a start category is a distinction
+  inside that branch and stays where the branch is, because moving it to the end
+  would separate it from the thing it subdivides. Its own subcategories travel
+  with it: a category is judged by the branch it sits in, not by itself.
+
+  What is given up: the staircase. Which requirements keep turning up in the
+  same company is no longer legible from the shape of the figure. It is still in
+  it dot by dot, and the count under each column still says which categories the
+  catalog has not answered.
 
 - **The heatmap wraps its row labels** instead of cutting them at thirty
   characters. It was the last chart doing that, directly under one that wraps

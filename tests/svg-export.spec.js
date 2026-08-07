@@ -111,7 +111,7 @@ test.afterAll(() => {
 });
 
 /** Click the save button and read back the file that came out. */
-async function saved(page, id) {
+async function savedFile(page, id) {
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     page.locator(`[data-svg="${id}"]`).click(),
@@ -148,7 +148,7 @@ for (const [what, id] of CHARTS) {
       [id, VISUAL],
     );
 
-    const file = await saved(page, id);
+    const file = await savedFile(page, id);
     /* Nothing may be left pointing at a stylesheet that is not there. A custom
        property in a saved file resolves to nothing at all outside the page. */
     expect(file, "no custom property survives into the file").not.toContain("var(--");
@@ -198,12 +198,84 @@ for (const [what, id] of CHARTS) {
   });
 }
 
+/**
+ * One figure, one file, whichever door it comes out of.
+ *
+ * The button and the endpoint call the same drawing code, which is the whole
+ * point of the arrangement — "what a reader saves from the screen and what a
+ * script fetches from the endpoint are the same picture, not two that happen to
+ * agree". They were not the same file. The button handed the layout the
+ * browser's real measurement of the text and the endpoint an estimate, and
+ * although only the key is laid out that way, a key near the width of the
+ * figure wrapped in one file and not in the other. A reader who saves a figure
+ * and a script that fetches it must not have to compare them.
+ *
+ * The theme, the language and the moment are the caller's, so they are held
+ * level here; everything else has to come out identical, byte for byte.
+ */
+test("what the button saves is what the endpoint answers", async ({ page, request }) => {
+  /* The heatmap is not in this list, and it is the exception that proves the
+     arrangement: it is the one figure whose own layout depends on how wide its
+     headings really are, so in the browser it measures them and grows its foot
+     to fit. The endpoint cannot ask a font anything and reserves a margin
+     instead. The two agree on every mark and may differ by a few pixels of
+     white space under the last heading. */
+  const files = {
+    chart: "coding-units-per-category",
+    saturation: "saturation",
+  };
+  await page.goto("/?lang=de");
+  await page.locator('.tab[data-view="analysis"]').click();
+  await expect(page.locator("#chart svg")).toBeVisible();
+
+  for (const [id, name] of Object.entries(files)) {
+    const saved = await savedFile(page, id);
+    const fetched = await (await request.get(`/api/figures/${name}.svg?lang=de`)).text();
+    expect(saved, `${name} comes out the same either way`).toBe(fetched);
+  }
+});
+
+test("and the same for the figures of the catalog", async ({ page, request }) => {
+  const files = {
+    coverage: "citations-per-requirement",
+    reach: "requirement-reach",
+    city: "catalog-city",
+  };
+  // A catalog to draw: two requirements, each carrying citations.
+  const made = [];
+  for (const title of ["Eine Suche über alle Interviews", "Ablage nach Vorgang"]) {
+    made.push(await (await request.post("/api/requirements", { data: { title } })).json());
+  }
+  let at = 0;
+  for (const one of await (await request.get("/api/interviews")).json()) {
+    const data = await (await request.get(`/api/interviews/${one.id}`)).json();
+    for (const coding of data.codings) {
+      await request.patch(`/api/interviews/${one.id}/codings/${coding.id}`, {
+        data: { requirements: [made[at % made.length].id] },
+      });
+      at += 1;
+    }
+  }
+
+  await page.goto("/?lang=de");
+  await page.locator('.tab[data-view="catalog"]').click();
+  await expect(page.locator("#reach svg")).toBeVisible();
+
+  for (const [id, name] of Object.entries(files)) {
+    const saved = await savedFile(page, id);
+    const fetched = await (await request.get(`/api/figures/${name}.svg?lang=de`)).text();
+    expect(saved, `${name} comes out the same either way`).toBe(fetched);
+  }
+
+  for (const requirement of made) await request.delete(`/api/requirements/${requirement.id}`);
+});
+
 test("a saved chart carries its key and its ground", async ({ page }) => {
   await page.goto("/?lang=de");
   await page.locator('.tab[data-view="analysis"]').click();
   await expect(page.locator("#chart svg")).toBeVisible();
 
-  const file = await saved(page, "chart");
+  const file = await savedFile(page, "chart");
   const alone = await page.context().newPage();
   await alone.setContent(file, { waitUntil: "load" });
 
@@ -235,7 +307,7 @@ test("the dark theme is saved dark, and stays readable", async ({ page }) => {
   await page.locator('.tab[data-view="analysis"]').click();
   await expect(page.locator("#chart svg")).toBeVisible();
 
-  const file = await saved(page, "chart");
+  const file = await savedFile(page, "chart");
   const alone = await page.context().newPage();
   await alone.setContent(file, { waitUntil: "load" });
 

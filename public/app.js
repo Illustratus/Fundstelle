@@ -96,6 +96,9 @@ const state = {
   ruleDraft: new Map(),
   requirements: [],
   moscow: [],
+  // The operations a requirement can be judged to block. The study's own
+  // vocabulary, seeded with three and the author's from then on.
+  operations: [],
   categoryRows: [],
   departments: [],
   // The specification behind each figure on screen, so the save button has the
@@ -123,6 +126,9 @@ const state = {
   // to several screens, and the counts above it say how many are still
   // undecided without offering any way to reach them.
   catalogFilter: { open: false, unsupported: false, unreviewed: false },
+  // The catalog is rebuilt whole on every change, so whether the vocabulary of
+  // blocked operations stands open has to be remembered outside the markup.
+  operationsOpen: false,
   noteFilter: "",
   noteKind: "",
   noteCategory: "",
@@ -216,6 +222,20 @@ function withoutTimestamps(text) {
 
 const categoryById = (id) => state.categories.find((category) => category.id === id);
 
+/**
+ * Is somebody writing inside this part of the screen?
+ *
+ * Everything here redraws everything, and a redraw replaces the markup — so a
+ * field with a half-typed sentence in it is thrown away by a coding unit
+ * confirmed somewhere else. Only a field counts: a button that has just been
+ * pressed also holds the focus, and skipping the redraw there would leave the
+ * row it just deleted standing on the screen.
+ */
+function beingTypedIn(where) {
+  const focused = document.activeElement;
+  return Boolean(focused?.matches?.("input, textarea") && focused.closest(where));
+}
+
 function colorOf(categoryId) {
   const category = categoryById(categoryId);
   const proposition = state.propositions[category?.proposition ?? "none"];
@@ -234,6 +254,7 @@ async function loadRequirements() {
   const data = await api("/api/requirements");
   state.requirements = data.requirements;
   state.moscow = data.moscow;
+  state.operations = data.operations;
   state.departments = data.departments;
 }
 
@@ -783,7 +804,17 @@ function drawSections() {
   // Searching a transcript that is not there is a control with nothing behind
   // it, and the first screen is a poor place to learn that some are.
   $(".search-bar").hidden = !state.transcript;
-  if (!state.transcript) return (list.innerHTML = "");
+  if (!state.transcript) {
+    /* Nothing open: after the last interview was taken out of the study, the
+       column would otherwise go on describing it — its sections, its counts,
+       the lines out of its header — beside a screen that says there is nothing
+       here yet. */
+    list.innerHTML = "";
+    $("#status").innerHTML = "";
+    $("#interview-meta").innerHTML = "";
+    $("#interview-meta").hidden = true;
+    return;
+  }
 
   /* A transcript that carries no guide sections is the ordinary case for one
      that came out of a recording — the sections belong to the interview guide,
@@ -890,6 +921,98 @@ function drawSections() {
   if (document.activeElement !== note) note.value = state.transcript.memo ?? "";
 }
 
+/* What the interview says about itself -------------------------------------
+   Title, department and the header lines. All three have been read since the
+   first version and shown ever since; none of them could be written. Correcting
+   a department spelled two ways meant leaving the tool and editing the file the
+   citations hang on, which is the one file nobody wants to open by hand. */
+
+function drawAbout() {
+  const form = $("#about-form");
+  if (!state.transcript) {
+    form.innerHTML = "";
+    return;
+  }
+  if (beingTypedIn("#about-form")) return;
+  const entries = Object.entries(state.transcript.meta ?? {});
+  const field = (label, id, value, note = "") =>
+    `<label class="field"><span class="field-label">${label}</span>` +
+    `<input type="text" data-about="${id}" value="${escapeHTML(value ?? "")}" autocomplete="off"></label>` +
+    (note ? `<p class="column-note">${note}</p>` : "");
+
+  form.innerHTML =
+    field(t("fieldTitle"), "title", state.transcript.title) +
+    field(t("fieldDepartment"), "department", state.transcript.department, t("departmentNote")) +
+    `<span class="field-label">${t("headerLines")}</span>` +
+    `<div class="meta-lines">` +
+    entries
+      .map(
+        ([key, value]) =>
+          `<div class="meta-line">` +
+          `<input type="text" data-meta-key value="${escapeHTML(key)}"` +
+          ` aria-label="${escapeHTML(t("headerFieldAria"))}">` +
+          `<input type="text" data-meta-value value="${escapeHTML(value)}"` +
+          ` aria-label="${escapeHTML(t("headerValueAria"))}">` +
+          `<button type="button" class="button-quiet remove" data-meta-remove` +
+          ` title="${escapeHTML(t("headerRemoveTitle"))}"` +
+          ` aria-label="${escapeHTML(t("headerRemoveAria", { field: key }))}">×</button></div>`,
+      )
+      .join("") +
+    `</div>` +
+    `<form id="meta-new">` +
+    `<input type="text" id="meta-new-key" autocomplete="off" placeholder="${escapeHTML(t("headerFieldPlaceholder"))}"` +
+    ` aria-label="${escapeHTML(t("headerFieldAria"))}">` +
+    `<input type="text" id="meta-new-value" autocomplete="off" placeholder="${escapeHTML(t("headerValuePlaceholder"))}"` +
+    ` aria-label="${escapeHTML(t("headerValueAria"))}">` +
+    `<button type="submit" class="button-quiet">＋</button></form>` +
+    /* The folder name is the identifier: it stands in the coding file beside
+       the transcript, in every export and in the git history. It is made from a
+       working title at the moment one knows least about the study. */
+    `<label class="field"><span class="field-label">${t("fieldFolder")}</span>` +
+    `<input type="text" id="about-folder" value="${escapeHTML(state.transcript.id)}" autocomplete="off"></label>` +
+    `<p class="column-note">${t("folderNote")}</p>` +
+    `<button type="button" class="button-quiet" id="about-rename">${t("renameFolder")}</button>` +
+    `<button type="button" class="button-quiet remove" id="about-remove">${t("removeInterview")}</button>`;
+}
+
+/** Write the header back and take the answer as the new truth about it. */
+async function updateAbout(fields, message) {
+  try {
+    const answer = await api(`/api/interviews/${encodeURIComponent(state.current)}`, {
+      method: "PATCH",
+      body: fields,
+    });
+    Object.assign(state.transcript, {
+      title: answer.title ?? state.transcript.title,
+      department: answer.department ?? state.transcript.department,
+      meta: answer.meta ?? state.transcript.meta,
+    });
+    await loadInterviewList();
+    drawAll();
+    notify(message);
+  } catch (error) {
+    // Back to what the file says, so a field does not keep showing what was
+    // not saved.
+    await loadTranscript();
+    drawAll();
+    complain(error);
+  }
+}
+
+/**
+ * The list of interviews again, without losing which one is open.
+ *
+ * `loadInterviews` picks a current interview, which is right at startup and
+ * wrong afterwards: a title changed in the header would have sent the reader
+ * back to the first interview in the study.
+ */
+async function loadInterviewList() {
+  const here = state.current;
+  state.interviews = await api("/api/interviews");
+  state.current = here;
+  drawInterviewList();
+}
+
 /* Categories ------------------------------------------------------------- */
 
 function countCategory(id) {
@@ -988,6 +1111,24 @@ function categoryDetail(category) {
           .join("") +
         `</select></label>`
       : "") +
+    /* Which proposition the category argues — the one thing about it that
+       decides how it is coloured in every figure. A subcategory takes its
+       parent's and says so instead of offering a choice that would be refused:
+       the distinction is drawn under the proposition standing above it. */
+    (category.parent
+      ? `<p class="column-note">` +
+        `${t("propositionFromParent", { name: propositionName(category.proposition) })}</p>`
+      : `<label class="field"><span class="field-label">${t("fieldProposition")}</span>` +
+        `<select data-category-proposition="${id}">` +
+        Object.entries(state.propositions)
+          .map(
+            ([key, proposition]) =>
+              `<option value="${escapeHTML(key)}"` +
+              `${key === (category.proposition ?? NO_PROPOSITION) ? " selected" : ""}>` +
+              `${escapeHTML(proposition.name ?? key)}</option>`,
+          )
+          .join("") +
+        `</select></label>`) +
     `<label class="field"><span class="field-label">${t("fieldDefinition")}</span>` +
     `<textarea rows="4" data-definition="${id}" aria-label="${escapeHTML(t("definitionAria", { name: category.name ?? "" }))}"` +
     ` placeholder="${escapeHTML(t("definitionPlaceholder"))}">${escapeHTML(category.definition ?? "")}</textarea></label>` +
@@ -1214,7 +1355,72 @@ async function showPassage(interview, id) {
   else notify(t("passageNotVisible"), "error");
 }
 
+/* Propositions ------------------------------------------------------------
+   The colour key of the whole study, and until now the one thing in the
+   category system that could only be changed by editing the file the tool
+   writes. A study whose research interest is not the bundled example's carried
+   two headings it never made — into every figure, and into the appendix. */
+
+/**
+ * The fallback: where a category lands that argues none of the study's own
+ * propositions. It can be worded and coloured like any other and cannot be
+ * dissolved, because something has to be there to land on.
+ */
+const NO_PROPOSITION = "none";
+
+const propositionName = (id) =>
+  state.propositions[id ?? NO_PROPOSITION]?.name ?? state.propositions[NO_PROPOSITION]?.name ?? "";
+
+function drawPropositions() {
+  // A redraw while a wording is being typed would pull the field away, and
+  // everything in the tool redraws everything: one confirmed coding unit
+  // elsewhere and the sentence in hand is gone. Only a field being written in
+  // is protected — a button that has just been pressed wants its redraw.
+  if (beingTypedIn("#propositions")) return;
+  const used = new Map();
+  for (const category of state.categories) {
+    const id = category.proposition ?? NO_PROPOSITION;
+    used.set(id, (used.get(id) ?? 0) + 1);
+  }
+  $("#propositions").innerHTML = Object.entries(state.propositions)
+    .map(([id, proposition]) => {
+      const count = used.get(id) ?? 0;
+      return (
+        `<div class="proposition" data-proposition="${escapeHTML(id)}">` +
+        `<input type="color" data-proposition-color value="${escapeHTML(proposition.color ?? NEUTRAL_COLOR)}"` +
+        ` aria-label="${escapeHTML(t("propositionColorOf", { name: proposition.name ?? id }))}">` +
+        `<input type="text" data-proposition-name value="${escapeHTML(proposition.name ?? id)}"` +
+        ` aria-label="${escapeHTML(t("propositionNameAria"))}">` +
+        `<span class="count">${count}</span>` +
+        // Dissolving takes the heading away and leaves the categories; the
+        // fallback is what they fall to, so it has no such button.
+        (id === NO_PROPOSITION
+          ? ""
+          : `<button type="button" class="button-quiet remove" data-proposition-remove` +
+            ` title="${escapeHTML(t("propositionRemoveTitle"))}"` +
+            ` aria-label="${escapeHTML(t("propositionRemoveAria", { name: proposition.name ?? id }))}">×</button>`) +
+        `</div>`
+      );
+    })
+    .join("");
+}
+
+/** Save a change to a proposition and redraw: it is a colour in every figure. */
+async function updateProposition(id, fields, message) {
+  try {
+    await api(`/api/propositions/${encodeURIComponent(id)}`, { method: "PATCH", body: fields });
+    await loadCategories();
+    drawAll();
+    notify(message);
+  } catch (error) {
+    await loadCategories();
+    drawAll();
+    complain(error);
+  }
+}
+
 function drawCategories() {
+  drawPropositions();
   const list = $("#categories");
   // Whoever is typing a rule while the previous one is being saved should not
   // fall out of the field.
@@ -1301,6 +1507,17 @@ function drawDetail() {
     `<label><input type="checkbox" id="detail-reviewed"${coding.reviewed === true ? " checked" : ""}> ${t("reviewed")}</label>` +
     `<button type="button" class="button-quiet remove" id="detail-remove">${t("delete")}</button>` +
     `</div>` +
+    /* Where the unit sits, changeable. A citation that begins one sentence too
+       early was a delete and a fresh coding — which threw away the note on it,
+       the anchor-example mark and every requirement it was evidence for, and
+       the passage most likely to need cutting again is the one that has just
+       been worked on. The move already existed for a unit that had lost its
+       place after a transcript edit; it was simply never offered for one that
+       still had a place. */
+    (state.reanchoring === coding.id
+      ? `<p class="column-note recutting">${t("recutWaiting")} ` +
+        `<button type="button" class="button-quiet" id="detail-recut-cancel">${t("cancel")}</button></p>`
+      : `<button type="button" class="button-quiet" id="detail-recut">${t("recut")}</button>`) +
     `<div class="cites"><span class="field-label">${t("citesRequirement")}</span>` +
     (state.requirements.length
       ? `<ul>` +
@@ -2477,20 +2694,49 @@ function keyHTML(legend) {
     );
   }
   const classed = legend.kind === "moscow";
+  /* Entries that belong together, wrapped as one. „Punktgröße in Belegen:" and
+     the two dots after it are one statement, and both this key and the one
+     drawn into the saved file used to break between them — a small dot at the
+     end of a line and a large one alone on the next reads as two scales. */
+  const runs = [];
+  for (const entry of legend.entries) {
+    if (entry.keepWith && runs.length) runs[runs.length - 1].push(entry);
+    else runs.push([entry]);
+  }
+
   return (
     `<div class="chart-legend${classed ? " moscow" : ""}">` +
-    legend.entries
-      .map((entry) =>
-        // An outline rather than a colour: the entry is about a shape drawn
-        // around a dot, so the key has to show that shape and not a swatch.
-        entry.shape === "ring"
-          ? `<span class="ring-key"><i></i>${escapeHTML(entry.label)}</span>`
-          : `<span${classed ? ` class="${entry.paint}"` : ""}>` +
-            `<i${classed ? "" : ` class="${entry.paint}"`}></i>${escapeHTML(entry.label)}</span>`,
-      )
+    runs
+      .map((run) => (run.length > 1 ? `<span class="key-run">${run.map(one).join("")}</span>` : one(run[0])))
       .join("") +
     `</div>`
   );
+
+  function one(entry) {
+    // An outline rather than a colour: the entry is about a shape drawn around
+    // a dot, so the key has to show that shape and not a swatch.
+    if (entry.shape === "ring") {
+      return `<span class="ring-key"><i></i>${escapeHTML(entry.label)}</span>`;
+    }
+    /* A size drawn at the size it means. A swatch would say nothing about it,
+       and a number beside a word even less: what the reader has to be able to
+       do is hold the key against the picture. */
+    if (entry.shape === "dot") {
+      const box = Math.ceil(entry.radius * 2);
+      return (
+        `<span class="dot-key"><svg width="${box}" height="${box}"` +
+        ` viewBox="0 0 ${box} ${box}" aria-hidden="true">` +
+        `<circle cx="${box / 2}" cy="${box / 2}" r="${entry.radius.toFixed(2)}"></circle>` +
+        `</svg>${escapeHTML(entry.label)}</span>`
+      );
+    }
+    // A word on its own — what the scale beside it is a scale of.
+    if (!entry.paint) return `<span class="key-note">${escapeHTML(entry.label)}</span>`;
+    return (
+      `<span${classed ? ` class="${entry.paint}"` : ""}>` +
+      `<i${classed ? "" : ` class="${entry.paint}"`}></i>${escapeHTML(entry.label)}</span>`
+    );
+  }
 }
 
 /**
@@ -2598,10 +2844,18 @@ function saveChart(id, file) {
      working it out a second time. */
   const drawn = document.querySelector(`#${id} svg`);
   const height = drawn ? Number(drawn.getAttribute("viewBox").split(/\s+/)[3]) : undefined;
-  const blob = new Blob(
-    [standalone(spec, { theme: currentTheme(), measure: measureText, height })],
-    { type: "image/svg+xml" },
-  );
+  /* Measured by the same arithmetic as the endpoint, although a browser could
+     do better. The key is the one part of a file whose layout is worked out
+     rather than inherited from the body, and handing it the real width of the
+     text here and an estimate there produced two files that were the same
+     picture and not the same file: the same key wrapped in one and not in the
+     other. Which is the promise this whole arrangement is for — what a reader
+     saves from the screen and what a script fetches from the endpoint are one
+     figure. A few pixels of unused white space in a key is the cheapest thing
+     in the tool to give up for it. */
+  const blob = new Blob([standalone(spec, { theme: currentTheme(), height })], {
+    type: "image/svg+xml",
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -3135,6 +3389,9 @@ function fitAngledHeadings(svg) {
 /** Put a coding unit that lost its place onto the selected passage. */
 async function reanchor(selection) {
   const id = state.reanchoring;
+  // A unit that had lost its place is put back; one that had a place is cut
+  // differently. Same request, and two quite different things to be told.
+  const lost = state.codings.find((coding) => coding.id === id)?.state === "lost";
   try {
     const updated = await api(
       `/api/interviews/${encodeURIComponent(state.current)}/codings/${id}`,
@@ -3155,7 +3412,7 @@ async function reanchor(selection) {
     document.getSelection()?.removeAllRanges();
     document.body.classList.remove("anchoring");
     drawAll();
-    notify(t("reanchored"));
+    notify(t(lost ? "reanchored" : "recutDone"));
   } catch (error) {
     complain(error);
   }
@@ -3178,11 +3435,10 @@ async function link(coding, requirementId, on) {
 
 /* Requirements catalog ----------------------------------------------------- */
 
-const OPERATIONS = [
-  { id: "filing", key: "operationFiling" },
-  { id: "retrieval", key: "operationRetrieval" },
-  { id: "transfer", key: "operationTransfer" },
-];
+/* Which operations there are to block is the study's vocabulary and comes with
+   the catalog. It used to be three words compiled into the tool — filing,
+   retrieval, transfer — so a study about something else weighed its
+   requirements against a triple it never chose. */
 
 const MOSCOW_ORDER = ["must", "should", "could", "wont"];
 
@@ -3226,7 +3482,7 @@ function catalogFiguresHTML(rows, departments) {
 
      The third counts citations, which exist from the first one, so it stays. */
   const judged = rows.some((row) => row.moscow || (row.blockedOperations ?? []).length);
-  const shared = { moscow: state.moscow, operationCount: OPERATIONS.length };
+  const shared = { moscow: state.moscow, operationCount: state.operations.length };
   const charts =
     (judged
       ? chartHTML(moscowBand(rows, t, shared)) +
@@ -3259,6 +3515,49 @@ async function drawCatalogCharts() {
   if (counts) counts.innerHTML = catalogMetricsHTML(state.requirements);
 }
 
+/**
+ * The operations a requirement is judged to block, as a list one can work on.
+ *
+ * Folded away, because it is the sort of thing settled once for a study and
+ * then left alone — but reachable, which it was not: the three the tool seeds
+ * are named after one study's filing, retrieval and transfer, and a study about
+ * something else had to weigh its requirements against them anyway. The number
+ * beside each says how many requirements name it, so that dissolving one is a
+ * decision made with the size of it in view.
+ */
+function operationsHTML() {
+  const used = new Map();
+  for (const requirement of state.requirements) {
+    for (const id of requirement.blockedOperations ?? []) {
+      used.set(id, (used.get(id) ?? 0) + 1);
+    }
+  }
+  return (
+    `<details class="operations" id="operations-shell"${state.operationsOpen ? " open" : ""}>` +
+    `<summary>${t("operationsSummary", { n: state.operations.length })}</summary>` +
+    `<p class="column-note">${t("operationsNote")}</p>` +
+    state.operations
+      .map(
+        (operation) =>
+          `<div class="operation" data-operation="${escapeHTML(operation.id)}">` +
+          `<input type="text" data-operation-name value="${escapeHTML(operation.name)}"` +
+          ` aria-label="${escapeHTML(t("operationNameAria"))}">` +
+          `<span class="count">${used.get(operation.id) ?? 0}</span>` +
+          `<button type="button" class="button-quiet remove" data-operation-remove` +
+          ` title="${escapeHTML(t("operationRemoveTitle"))}"` +
+          ` aria-label="${escapeHTML(t("operationRemoveAria", { name: operation.name }))}">×</button>` +
+          `</div>`,
+      )
+      .join("") +
+    `<form id="operation-new">` +
+    `<input type="text" id="operation-name" autocomplete="off"` +
+    ` placeholder="${escapeHTML(t("operationPlaceholder"))}"` +
+    ` aria-label="${escapeHTML(t("operationNewAria"))}">` +
+    `<button type="submit" class="button-quiet">＋</button></form>` +
+    `</details>`
+  );
+}
+
 async function drawCatalog() {
   await Promise.all([loadRequirements(), loadCategoryRows()]);
   const root = $("#catalog");
@@ -3269,7 +3568,8 @@ async function drawCatalog() {
     `<form class="new-requirement" id="new-requirement">` +
     `<input type="text" id="new-requirement-title" placeholder="${escapeHTML(t("requirementSentencePlaceholder"))}"` +
     ` aria-label="${escapeHTML(t("requirementTitleAria"))}" autocomplete="off">` +
-    `<button type="submit" class="button">${t("add")}</button></form>`;
+    `<button type="submit" class="button">${t("add")}</button></form>` +
+    operationsHTML();
 
   if (!state.requirements.length) {
     root.innerHTML = head + `<p class="empty-state">${t("catalogEmpty")}</p>`;
@@ -3311,11 +3611,14 @@ async function drawCatalog() {
             `<option value="${level.id}"${requirement.moscow === level.id ? " selected" : ""}>${level.name}</option>`,
         )
         .join("");
-      const operations = OPERATIONS.map(
-        (operation) =>
-          `<label><input type="checkbox" data-blocked="${operation.id}"` +
-          `${(requirement.blockedOperations ?? []).includes(operation.id) ? " checked" : ""}> ${t(operation.key)}</label>`,
-      ).join("");
+      const operations = state.operations
+        .map(
+          (operation) =>
+            `<label><input type="checkbox" data-blocked="${escapeHTML(operation.id)}"` +
+            `${(requirement.blockedOperations ?? []).includes(operation.id) ? " checked" : ""}> ` +
+            `${escapeHTML(operation.name)}</label>`,
+        )
+        .join("");
       const categories = requirement.categories
         .map(
           (category) =>
@@ -3643,6 +3946,7 @@ function drawAll() {
   drawTranscriptProblems();
   drawDrift();
   drawSections();
+  drawAbout();
   drawCategories();
   drawDetail();
   // The picker carries a count, and a count that is only right until the next
@@ -3865,6 +4169,9 @@ function connectEvents() {
       if (state.reanchoring) {
         state.reanchoring = null;
         document.body.classList.remove("anchoring");
+        // The detail panel is showing that it is waiting for a passage; taking
+        // that back has to take the sentence back with it.
+        drawDetail();
         return notify(t("reanchorCancelled"));
       }
       if (state.selection) {
@@ -4085,6 +4392,20 @@ function connectEvents() {
     const parent = event.target.closest("[data-category-parent]");
     if (parent) return subordinateCategory(parent.dataset.categoryParent, parent.value);
 
+    const proposition = event.target.closest("[data-category-proposition]");
+    if (proposition) {
+      const category = categoryById(proposition.dataset.categoryProposition);
+      if ((category.proposition ?? NO_PROPOSITION) === proposition.value) return;
+      return updateCategory(
+        category.id,
+        { proposition: proposition.value },
+        t("categoryNowArgues", {
+          name: category.name,
+          proposition: propositionName(proposition.value),
+        }),
+      );
+    }
+
     const rule = event.target.closest("[data-rule-text]");
     if (rule) {
       const index = Number(rule.dataset.index);
@@ -4101,6 +4422,159 @@ function connectEvents() {
         },
         value.trim() ? t("ruleChanged") : t("emptyRuleRemoved"),
       );
+    }
+  });
+
+  /* The interview's own description. Everything here writes the header of the
+     transcript and nothing writes its turns, so no citation moves. */
+  const about = $("#about-form");
+
+  const metaFromForm = () =>
+    Object.fromEntries(
+      [...about.querySelectorAll(".meta-line")]
+        .map((line) => [
+          line.querySelector("[data-meta-key]").value.trim(),
+          line.querySelector("[data-meta-value]").value.trim(),
+        ])
+        .filter(([key, value]) => key && value),
+    );
+
+  about.addEventListener("change", (event) => {
+    const line = event.target.closest(".meta-line");
+    if (line) return updateAbout({ meta: metaFromForm() }, t("headerSaved"));
+    const which = event.target.dataset?.about;
+    if (which === "title") {
+      const title = event.target.value.trim();
+      if (!title || title === state.transcript.title) return drawAbout();
+      return updateAbout({ title }, t("interviewRenamed", { title }));
+    }
+    if (which === "department") {
+      const department = event.target.value.trim();
+      if (!department || department === state.transcript.department) return drawAbout();
+      return updateAbout({ department }, t("departmentSet", { department }));
+    }
+  });
+
+  about.addEventListener("submit", (event) => {
+    if (event.target.id !== "meta-new") return;
+    event.preventDefault();
+    const key = $("#meta-new-key").value.trim();
+    const value = $("#meta-new-value").value.trim();
+    if (!key || !value) return;
+    updateAbout({ meta: { ...metaFromForm(), [key]: value } }, t("headerSaved"));
+  });
+
+  about.addEventListener("click", async (event) => {
+    if (event.target.closest("[data-meta-remove]")) {
+      const line = event.target.closest(".meta-line");
+      const key = line.querySelector("[data-meta-key]").value.trim();
+      line.remove();
+      return updateAbout({ meta: metaFromForm() }, t("headerRemoved", { field: key }));
+    }
+
+    if (event.target.id === "about-rename") {
+      const wanted = $("#about-folder").value.trim();
+      if (!wanted || wanted === state.current) return;
+      try {
+        const moved = await api(
+          `/api/interviews/${encodeURIComponent(state.current)}/rename`,
+          { method: "POST", body: { to: wanted } },
+        );
+        // Everything that remembers where one was is keyed by the folder name,
+        // so the reading position moves along rather than pointing at a folder
+        // that is gone.
+        const position = localStorage.getItem(STORAGE.readingPosition(state.current));
+        localStorage.removeItem(STORAGE.readingPosition(state.current));
+        if (position) localStorage.setItem(STORAGE.readingPosition(moved.id), position);
+        state.current = moved.id;
+        localStorage.setItem(STORAGE.interview, moved.id);
+        await loadInterviewList();
+        $("#interview-choice").value = moved.id;
+        await loadTranscript();
+        drawAll();
+        notify(t("folderRenamed", { folder: moved.id }));
+      } catch (error) {
+        complain(error);
+      }
+      return;
+    }
+
+    if (event.target.id !== "about-remove") return;
+    /* The most destructive thing the tool can be asked to do, and the one place
+       it asks first: transcript and codings go together, and there is no copy
+       anywhere — they are version-controlled beside each other, which is what
+       the folder layout is for and where they can be got back from. */
+    const said = t("removeInterviewConfirm", {
+      title: state.transcript.title,
+      n: state.codings.length,
+    });
+    if (!confirm(said)) return;
+    try {
+      await api(`/api/interviews/${encodeURIComponent(state.current)}`, { method: "DELETE" });
+      const gone = state.current;
+      localStorage.removeItem(STORAGE.readingPosition(gone));
+      state.current = null;
+      state.transcript = null;
+      state.codings = [];
+      await loadInterviews();
+      await loadTranscript();
+      drawAll();
+      notify(t("interviewRemoved", { title: gone }));
+    } catch (error) {
+      complain(error);
+    }
+  });
+
+  const propositions = $("#propositions");
+
+  propositions.addEventListener("change", (event) => {
+    const row = event.target.closest("[data-proposition]");
+    if (!row) return;
+    const id = row.dataset.proposition;
+    const proposition = state.propositions[id];
+    if (!proposition) return;
+    if (event.target.matches("[data-proposition-name]")) {
+      const name = event.target.value.trim();
+      if (!name || name === proposition.name) return drawPropositions();
+      return updateProposition(id, { name }, t("propositionRenamed", { name }));
+    }
+    if (event.target.matches("[data-proposition-color]")) {
+      if (event.target.value === proposition.color) return;
+      return updateProposition(id, { color: event.target.value }, t("propositionRecoloured"));
+    }
+  });
+
+  propositions.addEventListener("click", async (event) => {
+    const remove = event.target.closest("[data-proposition-remove]");
+    if (!remove) return;
+    const id = remove.closest("[data-proposition]").dataset.proposition;
+    const name = state.propositions[id]?.name ?? id;
+    try {
+      await api(`/api/propositions/${encodeURIComponent(id)}`, { method: "DELETE" });
+      await loadCategories();
+      drawAll();
+      notify(t("propositionRemoved", { name }));
+    } catch (error) {
+      complain(error);
+    }
+  });
+
+  $("#proposition-new").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const field = $("#proposition-name");
+    const name = field.value.trim();
+    if (!name) return;
+    try {
+      await api("/api/propositions", {
+        method: "POST",
+        body: { name, color: $("#proposition-color").value },
+      });
+      field.value = "";
+      await loadCategories();
+      drawAll();
+      notify(t("propositionAdded", { name }));
+    } catch (error) {
+      complain(error);
     }
   });
 
@@ -4151,6 +4625,22 @@ function connectEvents() {
   const catalog = $("#catalog");
 
   catalog.addEventListener("submit", async (event) => {
+    if (event.target.id === "operation-new") {
+      event.preventDefault();
+      const field = $("#operation-name");
+      const name = field.value.trim();
+      if (!name) return;
+      try {
+        await api("/api/operations", { method: "POST", body: { name } });
+        field.value = "";
+        state.operationsOpen = true;
+        await drawCatalog();
+        notify(t("operationAdded", { name }));
+      } catch (error) {
+        complain(error);
+      }
+      return;
+    }
     if (event.target.id !== "new-requirement") return;
     event.preventDefault();
     const field = $("#new-requirement-title");
@@ -4166,19 +4656,59 @@ function connectEvents() {
     }
   });
 
+  catalog.addEventListener("toggle", (event) => {
+    if (event.target.id === "operations-shell") state.operationsOpen = event.target.open;
+  }, true);
+
   catalog.addEventListener("change", async (event) => {
+    const operation = event.target.closest("[data-operation]");
+    if (operation && event.target.matches("[data-operation-name]")) {
+      const id = operation.dataset.operation;
+      const name = event.target.value.trim();
+      const before = state.operations.find((one) => one.id === id);
+      if (!name || name === before?.name) return drawCatalog();
+      try {
+        await api(`/api/operations/${encodeURIComponent(id)}`, { method: "PATCH", body: { name } });
+        await drawCatalog();
+        notify(t("operationRenamed", { name }));
+      } catch (error) {
+        complain(error);
+      }
+      return;
+    }
+
     const card = event.target.closest(".requirement");
     if (!card) return;
     const id = card.dataset.id;
     const fields = {};
-    if (event.target.classList.contains("level")) fields.moscow = event.target.value || null;
-    if (event.target.classList.contains("title")) fields.title = event.target.value.trim();
-    if (event.target.classList.contains("definition")) fields.definition = event.target.value;
-    if (event.target.classList.contains("description")) fields.description = event.target.value;
+    let said = t("requirementSaved");
+    if (event.target.classList.contains("level")) {
+      fields.moscow = event.target.value || null;
+      said = t("requirementLevelSet", { level: moscowName(fields.moscow) });
+    }
+    if (event.target.classList.contains("title")) {
+      fields.title = event.target.value.trim();
+      said = t("requirementRenamed", { title: fields.title });
+    }
+    if (event.target.classList.contains("definition")) {
+      fields.definition = event.target.value;
+      said = t("requirementDefinitionSaved");
+    }
+    if (event.target.classList.contains("description")) {
+      fields.description = event.target.value;
+      said = t("noteSaved");
+    }
     if (event.target.dataset.blocked) {
       fields.blockedOperations = [...card.querySelectorAll("[data-blocked]")]
         .filter((box) => box.checked)
         .map((box) => box.dataset.blocked);
+      said = fields.blockedOperations.length
+        ? t("requirementBlocks", {
+            operations: fields.blockedOperations
+              .map((one) => state.operations.find((each) => each.id === one)?.name ?? one)
+              .join(", "),
+          })
+        : t("requirementBlocksNothing");
     }
     if (!Object.keys(fields).length) return;
     try {
@@ -4188,6 +4718,11 @@ function connectEvents() {
       // hand that is still working in them would pull the field away.
       if ("moscow" in fields) await drawCatalog();
       else await drawCatalogCharts();
+      /* Said out loud, because it is the only sign there is. The category panel
+         has confirmed every change since it existed; the catalog saved in
+         silence, and a field that answers nothing looks exactly like a field
+         that did not save. */
+      notify(said);
     } catch (error) {
       complain(error);
     }
@@ -4273,8 +4808,14 @@ function connectEvents() {
     tip.style.top = `${y - frame.top}px`;
   }
 
-  // Tooltips of the charts: follow the mouse over anything that carries one.
-  const HOVERABLE = ".segment, .cell, .point, .moscow-band, .part-swatch, .bar-badge";
+  /* Tooltips of the charts: follow the mouse over anything that carries one.
+     Which is the trouble with this list — a mark carries `data-tip` where it is
+     drawn and is named again here, three hundred lines away, so a new figure
+     hovers and lights up and says nothing. The reach dots and the towers of the
+     city did exactly that: both have a `:hover` rule, so they promised a
+     tooltip and had none. Anything carrying a tip qualifies now; the classes
+     stay only for marks whose tip sits on a parent. */
+  const HOVERABLE = "[data-tip], .segment, .cell, .point, .moscow-band, .part-swatch, .bar-badge";
   for (const view of [$("#analysis"), catalog]) {
     view.addEventListener("mousemove", (event) => {
       const mark = event.target.closest?.(HOVERABLE);
@@ -4358,6 +4899,32 @@ async function copyCitation(id) {
       state.catalogFilter = { open: false, unsupported: false, unreviewed: false };
       return drawCatalog().catch((error) => complain(error));
     }
+    const dissolve = event.target.closest("[data-operation-remove]");
+    if (dissolve) {
+      const row = dissolve.closest("[data-operation]");
+      const id = row.dataset.operation;
+      const name = state.operations.find((one) => one.id === id)?.name ?? id;
+      const used = state.requirements.filter((requirement) =>
+        (requirement.blockedOperations ?? []).includes(id),
+      ).length;
+      /* Asked, and only when there is something to lose: the operation goes off
+         every requirement that names it, and that judgement was made one card
+         at a time. With nothing hanging on it there is nothing to warn about. */
+      if (used && !confirm(t("operationRemoveConfirm", { name, n: used }))) return;
+      try {
+        const gone = await api(`/api/operations/${encodeURIComponent(id)}`, { method: "DELETE" });
+        await drawCatalog();
+        notify(
+          gone.dropped
+            ? t("operationRemovedFrom", { name, n: gone.dropped })
+            : t("operationRemoved", { name }),
+        );
+      } catch (error) {
+        complain(error);
+      }
+      return;
+    }
+
     const merge = event.target.closest("[data-requirement-merge]");
     if (merge) {
       const card = merge.closest(".requirement");
@@ -4402,14 +4969,25 @@ async function copyCitation(id) {
     const coding = state.codings.find((other) => other.id === state.selected);
     if (!coding) return;
     const fields = {};
+    let said = null;
     // Whoever changes the category has decided — the passage is reviewed by it.
     if (event.target.id === "detail-category") {
       fields.category = event.target.value;
       if (coding.reviewed !== true) fields.reviewed = true;
+      said = t("codedAs", { name: categoryById(fields.category)?.name });
     }
-    if (event.target.id === "detail-anchor") fields.anchor = event.target.checked;
-    if (event.target.id === "detail-reviewed") fields.reviewed = event.target.checked;
-    if (event.target.id === "detail-memo") fields.memo = event.target.value;
+    if (event.target.id === "detail-anchor") {
+      fields.anchor = event.target.checked;
+      said = t(fields.anchor ? "anchorSet" : "anchorUnset");
+    }
+    if (event.target.id === "detail-reviewed") {
+      fields.reviewed = event.target.checked;
+      said = t(fields.reviewed ? "unitReviewed" : "unitUnreviewed");
+    }
+    if (event.target.id === "detail-memo") {
+      fields.memo = event.target.value;
+      said = t("noteSaved");
+    }
     if (!Object.keys(fields).length) return;
     try {
       const updated = await api(
@@ -4418,6 +4996,7 @@ async function copyCitation(id) {
       );
       Object.assign(coding, updated);
       drawAll();
+      if (said) notify(said);
     } catch (error) {
       complain(error);
     }
@@ -4445,8 +5024,26 @@ async function copyCitation(id) {
     const box = event.target.closest("[data-requirement]");
     if (box) {
       const coding = state.codings.find((other) => other.id === state.selected);
-      if (coding) await link(coding, box.dataset.requirement, box.checked);
-      return;
+      if (!coding) return;
+      await link(coding, box.dataset.requirement, box.checked);
+      const requirement = state.requirements.find((one) => one.id === box.dataset.requirement);
+      return notify(
+        t(box.checked ? "citationLinked" : "citationUnlinked", { title: requirement?.title ?? "" }),
+      );
+    }
+    // The same move the drift panel offers for a unit that lost its place, from
+    // the unit that still has one: mark the passage it should have instead.
+    if (event.target.id === "detail-recut") {
+      state.reanchoring = state.selected;
+      document.body.classList.add("anchoring");
+      drawDetail();
+      return notify(t("recutMark"));
+    }
+    if (event.target.id === "detail-recut-cancel") {
+      state.reanchoring = null;
+      document.body.classList.remove("anchoring");
+      drawDetail();
+      return notify(t("reanchorCancelled"));
     }
     if (event.target.id !== "detail-remove") return;
     await removeCoding(state.selected);
