@@ -6,7 +6,7 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.8.0 — 2026-08-07
 
 ### Upgrading
 
@@ -73,142 +73,97 @@ lies, as every earlier shape still is.
   save, which is very likely why "update is missing" was the impression even
   where it was not.
 
-- **A new figure in the catalog: which categories a requirement reaches.** The
+- **Two new figures in the catalog, and they are one matrix drawn twice.** The
   catalog could say how *many* categories a requirement rests on and never which
   ones, and the number is the less useful half — "touches four categories" does
   not tell anybody what changes if the requirement is met.
 
-  A grid of dots rather than of cells: a requirement rests on a handful of a
-  study's categories, so the honest picture is mostly empty, and a heatmap of
-  mostly-empty boxes reads as a wall with something wrong in it. It is meant to
-  be read both ways. Across a row: meet this requirement, and these are the
-  categories it speaks to. Down a column: this is what people said, and these
-  are the requirements that would answer it — and **a column with nothing in it
-  is a category the catalog has not turned into anything yet**, which is the
-  finding worth having. The count under each column says so as a number, and the
-  name of an unreached category is set quietly so the eye finds it.
+  **Which categories a requirement reaches** draws that as a grid of dots rather
+  than of cells: a requirement rests on a handful of a study's categories, so
+  the honest picture is mostly empty, and a heatmap of mostly-empty boxes reads
+  as a wall with something wrong in it. It is meant to be read both ways. Across
+  a row: meet this requirement, and these are the categories it speaks to. Down
+  a column: this is what people said, and these are the requirements that would
+  answer it — and **a column with nothing in it is a category the catalog has
+  not turned into anything yet**, which is the finding worth having. The count
+  under each column says so as a number, and the name of an unreached category
+  is set quietly so the eye finds it.
 
-  **Sorted so the structure shows.** Rows run widest reach first, so the top of
-  the figure is what a study turns on and the bottom is what is local; the
-  columns then follow the rows, which puts requirements sharing categories side
-  by side and makes the picture a staircase whose breaks are groups. A matrix
-  holds what it holds in any order and shows shape in only one of them, and
-  catalog order was not it.
+  **The city plot** is the same matrix in three dimensions: the towers stand on
+  a lattice of categories and requirements and rise with the citations in their
+  cell. It carries what the flat figure carries, mark for mark — the same cells
+  with the same numbers, the same counts at both edges, the same table
+  underneath — and pays for the third dimension in the one way that cannot be
+  drawn away: a tall tower in front hides what stands behind it, which its
+  caption says.
+
+  **A dot counts the coding units that cite this requirement and sit in this
+  category.** One unit, one category — but a citation can carry several
+  requirements and then stands in several rows, which is the thing about the
+  figure most easily misread, so the caption says it and the key carries the two
+  ends of the size scale drawn at the size they mean.
 
   **A circled dot is the only requirement carrying that category** — drop it and
   nothing in the catalog answers what people said there any more. That is what
   keeps reach from being read as importance on its own: a requirement touching
   one category can be the single thing holding it.
 
-  Dot size is citations, dot colour is the requirement's MoSCoW level, so a
-  category answered only by pale dots is one the catalog has noticed and
-  postponed. Fetchable like the others, at `GET /api/figures/requirement-reach.svg`.
+  **Both axes take an order that already exists elsewhere in the tool.** The
+  rows are the catalog's own: grouped by MoSCoW level, and inside a level the
+  requirement more departments name first — what `/api/requirements` answers,
+  what the cards show, what the export writes. The columns are the interview
+  guide's: the deductive system as its author built it, and behind it what the
+  material added. What is appended is what stands on its own; a category *under*
+  a start category is a distinction inside that branch and stays where the
+  branch is. A figure that sorted itself would have put the same requirement in
+  one place in the list and another in the picture.
+
+  Both are fetchable like every other figure, at
+  `GET /api/figures/requirement-reach.svg` and `/api/figures/catalog-city.svg`.
 
 ### Fixed
 
-- **A key that fits on one line is no longer broken onto two.** The file lays
-  its own key out by arithmetic, and the estimate it measured with runs wide on
-  purpose — which is right for *reserving* room, where too wide is a little
-  unused white and too narrow is a word cut in half, and exactly wrong for
-  *deciding a wrap*, where too wide breaks a line that had room left. The key of
-  the reach figure came to 722 reckoned pixels of a 720-pixel line and went onto
-  two, while the same words measure 640: the interface showed them on one line
-  and the saved file on two, from the same figure at the same moment. The two
-  estimates are now two numbers, and the one that decides whether something fits
-  is held to what the font really does.
+- **A key that fits on one line is no longer broken onto two.** A saved figure
+  lays its own key out by arithmetic, and the estimate it measures with runs
+  wide on purpose — which is right for *reserving* room, where too wide is a
+  little unused white and too narrow is a word cut in half, and exactly wrong
+  for *deciding a wrap*, where too wide breaks a line that had room left. One
+  key came to 722 reckoned pixels of a 720-pixel line and went onto two, while
+  the same words measure 640: the interface showed them on one line and the
+  saved file on two, from the same figure at the same moment. The two estimates
+  are now two numbers, and the one that decides whether something fits is held
+  to what the font really does.
+
+  And where a key does have to wrap, it no longer breaks a scale in two. The
+  entries that are one statement — a label and the ends of the scale it belongs
+  to — wrap as one, in the file and in the browser alike.
 
 - **What the save button writes and what the endpoint answers are one file
   again.** They call the same drawing code — that is the whole point of the
   arrangement — but the button handed the layout the browser's real measurement
   of the text and the endpoint an estimate. Only the key is laid out that way,
   and only its wrapping depends on it, so a key near the width of the figure
-  wrapped in one file and not in the other: „Punktgröße in Belegen" on the
-  second line here and on the first there, from the same study at the same
+  wrapped in one file and not in the other, from the same study at the same
   moment. Both estimate now. A few pixels of unused white space in a key is the
   cheapest thing in the tool to give up for a figure that is one figure.
 
   The heatmap stays the exception, and says so: it is the one figure whose own
   layout depends on how wide its headings really are, so in the browser it
   measures them and grows its foot to fit. Which turned up the second half of
-  this — the estimate it falls back to was taken for the safe side and is not:
-  a heading of umlauts and wide letters came out four pixels past what it
+  this — the estimate it falls back to was taken for the safe side and is not: a
+  heading of umlauts and wide letters came out four pixels past what it
   reserved, and the browser grew the drawing to catch it while the endpoint cut
-  the tail off. The estimate now reserves a margin, in both angled-heading
-  figures.
+  the tail off. The estimate now reserves a margin.
 
-- **The city plot can be fetched like every other figure**, at
-  `GET /api/figures/catalog-city.svg`. It was on the screen and nowhere else —
-  the one figure a report had to screenshot.
-
-- **The MoSCoW key holds the levels a figure actually draws.** The prioritised
-  field, the reach figure and the city listed all five whatever they held, so a
-  catalog in which nothing had been postponed still carried „Won't have" in its
-  key — a colour to hunt for that is not on the picture, and a quiet suggestion
-  that something had been postponed. The band of the distribution has dropped
-  its empty levels from the beginning; it is built from counts and could hardly
-  do otherwise. The other three now say the same thing the ring in the reach
-  figure already said: a key entry for something not drawn is worse than none.
-
-- **A column heading in the reach figure is written whole, over as many lines
-  as it needs.** The headings run down and to the left at forty-five degrees,
-  so a heading costs height by its width, and the longest category name in a
-  study decided how much white space every other column stood in. That was
-  answered by cutting: measured once for the narrowest place, applied to every
-  column, and a thirty-four-character ceiling on top — so „Erwartung &
-  Vertrauen in KI-Inhal…" was cut in a column with room for twice that. It is
-  wrapped now, and what is shortened is a line rather than the name.
-
-  Two lines, and the line is widened until they are enough — a fixed line width
-  broke that name into three, and three short lines are a stack rather than a
-  label: harder to read than two long ones, and they buy almost no height,
-  because every line after the first is offset down the slope again. A third
-  line is the last resort before anything is shortened, and shortening the last
-  resort of all.
-
-- **The key of a saved figure no longer breaks a scale in two.** On screen the
-  key is HTML and the browser wraps it; in the file there is nobody to ask, so
-  it is measured by estimate and wrapped by arithmetic — and with a full key
-  that arithmetic put the small dot of the size scale at the right edge of the
-  first line and the large one alone at the left of the second. Two ends of one
-  scale, read as two scales. Entries that are one statement now wrap as one, in
-  the file and in the browser alike. It never showed on screen, which is why it
-  went unnoticed until somebody put the figure in a document.
-
-- **The dots of the reach figure and the towers of the city show their
-  tooltips.** Both carry one on every mark and both light up under the mouse —
-  they have a `:hover` rule — and neither said a word: the tip is written where
-  the mark is drawn and the mouse was wired to it by a list of class names three
-  hundred lines away, which the two newest figures were never added to. A mark
-  that reacts to the mouse and then withholds the number is worse than one that
-  ignores it. Anything carrying a tip is hoverable now, and the suite checks
-  that as a rule rather than figure by figure, so the next one cannot fall out
-  of it.
+- **A MoSCoW key holds the levels the figure actually draws.** The prioritised
+  field listed all five whatever it held, so a catalog in which nothing had been
+  postponed still carried „Won't have" in its key — a colour to hunt for that is
+  not on the picture, and a quiet suggestion that something had been postponed.
+  The band of the distribution has dropped its empty levels from the beginning;
+  it is built from counts and could hardly do otherwise. Every figure now says
+  the same thing: a key entry for something not drawn is worse than none.
 
 ### Changed
-
-- **The catalog figures take the order the catalog already has, on both axes.**
-  The reach figure sorted itself: rows by how many categories they reach, then
-  columns by where their topmost dot sat. It made a staircase one could read
-  groups off, and it cost more than it was worth — the same twenty requirements
-  stood in one order in the list of cards, in another in the figure and in a
-  third in the export, so finding a requirement in the list and then in the
-  picture was a hunt.
-
-  The rows are the catalog's own order now: grouped by MoSCoW level, and inside
-  a level the requirement more departments name first. That is what
-  `/api/requirements` answers, what the cards show and what the export writes.
-
-  The columns are the interview guide's: the deductive system as its author
-  built it, and behind it what the material added. What is appended is what
-  stands on its own — a category *under* a start category is a distinction
-  inside that branch and stays where the branch is, because moving it to the end
-  would separate it from the thing it subdivides. Its own subcategories travel
-  with it: a category is judged by the branch it sits in, not by itself.
-
-  What is given up: the staircase. Which requirements keep turning up in the
-  same company is no longer legible from the shape of the figure. It is still in
-  it dot by dot, and the count under each column still says which categories the
-  catalog has not answered.
 
 - **The heatmap wraps its row labels** instead of cutting them at thirty
   characters. It was the last chart doing that, directly under one that wraps
