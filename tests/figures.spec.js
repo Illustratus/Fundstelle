@@ -306,3 +306,48 @@ test("a long name is wrapped and set smaller, not cut off", async ({ page, reque
   await request.delete(`/api/interviews/${interviews[0].id}/codings/${coding.id}`);
   expect((await request.delete(`/api/categories/${encodeURIComponent(made.id)}`)).status()).toBe(204);
 });
+
+/**
+ * How a subcategory is told apart from a category, in a column that also has to
+ * say when it could not fit a name.
+ *
+ * A subcategory used to be marked by setting „… " in front of its name — the
+ * same three dots this column puts *after* a name it had to cut short. One
+ * glyph, two meanings, in one label column. A long subcategory came out as
+ * „… Zusammenarbeit über Bereic…": indented at one end and truncated at the
+ * other in the same mark, and the honest reading of a leading ellipsis is that
+ * something was cut off there too — which is what a reader reports as an
+ * interface that shows them half a word.
+ *
+ * The indent is an indent now, from the right, because that is the edge these
+ * labels are set against and the one they have to keep sharing.
+ */
+test("a subcategory is indented, not prefixed with the mark for a cut name", async ({ page }) => {
+  await page.goto("/?lang=de");
+  await page.locator('.tab[data-view="analysis"]').click();
+  await expect(page.locator("#chart svg")).toBeVisible();
+
+  const labels = await page.evaluate(() =>
+    [...document.querySelectorAll("#chart text.row-label")].map((one) => ({
+      text: [...one.querySelectorAll("tspan")].map((line) => line.textContent).join(" "),
+      child: one.classList.contains("child"),
+      right: Math.round(one.getBoundingClientRect().right),
+    })),
+  );
+
+  const children = labels.filter((one) => one.child);
+  const parents = labels.filter((one) => !one.child);
+  expect(children.length, "the start system has a subcategory to draw").toBeGreaterThan(0);
+  expect(parents.length).toBeGreaterThan(0);
+
+  // Nothing in the column claims to have been cut where it was not.
+  for (const label of labels) {
+    expect(label.text.startsWith("…"), `${label.text} carries no leading ellipsis`).toBe(false);
+  }
+
+  // The parents share one edge; the children sit inside it by a visible step.
+  expect(new Set(parents.map((one) => one.right)).size, "one edge for the categories").toBe(1);
+  for (const child of children) {
+    expect(child.right, `${child.text} is indented`).toBeLessThan(parents[0].right - 4);
+  }
+});

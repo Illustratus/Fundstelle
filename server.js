@@ -24,6 +24,7 @@ import { convert, folderName, readTranscript } from "./lib/import.js";
 import { FALLBACK, LANGUAGES, fail, negotiate, translator } from "./lib/texts.js";
 import { SVG, drawFigure, figureIndex, needsOf } from "./lib/figures.js";
 import { openapiDocument } from "./lib/openapi.js";
+import { pillarEvidence, roleProfiles, roleProfilesMarkdown, voices } from "./lib/roles.js";
 import { THEME_NAMES } from "./public/charts.js";
 import {
   MOSCOW,
@@ -228,6 +229,31 @@ async function allInterviews() {
   const loaded = [];
   for (const { id } of found) loaded.push(await loadChecked(id));
   return loaded;
+}
+
+/**
+ * The role profiles, joined to the transcripts.
+ *
+ * Shared by the route the view reads, the two figures and the export that
+ * writes the section back into the chapter — one join, so that a bar, a table
+ * cell and a printed profile cannot come out of three different readings of the
+ * same file.
+ *
+ * The department order is the analysis order, so that a department keeps its
+ * series colour across every view it appears in.
+ */
+async function roleView(loaded) {
+  const all = loaded ?? (await allInterviews());
+  const { pillars, roles } = await store.roles(START_LANGUAGE ?? FALLBACK);
+  const profiles = roleProfiles(all, roles, pillars);
+  const departments = [...new Set(all.map((interview) => interview.transcript.department))];
+  return {
+    pillars,
+    roles: profiles,
+    departments,
+    voices: voices(profiles, departments),
+    evidencePerPillar: pillarEvidence(profiles, pillars, departments),
+  };
 }
 
 /**
@@ -805,6 +831,15 @@ const server = createServer(async (request, response) => {
         propositions,
       });
     }
+    // Role profiles ---------------------------------------------------------
+    /* Read-only, because a profile is written by reading and not by clicking.
+       What this answers is the join the file cannot make on its own: every
+       locator resolved to the turn it names, and the two counts that follow
+       from it — whose voice a profile is written from, and how much evidence
+       each of its pillars rests on. */
+    if (path === "/api/roles" && request.method === "GET") {
+      return send(response, 200, await roleView());
+    }
     if (path === "/api/requirements" && request.method === "POST") {
       return send(response, 201, await store.addRequirement(await body(request)));
     }
@@ -909,8 +944,14 @@ const server = createServer(async (request, response) => {
       const { requirements, operations } = needs.includes("catalog")
         ? await store.requirements(seedLanguage)
         : { requirements: [], operations: [] };
+      const profiles = needs.includes("roles") ? await roleView(all) : null;
       const { svg } = drawFigure(name, {
         analysis: needs.includes("analysis") ? analysis(all, categories) : null,
+        roles: profiles && {
+          departments: profiles.departments,
+          voices: profiles.voices,
+          pillars: profiles.evidencePerPillar,
+        },
         catalog:
           needs.includes("catalog")
             ? {
@@ -1012,6 +1053,10 @@ const server = createServer(async (request, response) => {
         catalogMarkdown(catalog(all, requirements, categories), language, operations),
         MARKDOWN,
       );
+    }
+    if (path === "/api/export/role-profiles.md") {
+      const { roles, pillars } = await roleView();
+      return send(response, 200, roleProfilesMarkdown(roles, pillars, language), MARKDOWN);
     }
     const codingTable = path.match(/^\/api\/export\/coding-table\/([^/]+)\.md$/);
     if (codingTable) {

@@ -6,8 +6,9 @@
 #   TRANSCRIPTS   the root that holds one folder per interview. Every immediate
 #                 subfolder containing a `final.md` counts as an interview; the
 #                 coding is written next to it as `coding.json`.
-#   CATEGORIES    the category system file. `requirements.json` is kept as its
-#                 sibling, so both land in the same directory.
+#   CATEGORIES    the category system file. `requirements.json` and, if the
+#                 study writes role profiles, `roles.json` are kept as its
+#                 siblings, so they all land in the same directory.
 #   START_SYSTEM  optional: a JSON file that seeds your own deductive category
 #                 system on first start (defaults to the bundled example).
 #
@@ -17,6 +18,7 @@
 #   my-study/
 #     categories.json           <- written here
 #     requirements.json         <- written here
+#     roles.json                <- the role profiles, if the study has any
 #     interviews/
 #       interview-01/final.md   <- yours; coding.json is written beside it
 #       interview-02/final.md

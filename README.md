@@ -163,6 +163,14 @@ quietly dropping the other's work.
   the list cuts down to what is still unfinished. Which operations there are to
   block is the study's own vocabulary: filing, retrieval and transfer are what a
   fresh catalog is seeded with, not what it is stuck with.
+- **Role profiles that show whose voice they are** — a profile per department,
+  written while reading its citations and kept as prose in a file of your own.
+  The tool resolves every locator to the turn it names, so each sentence carries
+  its evidence one click from the passage, and it counts the thing prose cannot
+  say: how much of a profile the department said about itself and how much came
+  from others — a single-colour bar is a self-portrait — and how much evidence
+  each pillar of the profile actually rests on. A pillar the material says
+  nothing about is shown as open, not left out.
 - **Production-grade analytics** — a stacked bar chart per category and
   department, a category × guide-section heatmap, cross tables, per-interview
   progress, and a saturation curve: how many categories turned up for the first
@@ -244,7 +252,7 @@ answer carries a path from the machine the tool runs on.
 | Variable | Meaning | Default |
 | --- | --- | --- |
 | `TRANSCRIPTS` | root folder of the interview directories | `data/transcripts` |
-| `CATEGORIES` | path to `categories.json` (its sibling `requirements.json` is derived) | `data/categories.json` |
+| `CATEGORIES` | path to `categories.json` (its siblings `requirements.json` and `roles.json` live beside it) | `data/categories.json` |
 | `START_SYSTEM` | your own deductive start system, seeded on first start | built-in example |
 | `START_LANGUAGE` | `de` or `en`; pins the language the start system is seeded in | whoever opens it first |
 | `PORT` | server port | `4173` |

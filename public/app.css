@@ -225,6 +225,7 @@ a.button-quiet { text-decoration: none; display: inline-block; }
 .view[hidden] { display: none; }
 
 #view-analysis,
+#view-roles,
 #view-catalog { grid-template-columns: minmax(0, 1fr); overflow: auto; }
 
 .column {
@@ -257,7 +258,10 @@ a.button-quiet { text-decoration: none; display: inline-block; }
 .section-entry {
   display: grid;
   grid-template-columns: 1.4rem 1fr auto;
-  align-items: center;
+  /* On the first line of the name, not in the middle of it. Centred, the number
+     of a block whose name runs to two lines floated between them, which lines
+     up with neither its own name nor the numbers above and below it. */
+  align-items: baseline;
   gap: .5rem;
   width: 100%;
   background: none;
@@ -281,7 +285,6 @@ a.button-quiet { text-decoration: none; display: inline-block; }
   font-size: .62rem;
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
-  align-self: center;
 }
 .section-entry .coverage {
   grid-column: 2 / -1;
@@ -441,21 +444,28 @@ a.button-quiet { text-decoration: none; display: inline-block; }
   font-size: .92rem;
   line-height: 1.45;
 }
-/* What the transcript's own header records about the interview. */
+/* What the transcript's own header records about the interview.
+
+   One grid for the whole block rather than one per row: each row used to size
+   its own two columns, so „Erhebung" and „Quelle" ended at different places and
+   their values began at different places — four edges where there should be
+   two. A value too long for its column then wrapped against the right edge and
+   set its second line adrift, under nothing.
+
+   Now the labels share a column as wide as the widest of them, the values share
+   the rest, and a value that wraps wraps under itself. */
 .about {
   display: grid;
-  gap: .3rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: .6rem;
+  row-gap: .3rem;
   margin-top: 1.1rem;
   padding-top: .9rem;
   border-top: 1px solid var(--line);
-}
-.about > div {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: baseline;
-  gap: .5rem;
   font-size: .76rem;
 }
+.about > div { display: contents; }
+.about > div > span { align-self: baseline; min-width: 0; overflow-wrap: break-word; }
 .about .field-label { margin: 0; }
 
 /* The copy sits with the other handle on a citation, quieter than it. */
@@ -1359,7 +1369,25 @@ mark.match.current {
 
 /* Analysis -------------------------------------------------------------- */
 
-.analysis { padding: 2rem 2rem 5rem; max-width: 78rem; margin: 0 auto; width: 100%; }
+/* Two widths, and only two. Everything that carries data — the metric row, the
+   figures, the tables and the legends under them — ends on the same line, so
+   that the eye has one right edge to follow down a page rather than three.
+   Running text keeps its own, narrower measure: a line 78rem wide cannot be
+   read, and a column that is visibly and deliberately narrower does not read as
+   a block that failed to line up.
+
+   These were three loose numbers — 78rem on the page, 64rem on the tables,
+   46rem on the leads — and the tables ended 92 pixels short of the heading
+   above them and the legend below them, for no reason anybody could have
+   named. */
+.analysis {
+  --measure: 78rem;
+  --measure-prose: 46rem;
+  padding: 2rem 2rem 5rem;
+  max-width: var(--measure);
+  margin: 0 auto;
+  width: 100%;
+}
 
 .analysis h2 {
   font-family: var(--serif);
@@ -1375,7 +1403,12 @@ mark.match.current {
   color: var(--ink-faint);
   margin: 2.5rem 0 .8rem;
 }
-.analysis p.lead { margin: 0 0 2rem; color: var(--ink-soft); font-size: .88rem; max-width: 46rem; }
+.analysis p.lead {
+  margin: 0 0 2rem;
+  color: var(--ink-soft);
+  font-size: .88rem;
+  max-width: var(--measure-prose, 46rem);
+}
 
 /* Said to a screen reader, not drawn: the summary of a chart, the caption of a
    table, the zero a middle dot stands for. Kept out of the picture without
@@ -1554,10 +1587,22 @@ tbody tr:hover { background: var(--paper); }
   letter-spacing: .1em;
   color: var(--ink-faint);
   list-style: none;
+  /* The sign is a sign, not the first word. A heading long enough to wrap —
+     „Codesystem aus einem anderen Programm" is, in this column — used to set
+     its second line under the plus, so the marker column and the text column
+     were the same column. Hanging: the marker steps out to the left and every
+     line of the heading starts on one edge. */
+  padding-left: 1.1em;
+  text-indent: -1.1em;
 }
 .inductive > summary::-webkit-details-marker { display: none; }
-.inductive > summary::before { content: "+ "; }
-.inductive[open] > summary::before { content: "− "; }
+.inductive > summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1.1em;
+  text-indent: 0;
+}
+.inductive[open] > summary::before { content: "−"; }
 .inductive > summary:hover { color: var(--ink); }
 .inductive .field { margin-bottom: .5rem; }
 .inductive .field input, .inductive .field textarea, .inductive .field select { max-width: none; width: 100%; }
@@ -1659,6 +1704,14 @@ tbody tr:hover { background: var(--paper); }
 .jump {
   margin-top: .7rem;
   width: 100%;
+  /* The status column is set 1.7 lines apart, which is right for a running
+     count and wrong for a label inside a button: „Nächster unberührter Beitrag"
+     came out a 75-pixel slab in a 159-pixel column. The label is a label and
+     keeps its own leading. */
+  line-height: 1.35;
+  /* And it breaks evenly. A label that puts everything on the first line and
+     one word on the second reads as two labels, one of them orphaned. */
+  text-wrap: balance;
 }
 
 /* Bars in table cells: the same scale as in the section bar. */
@@ -1672,8 +1725,7 @@ tbody tr:hover { background: var(--paper); }
 }
 .bar i { display: block; height: 100%; background: var(--accent); min-width: 1px; }
 
-#view-analysis .table-frame { max-width: 64rem; }
-#view-catalog .lead { max-width: 46rem; }
+#view-catalog .lead { max-width: var(--measure-prose, 46rem); }
 
 /* Requirements catalog ---------------------------------------------------- */
 
@@ -1816,6 +1868,77 @@ tbody tr:hover { background: var(--paper); }
 .cites form input { flex: 1 1 auto; min-width: 16rem; }
 .cites form button { margin-left: auto; }
 .cites .column-note { margin: .3rem 0 0; }
+
+/* Role profiles ------------------------------------------------------------
+   The same card as a requirement, one step quieter: nothing here is edited, so
+   nothing may look like a field. What is clickable is the evidence and only the
+   evidence — a chip per cited turn, which is the way back into the transcript
+   and the reason this view exists at all. */
+
+#view-roles .lead { max-width: var(--measure-prose, 46rem); }
+
+.role-list { display: grid; gap: .75rem; max-width: 64rem; }
+
+.role {
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: .85rem .95rem;
+}
+.role header { border-bottom: 1px solid var(--line); padding-bottom: .5rem; }
+.role h3 { margin: 0; font-family: var(--serif); font-size: 1.05rem; }
+.role .numbers { margin: .25rem 0 0; font-size: .78rem; color: var(--ink-soft); }
+.role .numbers b { font-weight: 600; color: var(--ink); }
+.role .numbers .separator { margin: 0 .4rem; color: var(--ink-faint); }
+/* A profile with no voice of its own is not an error and must not read as one:
+   two departments were never interviewed. It is a different kind of statement,
+   and it says so where the profile is read. */
+.role .numbers .open-mark { margin-left: .5rem; color: var(--warning); font-weight: 600; }
+
+.pillar { margin-top: .8rem; }
+.pillar h4 {
+  margin: 0;
+  display: flex;
+  gap: .5rem;
+  align-items: baseline;
+  font-family: var(--mono);
+  font-size: .64rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.pillar h4 .count { font-size: .6rem; letter-spacing: .04em; text-transform: none; }
+.pillar h4 .count .separator { margin: 0 .3rem; }
+.pillar h4 .open-mark { color: var(--warning); text-transform: none; letter-spacing: .04em; }
+.pillar.empty h4 { opacity: .8; }
+.pillar ul { list-style: none; margin: .45rem 0 0; padding: 0; display: grid; gap: .55rem; }
+.role-entry { border-left: 2px solid var(--line-strong); padding-left: .6rem; }
+.role-entry p {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: .92rem;
+  line-height: 1.45;
+}
+
+.citation-chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .25rem; }
+.citation-chip {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: .05rem .35rem;
+  font-family: var(--mono);
+  font-size: .6rem;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.citation-chip:hover { color: var(--ink); border-color: var(--line-strong); }
+.citation-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Whose voice this is, without a second legend: the department speaking about
+   itself carries the mark, everything else is another department's statement.
+   The border and not the colour, because the series colours belong to the
+   figures above and a chip is not a segment of them. */
+.citation-chip.self { border-left: 3px solid var(--line-strong); color: var(--ink-soft); }
+.citation-chip.missing { border-color: var(--warning); color: var(--warning); }
 
 /* Coding units that lost their place -------------------------------------- */
 
@@ -2280,6 +2403,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 
   .view,
   #view-analysis,
+  #view-roles,
   #view-catalog { display: block; overflow: visible; height: auto; }
   .column { overflow: visible; }
 

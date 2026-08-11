@@ -15,10 +15,12 @@ import {
   estimateWidth,
   heatmapChart,
   moscowBand,
+  pillarChart,
   priorityField,
   reachChart,
   saturationChart,
   standalone,
+  voicesChart,
 } from "./charts.js";
 import { effectiveWord, matchesSlice, occurrences, trimStem } from "./search.js";
 import { sentenceAt, sentences } from "./sentences.js";
@@ -36,6 +38,46 @@ const STORAGE = {
   theme: "fundstelle.theme",
   readingPosition: (interview) => `fundstelle.readingPosition.${interview}`,
 };
+
+/* The address ------------------------------------------------------------
+   Until now the tool held its place only in memory. A reload landed back in
+   the coding view whatever one had been reading, the browser's back button
+   left the tool altogether, and a colleague could not be pointed at the
+   evaluation — the address said nothing about where one was standing.
+
+   The hash carries it: which of the four views is open, and, where the view
+   is about a single interview, which one. The hash and not a path, because
+   the same file is served under every address and a path would have to be
+   taught to the server, the service worker and the offline cache alike. */
+
+const VIEWS = ["code", "catalog", "roles", "analysis"];
+
+function readRoute() {
+  const [, view, interview] = (location.hash || "").split("/");
+  return {
+    view: VIEWS.includes(view) ? view : null,
+    interview: interview ? decodeURIComponent(interview) : null,
+  };
+}
+
+/**
+ * The interview belongs in the address only where the view is about one. The
+ * catalogue and the evaluation read the whole study; carrying an id they
+ * ignore would promise a narrowing that is not there.
+ */
+const routeHash = () =>
+  state.view === "code" && state.current
+    ? `#/code/${encodeURIComponent(state.current)}`
+    : `#/${state.view}`;
+
+function writeRoute({ push = false } = {}) {
+  const target = routeHash();
+  if (location.hash === target) return;
+  // Back has to lead out of a view one has just opened, so anything the reader
+  // pressed pushes; anything that merely re-states where they already are
+  // replaces, or the back button would walk through boot-up.
+  history[push ? "pushState" : "replaceState"](null, "", target);
+}
 
 /**
  * Bring the statically labelled parts of the interface into the chosen
@@ -56,7 +98,13 @@ function translateChrome() {
     setLanguage(current === "de" ? "en" : "de");
     const target = new URL(location.href);
     target.searchParams.delete("lang");
-    location.href = target.href;
+    /* Assigning an address that differs from the current one only in its hash
+       is a jump inside the page, not a reload — and since the views carry a
+       hash, that is now the ordinary case. So the address is corrected first
+       and the reload asked for separately; the interface is translated on
+       start-up and has to run through it again. */
+    history.replaceState(null, "", target.href);
+    location.reload();
   });
 
   if (current === "de") return;
@@ -101,6 +149,10 @@ const state = {
   operations: [],
   categoryRows: [],
   departments: [],
+  // The role profiles, as the file has them and joined to the transcripts. Not
+  // edited here — they are written while reading, in the study's own document —
+  // so there is nothing to hold but what was last fetched.
+  roles: null,
   // The specification behind each figure on screen, so the save button has the
   // picture to write out rather than the picture to read back off the page.
   charts: {},
@@ -296,8 +348,9 @@ function drawInterviewList() {
     )
     .join("");
   // A dropdown with nothing in it is a control that cannot be used and a
-  // question the reader cannot answer.
-  choice.closest(".field").hidden = !state.interviews.length;
+  // question the reader cannot answer. Whether it belongs on this screen at
+  // all is one decision, and it is made in drawChrome.
+  choice.closest(".field").hidden = state.view !== "code" || !state.interviews.length;
   if (state.current) choice.value = state.current;
 }
 
@@ -897,9 +950,6 @@ function drawSections() {
         : "") +
     `<button type="button" class="button-quiet jump" id="jump">${t("nextUntouched")}</button>`;
 
-  const conducted = state.transcript.meta.Erhebung ?? state.transcript.meta.Conducted ?? "";
-  $("#header-subtitle").textContent = `${state.transcript.department} · ${conducted}`.trim();
-
   /* Everything else the transcript's header records. The format has parsed
      these lines from the beginning and exactly one of them was ever shown, so a
      role or a tenure written into a file was read and dropped — and then typed
@@ -1345,7 +1395,9 @@ async function showPassage(interview, id) {
     $("#interview-choice").value = interview;
     await loadTranscript();
   }
-  setView("code");
+  // Pushed, so that the back button leads to the table the citation was read
+  // in — comparing two places means going back and forth between them.
+  setView("code", { push: true });
   state.selected = id;
   const coding = state.codings.find((other) => other.id === id);
   if (coding) state.inFocus = coding.turn;
@@ -1353,6 +1405,29 @@ async function showPassage(interview, id) {
   const place = document.querySelector(`#transcript .segment[data-id="${CSS.escape(id)}"]`);
   if (place) place.scrollIntoView({ behavior: "smooth", block: "center" });
   else notify(t("passageNotVisible"), "error");
+}
+
+/**
+ * The same movement, from a locator rather than from a coding unit.
+ *
+ * A role profile cites a speaker turn, not a passage somebody marked: the
+ * sentence in the study's document was read out of the turn as a whole, and
+ * often out of two of them at once. So the turn is what is opened, and the
+ * focus mark — the one the keyboard walk uses — says which one it was.
+ */
+async function showTurn(interview, turn) {
+  if (interview !== state.current) {
+    state.current = interview;
+    $("#interview-choice").value = interview;
+    await loadTranscript();
+  }
+  setView("code", { push: true });
+  state.selected = null;
+  state.inFocus = turn;
+  drawAll();
+  const place = document.getElementById(`turn-${turn}`);
+  if (place) place.scrollIntoView({ behavior: "smooth", block: "center" });
+  else notify(t("turnNotInTranscript"), "error");
 }
 
 /* Propositions ------------------------------------------------------------
@@ -3722,6 +3797,133 @@ async function drawCatalog() {
   markScrollableTables(root);
 }
 
+/* Role profiles ------------------------------------------------------------
+   The catalog is made here: citations are assigned to a requirement and the
+   view counts what came of it. A role profile is not. It is written while
+   reading a department's citations — what its work is, what it files, what it
+   retrieves, what it hands over, in which shape it wants what it receives — and
+   that reading happens in the study's own document, where the sentences end up.
+
+   What that document cannot do is stand behind its own claims. It carries the
+   locators as bracketed keys, which nobody follows, and it cannot count. This
+   view does both: every paraphrase gets its evidence as buttons into the
+   transcript, and the two figures say what the prose leaves unsaid — whose
+   voice a profile is written from, and how much each of its pillars rests on.
+
+   Read-only for the same reason the catalog is not: writing a profile is
+   reading work, and a text field here would only invite it to be done in the
+   wrong place. */
+
+async function loadRoles() {
+  state.roles = await api("/api/roles");
+}
+
+function roleFiguresHTML(data) {
+  const charts =
+    chartHTML(voicesChart(data.voices, data.departments, t)) +
+    chartHTML(pillarChart(data.evidencePerPillar, data.departments, t));
+  return charts || `<p class="empty-state">${t("roleChartsEmpty")}</p>`;
+}
+
+/**
+ * One profile.
+ *
+ * The head carries the count that decides how far the profile may be trusted:
+ * how much of it the department said about itself and how much came from
+ * others. A profile with nothing of its own is not an error — two departments
+ * were never interviewed — but it is a different kind of statement, and it says
+ * so where it is read rather than in a footnote somewhere else.
+ */
+function roleHTML(role) {
+  const pillars = role.pillars
+    .map((pillar) => {
+      const entries = role.entries.filter((entry) => entry.pillar === pillar.id);
+      if (!entries.length) {
+        return (
+          `<section class="pillar empty"><h4>${escapeHTML(pillar.name)}` +
+          `<span class="open-mark">${t("pillarOpen")}</span></h4></section>`
+        );
+      }
+      const written = entries
+        .map((entry) => {
+          const citations = entry.citations
+            .map(
+              (citation) =>
+                `<button type="button" class="citation-chip${citation.self ? " self" : ""}` +
+                `${citation.missing ? " missing" : ""}"` +
+                ` data-role-turn="${citation.turn}" data-interview="${escapeHTML(citation.interview)}"` +
+                ` title="${escapeHTML(citation.missing ? t("turnNotInTranscript") : quoted(citation.text.slice(0, 240)))}">` +
+                `${escapeHTML(citation.department)} · ${t("turn")} ${citation.turn}</button>`,
+            )
+            .join("");
+          return (
+            `<li class="role-entry"><p>${escapeHTML(entry.reading)}</p>` +
+            `<div class="citation-chips">${citations}</div></li>`
+          );
+        })
+        .join("");
+      return (
+        `<section class="pillar"><h4>${escapeHTML(pillar.name)}` +
+        `<span class="count">${pillar.entries} ` +
+        `${plural(pillar.entries, "roleEntryOne", "roleEntryMany")}` +
+        `<span class="separator">·</span>${pillar.evidence} ` +
+        `${plural(pillar.evidence, "citationOne", "citationMany")}</span></h4>` +
+        `<ul>${written}</ul></section>`
+      );
+    })
+    .join("");
+
+  return (
+    `<article class="role" data-id="${escapeHTML(role.id)}">` +
+    `<header><h3>${escapeHTML(role.name)}</h3>` +
+    `<p class="numbers"><b>${role.entries.length}</b> ` +
+    `${plural(role.entries.length, "roleEntryOne", "roleEntryMany")}` +
+    `<span class="separator">·</span><b>${role.evidence}</b> ` +
+    `${plural(role.evidence, "citationOne", "citationMany")}` +
+    `<span class="separator">·</span>${t("roleOwnVoice", { own: role.own, others: role.others })}` +
+    (role.own ? "" : `<span class="open-mark">${t("roleWithoutOwnVoice")}</span>`) +
+    (role.missing ? `<span class="open-mark">${t("roleMissingTurns", { n: role.missing })}</span>` : "") +
+    `</p></header>${pillars}</article>`
+  );
+}
+
+async function drawRoles() {
+  await loadRoles();
+  const root = $("#roles");
+  const data = state.roles;
+
+  const head = `<h2>${t("rolesTitle")}</h2><p class="lead">${t("rolesLead")}</p>`;
+  if (!data.roles.length) {
+    root.innerHTML = head + `<p class="empty-state">${t("rolesEmpty")}</p>`;
+    return;
+  }
+
+  const evidence = data.roles.reduce((n, role) => n + role.evidence, 0);
+  const metrics =
+    `<div class="metrics">` +
+    `<div class="metric"><div class="value">${data.roles.length}</div>` +
+    `<span class="label">${t("metricProfiles")}</span></div>` +
+    `<div class="metric"><div class="value">${data.roles.reduce((n, role) => n + role.entries.length, 0)}</div>` +
+    `<span class="label">${t("metricRoleEntries")}</span></div>` +
+    `<div class="metric"><div class="value">${evidence}</div>` +
+    `<span class="label">${t("citationMany")}</span></div>` +
+    /* The number that decides whether the profiles may carry a design decision:
+       everything said about a department by somebody other than itself. */
+    `<div class="metric"><div class="value">${data.roles.reduce((n, role) => n + role.others, 0)}</div>` +
+    `<span class="label">${t("metricFromOthers")}</span></div>` +
+    `</div>`;
+
+  root.innerHTML =
+    head +
+    metrics +
+    `<div id="role-charts">${roleFiguresHTML(data)}</div>` +
+    `<div class="role-list">${data.roles.map(roleHTML).join("")}</div>` +
+    `<div class="exports"><a class="button-quiet" href="${exportHref("/api/export/role-profiles.md")}" download>` +
+    `${t("rolesTitle")}</a></div>`;
+
+  markScrollableTables(root);
+}
+
 /* Reading position -------------------------------------------------------- */
 
 /**
@@ -3942,6 +4144,7 @@ function nextUntouchedTurn() {
 }
 
 function drawAll() {
+  drawChrome();
   drawTranscript();
   drawTranscriptProblems();
   drawDrift();
@@ -3954,14 +4157,47 @@ function drawAll() {
   drawInterviewList();
 }
 
-function setView(name) {
+/**
+ * The line under the name of the tool. In the coding view it says which
+ * interview is open; the other two views read the whole study, and a
+ * department printed above a study-wide table has been read as its scope.
+ *
+ * The parts are joined rather than glued to a separator: a transcript without
+ * a department used to leave the dot standing at the front of the line.
+ */
+function headerSubtitle() {
+  if (state.view !== "code" || !state.transcript) return t("headerSubtitle");
+  const conducted = state.transcript.meta.Erhebung ?? state.transcript.meta.Conducted ?? "";
+  const parts = [state.transcript.department, conducted].map((part) => (part ?? "").trim());
+  return parts.filter(Boolean).join(" · ") || t("headerSubtitle");
+}
+
+/**
+ * What the header offers, given the view standing in front of it. A picker
+ * that changes nothing on screen is worse than a missing one: it invites the
+ * reader to believe the evaluation below it is about the one interview named
+ * in it. The same for reading in a transcript, which only the coding view has
+ * anywhere to put.
+ */
+function drawChrome() {
+  const perInterview = state.view === "code";
+  $("#interview-choice").closest(".field").hidden = !perInterview || !state.interviews.length;
+  $("#import").hidden = !perInterview;
+  $("#header-subtitle").textContent = headerSubtitle();
+}
+
+function setView(name, { route = true, push = false } = {}) {
   state.view = name;
   $$(".tab").forEach((tab) => tab.setAttribute("aria-current", String(tab.dataset.view === name)));
   $("#view-code").hidden = name !== "code";
   $("#view-catalog").hidden = name !== "catalog";
+  $("#view-roles").hidden = name !== "roles";
   $("#view-analysis").hidden = name !== "analysis";
+  drawChrome();
+  if (route) writeRoute({ push });
   if (name === "analysis") drawAnalysis().catch((error) => complain(error));
   if (name === "catalog") drawCatalog().catch((error) => complain(error));
+  if (name === "roles") drawRoles().catch((error) => complain(error));
 }
 
 function setTheme(value) {
@@ -3974,10 +4210,35 @@ function connectEvents() {
     state.current = event.target.value;
     await loadTranscript();
     drawAll();
+    writeRoute({ push: true });
     restoreReadingPosition();
   });
 
-  $$(".tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
+  $$(".tab").forEach((tab) =>
+    tab.addEventListener("click", () => setView(tab.dataset.view, { push: true })),
+  );
+
+  /* Back and forward. The hash is the only thing history moves here, so
+     hashchange is enough — and it is the same entry point the address bar
+     uses when somebody pastes a link. Anything the address asks for that is
+     not there is ignored rather than corrected: a mistyped id should not
+     silently open a different interview than the one that was sent. */
+  window.addEventListener("hashchange", async () => {
+    const route = readRoute();
+    if (!route.view) return writeRoute();
+    if (
+      route.interview &&
+      route.interview !== state.current &&
+      state.interviews.some((interview) => interview.id === route.interview)
+    ) {
+      state.current = route.interview;
+      $("#interview-choice").value = route.interview;
+      await loadTranscript();
+      drawAll();
+      restoreReadingPosition();
+    }
+    if (route.view !== state.view) setView(route.view, { route: false });
+  });
 
   $("#keys").addEventListener("click", openKeys);
 
@@ -4264,6 +4525,7 @@ function connectEvents() {
       localStorage.setItem(STORAGE.interview, next);
       await loadTranscript();
       drawAll();
+      writeRoute({ push: true });
       return jumpToUnreviewed();
     }
     if (event.target.id !== "jump") return;
@@ -4492,6 +4754,9 @@ function connectEvents() {
         $("#interview-choice").value = moved.id;
         await loadTranscript();
         drawAll();
+        // Replaced, not pushed: the folder under the old name no longer
+        // exists, and back would lead to an address that cannot be opened.
+        writeRoute();
         notify(t("folderRenamed", { folder: moved.id }));
       } catch (error) {
         complain(error);
@@ -4519,6 +4784,7 @@ function connectEvents() {
       await loadInterviews();
       await loadTranscript();
       drawAll();
+      writeRoute();
       notify(t("interviewRemoved", { title: gone }));
     } catch (error) {
       complain(error);
@@ -4735,6 +5001,15 @@ function connectEvents() {
       if (goto) showPassage(goto.dataset.interview, goto.dataset.passage);
     });
   }
+
+  /* The profiles lead back the same way, only by turn rather than by coding
+     unit: a profile cites what was said, and the study's own document names it
+     by the number of the speaker turn. That number is the one address every
+     part of this tool shares, so it is enough to land on the passage. */
+  $("#roles").addEventListener("click", (event) => {
+    const goto = event.target.closest("[data-role-turn]");
+    if (goto) showTurn(goto.dataset.interview, Number(goto.dataset.roleTurn));
+  });
 
   // Slices through the citations. They apply to the state already computed,
   // so without a refetch and without redrawing the cross table.
@@ -5063,15 +5338,23 @@ async function copyCitation(id) {
 async function start() {
   setTheme(localStorage.getItem(STORAGE.theme) ?? "auto");
   translateChrome();
+  // Read before anything is loaded: an address that names an interview
+  // outranks the one this browser happened to have open last, or a link would
+  // open whatever the recipient was working on instead of what was sent.
+  const route = readRoute();
   try {
     await loadCategories();
     await loadRequirements();
     await loadInterviews();
+    if (route.interview && state.interviews.some((i) => i.id === route.interview)) {
+      state.current = route.interview;
+    }
     await loadTranscript();
     drawAll();
     connectEvents();
     watchSections();
-    restoreReadingPosition();
+    setView(route.view ?? "code");
+    if (state.view === "code") restoreReadingPosition();
   } catch (error) {
     cannotStart(error);
   }

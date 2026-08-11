@@ -130,10 +130,18 @@ export function escape(text) {
  * before anything is given up to an ellipsis.
  */
 export function labelColumn(names, { room, sizes = [11.5, 10.5, 9.5, 8.5, 7.5], wanted = 2, max = 3 } = {}) {
+  // One room for the column, or one per label where the rows are not all set
+  // against the same edge — a subcategory is indented and has that much less to
+  // fit its name into, and the size that fits every name has to know it.
+  const roomOf = (index) => (typeof room === "function" ? room(index) : room);
   let size = sizes.at(-1);
-  let labels = names.map((name) => wrapLabel(name, { room, size, maxLines: max }));
+  let labels = names.map((name, index) =>
+    wrapLabel(name, { room: roomOf(index), size, maxLines: max }),
+  );
   for (const candidate of sizes) {
-    const tried = names.map((name) => wrapLabel(name, { room, size: candidate, maxLines: wanted }));
+    const tried = names.map((name, index) =>
+      wrapLabel(name, { room: roomOf(index), size: candidate, maxLines: wanted }),
+    );
     if (!tried.some((one) => one.truncated)) {
       size = candidate;
       labels = tried;
@@ -536,8 +544,19 @@ export function stackedBars({
   const track = WIDTH - LABEL - VALUE - 8;
   const scale = (value) => (value / end) * track;
 
-  const names = rows.map((row) => (row.child ? "… " : "") + row.name);
-  const { size, line: LINE, labels, tallest } = labelColumn(names, { room: LABEL - 12 });
+  /* A subcategory used to be marked by setting „… " in front of its name — the
+     same three dots this very column puts *after* a name it had to cut short.
+     One glyph, two meanings, in one label column: a long subcategory came out
+     as „… Zusammenarbeit über Bereic…", indented at one end and truncated at
+     the other in the same mark, and the honest reading of the leading one is
+     that something was cut off there too.
+
+     It is indented instead — from the right, because that is the edge these
+     labels are set against — and it keeps the quieter ink it always had. */
+  const CHILD_INDENT = 10;
+  const roomFor = (index) => LABEL - 12 - (rows[index].child ? CHILD_INDENT : 0);
+  const names = rows.map((row) => row.name);
+  const { size, line: LINE, labels, tallest } = labelColumn(names, { room: roomFor });
   // The row grows to hold the tallest label; a bar is still a bar, centred in it.
   const ROW = Math.max(26, Math.ceil(tallest * LINE) + 10);
   const height = TOP + rows.length * ROW + 22;
@@ -594,7 +613,7 @@ export function stackedBars({
         .join("");
 
       const label = labelText(labels[index], {
-        x: LABEL - 8,
+        x: LABEL - 8 - (row.child ? CHILD_INDENT : 0),
         middle: y + BAR / 2,
         size,
         line: LINE,
@@ -2089,6 +2108,64 @@ export function coverageChart(rows, departments, t) {
   });
 }
 
+/* The role profiles -------------------------------------------------------- */
+
+/**
+ * Who speaks about whom.
+ *
+ * One bar per profile, split by the department whose interview the evidence
+ * comes from. The question it answers is the one a role profile has to survive
+ * before it may be used: is this a self-portrait, or did somebody else say it
+ * too? A bar in a single colour is a department describing itself, and the two
+ * departments that were never interviewed have bars in which their own colour
+ * does not appear at all — which is the honest picture of what they are, and
+ * exactly what the prose of the chapter cannot show.
+ *
+ * The same idiom as the coverage chart of the catalog, deliberately: both ask
+ * how much of this comes from where, and a reader who has learnt the colours in
+ * one figure keeps them in the other.
+ */
+export function voicesChart(rows, departments, t) {
+  const spoken = rows.filter((row) => row.sum);
+  if (!spoken.length || !departments.length) return null;
+  return stackedBars({
+    id: "voices",
+    file: "role-voices.svg",
+    summaryKey: "summaryVoices",
+    figuresCaption: t("voicesFiguresCaption"),
+    title: t("chartVoicesTitle"),
+    caption: t("chartVoicesCaption"),
+    departments,
+    rows: spoken.map((row) => ({ name: row.name, child: false, values: row.values, sum: row.sum })),
+    t,
+  });
+}
+
+/**
+ * What each pillar rests on.
+ *
+ * One bar per pillar, over all six profiles, split the same way. A profile is
+ * five statements about a department, and read as prose all five carry the same
+ * weight; here it comes out that they do not. The pillar with the shortest bar
+ * is the one the design should lean on last — and if it is the pillar the
+ * design leans on most, that is the finding this figure exists to force.
+ */
+export function pillarChart(rows, departments, t) {
+  const filled = rows.filter((row) => row.sum);
+  if (!filled.length || !departments.length) return null;
+  return stackedBars({
+    id: "pillars",
+    file: "evidence-per-pillar.svg",
+    summaryKey: "summaryPillars",
+    figuresCaption: t("pillarFiguresCaption"),
+    title: t("chartPillarTitle"),
+    caption: t("chartPillarCaption"),
+    departments,
+    rows: filled.map((row) => ({ name: row.name, child: false, values: row.values, sum: row.sum })),
+    t,
+  });
+}
+
 /* Every figure by the name it is fetched under ----------------------------- */
 
 /**
@@ -2165,6 +2242,18 @@ export const FIGURES = {
     emptyKey: "figureNeedsCitations",
     draw: ({ analysis, catalog, t }) =>
       cityPlot(catalog.requirements, analysis.rows, t, { moscow: catalog.moscow }),
+  },
+  "role-voices": {
+    view: "roles",
+    titleKey: "chartVoicesTitle",
+    emptyKey: "figureNeedsProfiles",
+    draw: ({ roles, t }) => voicesChart(roles.voices, roles.departments, t),
+  },
+  "evidence-per-pillar": {
+    view: "roles",
+    titleKey: "chartPillarTitle",
+    emptyKey: "figureNeedsProfiles",
+    draw: ({ roles, t }) => pillarChart(roles.pillars, roles.departments, t),
   },
 };
 

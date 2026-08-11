@@ -6,6 +6,116 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **Role profiles, and what each one stands on.** A requirement is built in
+  the tool; a role profile is not. It is written while reading a department's
+  citations — what its work is, what it files, what it retrieves, what it hands
+  over, in which shape it wants what it receives — and it stays prose, in a file
+  of the study's own (`roles.json`, beside the requirements).
+
+  Prose like that can be wrong in two ways nobody reading it would catch. It can
+  cite a turn nobody spoke. And it can be a self-portrait — everything a
+  department says about itself, nothing anybody else says about it — while
+  reading exactly like a profile carried by four interviews.
+
+  The new view makes both visible. Every locator is resolved against the
+  transcripts, so each paraphrase carries its evidence as buttons that land on
+  the passage; a locator no transcript has a turn for is marked rather than
+  quietly dropped. Two figures say what the prose leaves unsaid: „Wer über wen
+  spricht" splits each profile by the interview its evidence comes from — a
+  single-colour bar is a self-description, and a department that was never
+  interviewed has none of its own colour in it — and „Belege je Säule" counts,
+  over all profiles, what the five pillars of a role profile actually rest on.
+  A pillar the material says nothing about stands there as open instead of being
+  left out, because a pillar left out and a pillar shown to be empty read the
+  same and are not the same finding.
+
+  Read-only on purpose: writing a profile means weighing several passages
+  against each other and finding one sentence for them, which is reading work
+  and belongs where the study is written. `GET /api/roles` answers with the
+  join, `GET /api/export/role-profiles.md` writes the section back out — the
+  paraphrases verbatim, citation markers and all, so the document and the file
+  cannot drift apart.
+
+- **Every view has an address.** The tool held its place only in memory. A
+  reload — because a transcript changed on disk, because the browser
+  restarted, because anything — landed back in the coding view of whichever
+  interview that browser happened to remember, however far one had read into
+  the evaluation. The back button led out of the tool rather than to the view
+  before it. And a colleague could not be pointed at a screen, because every
+  screen had the same address.
+
+  The view now stands in the address, and where a view is about one interview,
+  so does the interview: `#/analysis`, `#/catalog`, `#/code/interview-02`. A
+  reload lands where it left. Back and forward walk the views, including the
+  jump from a citation in the evaluation back into the transcript it was cut
+  from — which is the movement one makes constantly while comparing two
+  places. A pasted address opens the interview it names rather than the one
+  the recipient last had open, and an address naming something that is not
+  there falls back and corrects itself rather than quietly opening a different
+  interview under the name that was sent.
+
+### Changed
+
+- **The header offers what the view in front of it can use.** The interview
+  picker, reading in a transcript and the line naming department and date sat
+  above all three views. The catalog and the evaluation read the whole study.
+  A picker above a study-wide cross table does not merely do nothing: it reads
+  as the scope of the table below it, which is the one misreading that turns a
+  correct figure into a wrong sentence in a thesis. The three now appear where
+  they are about something; the keys, the interface reference, the language and
+  the brightness stay, because those are about the tool and not the material.
+
+  The subtitle also no longer starts with a stray separator when a transcript
+  carries no department: the parts are joined, not glued to a dot.
+
+- **One right edge in the evaluation instead of three.** The metric row and the
+  figures ran to 78rem, the tables stopped at 64rem, and the prose at 46rem.
+  Two of those are a decision — a line of text 78rem wide cannot be read — and
+  one was a stray number nobody could have named a reason for, so the cross
+  table ended 92 pixels short of the heading printed above it and the legend
+  printed below it. Everything carrying data now ends on one line; running text
+  keeps its own, visibly narrower measure, which does not read as a block that
+  failed to line up.
+
+- **What is beside a thing lines up with it.** Four places in the left and
+  right columns where a pair came apart as soon as the longer half wrapped:
+
+  The number of a guide block sat centred against its name, so the number of a
+  block whose name ran to two lines floated between them, lining up with
+  neither its own name nor the numbers above and below. It sits on the first
+  line now.
+
+  The interview's own header sized its two columns per row rather than once for
+  the block, so the labels ended at different places and the values began at
+  different places — four edges where there should be two — and a value too
+  long for its column set its second line adrift under nothing. Labels share a
+  column, values share a column, and a value that wraps wraps under itself.
+
+  A disclosure heading in the right-hand column set its second line under the
+  plus that says whether it is open, so the marker and the text shared one
+  column. The marker hangs outside now.
+
+- **A subcategory no longer looks like a name that was cut off.** In the bar
+  chart a subcategory was marked by setting „… " in front of its name — the same
+  three dots that column puts *after* a name too long to fit. One glyph, two
+  meanings, in one label column: a long subcategory came out as
+  „… Zusammenarbeit über Bereic…", indented at one end and truncated at the
+  other in the same mark. The honest reading of a leading ellipsis is that
+  something was cut off there too, which is what gets reported as an interface
+  showing half a word. It is indented instead — from the right, the edge these
+  labels are set against — and keeps the quieter ink it always had. The
+  appendix table is unchanged: a Markdown cell cannot be indented, and nothing
+  is ever cut short there, so the mark is unambiguous where it stands.
+
+  „Nächster unberührter Beitrag" inherited the 1.7-line spacing of the status
+  count it stands under, which is right for a running count and turned a
+  three-line button label into a 75-pixel slab in a 159-pixel column. It keeps
+  its own leading and breaks its lines evenly.
+
 ## 0.8.0 — 2026-08-07
 
 ### Upgrading

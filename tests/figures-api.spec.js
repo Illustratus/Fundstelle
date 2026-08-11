@@ -3,6 +3,7 @@ import { rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { THEMES } from "../public/charts.js";
+import { writeProfiles } from "./role-profiles.mjs";
 
 /**
  * The figures, fetched rather than drawn.
@@ -37,6 +38,8 @@ const NAMES = [
   "citations-per-requirement",
   "requirement-reach",
   "catalog-city",
+  "role-voices",
+  "evidence-per-pillar",
 ];
 
 const TITLES = [
@@ -136,6 +139,9 @@ test.beforeAll(async ({ playwright, baseURL }) => {
   const request = await playwright.request.newContext({ baseURL });
   await addThirdInterview(request);
   await buildStudy(request);
+  // The two role figures are drawn from a file rather than from the coding, so
+  // they need one to exist — written by the checks that are about it.
+  writeProfiles();
   await request.dispose();
 });
 
@@ -144,6 +150,7 @@ test.afterAll(() => {
     recursive: true,
     force: true,
   });
+  rmSync(join(process.cwd(), ".sandbox", "roles.json"), { force: true });
 });
 
 test("the endpoint says which figures there are, in the language asked for", async ({ request }) => {
@@ -154,7 +161,7 @@ test("the endpoint says which figures there are, in the language asked for", asy
   for (const one of german.figures) {
     expect(one.title, `${one.name} carries a title`).toBeTruthy();
     expect(one.url).toBe(`/api/figures/${one.name}.svg`);
-    expect(["analysis", "catalog"]).toContain(one.view);
+    expect(["analysis", "catalog", "roles"]).toContain(one.view);
   }
   const english = await (await request.get("/api/figures?lang=en")).json();
   const changed = english.figures.filter(

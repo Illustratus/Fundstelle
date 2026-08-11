@@ -782,6 +782,44 @@ export const TEXTS = {
     priorityTip: "{title} · {departments} Bereiche · {blocked} blockiert · {citations} Belege",
     catalogChartsEmpty: "Sobald eine Anforderung belegt ist, zeigt sich hier ihre Lage.",
 
+    tabRoles: "Rollen",
+    rolesTitle: "Rollenprofile der Bereiche",
+    rolesLead:
+      "Ein Profil sagt je Bereich, was er tut, was er ablegt, was er abruft, was er übergibt und in welcher Form er Eingehendes erwartet. Geschrieben wird es beim Lesen, in der Arbeit selbst; hier steht, worauf es sich stützt — jeder Satz mit seinen Belegen, jeder Beleg als Weg ins Transkript.",
+    rolesEmpty:
+      "Noch keine Rollenprofile. Sie stehen in der Datei roles.json neben den Anforderungen.",
+    roleChartsEmpty: "Sobald ein Profil Belege trägt, zeigt sich hier, worauf es steht.",
+    pillarTasks: "Aufgaben",
+    pillarFiling: "Ablage",
+    pillarRetrieval: "Abruf",
+    pillarTransfer: "Transfer",
+    pillarStructure: "Struktur",
+    pillarOpen: "offen",
+    roleEntryOne: "Zuschreibung",
+    roleEntryMany: "Zuschreibungen",
+    roleOwnVoice: "{own} aus eigener Stimme, {others} von anderen",
+    roleWithoutOwnVoice: "kein eigenes Interview",
+    roleMissingTurns: "{n} Belege ohne Beitrag im Transkript",
+    turnNotInTranscript: "Diesen Beitrag gibt es im Transkript nicht.",
+    metricProfiles: "Profile",
+    metricRoleEntries: "Zuschreibungen",
+    metricFromOthers: "aus fremder Stimme",
+    figureNeedsProfiles: "Noch kein belegtes Rollenprofil.",
+    chartVoicesTitle: "Wer über wen spricht",
+    chartVoicesCaption:
+      "Je Profil die Belege, aufgeteilt nach dem Interview, aus dem sie stammen. Ein einfarbiger Balken ist eine Selbstauskunft; erst ein zweiter Farbanteil ist eine Fremdaussage über den Bereich. Bereiche ohne eigenes Interview tragen die eigene Farbe gar nicht.",
+    voicesFiguresCaption: "Belege je Rollenprofil und sprechendem Bereich.",
+    summaryVoices:
+      "Balkendiagramm: {rows} Rollenprofile, {total} Belege aus {departments} Interviews. " +
+      "Am dichtesten belegt ist {top} mit {topValue}. Die Profile stehen einzeln darunter.",
+    chartPillarTitle: "Belege je Säule",
+    chartPillarCaption:
+      "Über alle Profile hinweg: worauf die fünf Säulen eines Rollenzuschnitts stehen. Segmentfarbe = sprechender Bereich. Die kürzeste Säule ist die, die ein Entwurf zuletzt tragen sollte.",
+    pillarFiguresCaption: "Belege je Säule und sprechendem Bereich.",
+    summaryPillars:
+      "Balkendiagramm: {rows} Säulen, {total} Belege aus {departments} Interviews. " +
+      "Am dichtesten belegt ist {top} mit {topValue}. Die Säulen stehen einzeln darunter.",
+
     onboardingTitle: "Noch kein Transkript",
     onboardingReads:
       "Das Werkzeug liest je Interview eine Datei <code>final.md</code> aus einem eigenen Unterordner des Transkriptordners:",
@@ -1512,6 +1550,43 @@ export const TEXTS = {
     axisBlockedOperations: "blocked operations",
     priorityTip: "{title} · {departments} departments · {blocked} blocked · {citations} citations",
     catalogChartsEmpty: "As soon as a requirement is cited, its position shows up here.",
+
+    tabRoles: "Roles",
+    rolesTitle: "Role profiles of the departments",
+    rolesLead:
+      "A profile says, per department, what it does, what it files, what it retrieves, what it hands over and in which shape it expects what it receives. It is written while reading, in the study itself; here is what it rests on — every sentence with its evidence, every piece of evidence a way into the transcript.",
+    rolesEmpty: "No role profiles yet. They live in roles.json, beside the requirements.",
+    roleChartsEmpty: "As soon as a profile carries evidence, what it stands on shows up here.",
+    pillarTasks: "Tasks",
+    pillarFiling: "Filing",
+    pillarRetrieval: "Retrieval",
+    pillarTransfer: "Transfer",
+    pillarStructure: "Structure",
+    pillarOpen: "open",
+    roleEntryOne: "attribution",
+    roleEntryMany: "attributions",
+    roleOwnVoice: "{own} in its own voice, {others} from others",
+    roleWithoutOwnVoice: "no interview of its own",
+    roleMissingTurns: "{n} citations without a turn in the transcript",
+    turnNotInTranscript: "That turn is not in the transcript.",
+    metricProfiles: "Profiles",
+    metricRoleEntries: "Attributions",
+    metricFromOthers: "in another voice",
+    figureNeedsProfiles: "No cited role profile yet.",
+    chartVoicesTitle: "Who speaks about whom",
+    chartVoicesCaption:
+      "Per profile the citations, split by the interview they come from. A single-color bar is self-description; only a second color is another department speaking about this one. Departments without an interview of their own carry none of their own color.",
+    voicesFiguresCaption: "Citations per role profile and speaking department.",
+    summaryVoices:
+      "Bar chart: {rows} role profiles, {total} citations from {departments} interviews. " +
+      "Best evidenced is {top} with {topValue}. The profiles are listed one by one below.",
+    chartPillarTitle: "Citations per pillar",
+    chartPillarCaption:
+      "Across all profiles: what the five pillars of a role profile stand on. Segment color = speaking department. The shortest pillar is the one a design should lean on last.",
+    pillarFiguresCaption: "Citations per pillar and speaking department.",
+    summaryPillars:
+      "Bar chart: {rows} pillars, {total} citations from {departments} interviews. " +
+      "Best evidenced is {top} with {topValue}. The pillars are listed one by one below.",
 
     onboardingTitle: "No transcript yet",
     onboardingReads:
