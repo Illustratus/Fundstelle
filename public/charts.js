@@ -236,7 +236,13 @@ export function shorten(text, limit = 30) {
  * the caller try a smaller size before it settles for an ellipsis.
  */
 export function wrapLabel(text, { room, size, maxLines = 3 }) {
-  const fits = (one) => estimateWidth(one, { size }) <= room;
+  /* Nothing always fits. Without that, a caller who works out a room from a
+     layout and gets a negative one — which a crowded figure can — sends this
+     into a loop that breaks a word into empty pieces for ever, and the failure
+     surfaces as an out-of-memory in a chart rather than as a squeezed label.
+     The caller should not hand over a negative room; this is what happens when
+     it does anyway. */
+  const fits = (one) => !one || estimateWidth(one, { size }) <= room;
   const perLine = Math.max(4, Math.floor(room / (size * 0.58)));
   const lines = [];
   let line = "";
@@ -1536,29 +1542,309 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
     { title: withCitations[0].title, touched: links(withCitations[0]) },
   );
 
-  const COS = Math.cos(Math.PI / 6);
-  const SIN = Math.sin(Math.PI / 6);
-  /* Room for a name at each end of both axes. The labels are ordinary
-     horizontal text, so what they need is width, and the grid gets what is
-     left. */
-  const NAMES = 132;
-  const CELL = Math.max(
-    14,
-    Math.min(34, (WIDTH - 2 * NAMES) / ((columns.length + withCitations.length) * COS)),
-  );
-  const TALL = 96;
   const INSET = 0.2;
 
-  const spread = (columns.length + withCitations.length) * CELL * SIN;
-  // Centred on the diamond itself, with a name's width outside each of its two
-  // side corners.
-  const midX = (WIDTH - (columns.length - withCitations.length) * CELL * COS) / 2;
-  const top = TALL + 26;
+  /* What stands between the lattice and a name: the gap and the number. The
+     counts stand against the city — against the cell at the edge whose row or
+     column they count — and the name hangs off the number. Put behind the name
+     instead, as the right-hand side once had them, a count sits a whole name's
+     width from the thing it counts and the reader has to measure across the
+     white to see which one it belongs to. */
+  const GAP = 9;
+  const NUMBER = 20;
+  const EDGE = 4;
+  const CLEAR = 5;
+  /* The lattice keeps the thirty degrees it is drawn at. It is what makes the
+     picture a city rather than a diagram of one, and the moment the names were
+     allowed to stretch it — a row is only as tall as the step down, and two
+     lines of type need three times that — the floor tipped up to something
+     nobody would call a view. So the names no longer set the step. */
+  const ISO = Math.tan(Math.PI / 6);
+
+  /* And they no longer need to. A name set flat has the step down to live in,
+     which is half the step across and never enough; set at an angle, what it
+     has is the distance between two *parallel* lines of writing, which is a
+     good deal more.
+
+     Thirty, which is the lattice's own angle, because the name has to run along
+     the row it names and not merely start on it. A row of this figure is a line
+     of cells, and that line leaves the lattice at exactly the point the count
+     stands at and carries on outward: written along it, a name lies on its own
+     row from its first letter to its last. Written at any other angle it
+     crosses out of its row as it goes, and a reader who follows the writing
+     inward — which is what a reader does — arrives at the wrong one.
+
+     What it costs is height, which a figure on a page can spend: it is drawn to
+     one width and scaled to the column it stands in, so growing downward is
+     free and growing sideways is not. */
+  const SLANT = 30;
+  const RUN = Math.cos((SLANT * Math.PI) / 180);
+  const RISE = Math.sin((SLANT * Math.PI) / 180);
+  // How much room one step across leaves between two names, at this tilt on
+  // this lattice: what a step contributes across the writing rather than along
+  // it. At thirty degrees it is exactly the step; here it is a little more.
+  const LANE = RISE + ISO * RUN;
+
+  const categoryText = columns.map((one) => one.name);
+  const requirementText = withCitations.map((row) => row.title);
+  const lattices = columns.length + withCitations.length;
+
+  /* The narrowest a name can be set in and still come out in the lines it is
+     allowed. Found by trying, because the wrapping is greedy: half of a name is
+     not where it breaks in two — that puts three words on the first line and
+     the rest on a second and a third — and the answer is the first width at
+     which it does come out whole.
+
+     Two things are asked of it. What a side has to keep, before anything is
+     drawn: a title set on one line takes a third of the sheet on its own, and
+     broken it takes a sixth. And where a name that has to break should break:
+     the same width, which is the most even break there is. */
+  const asksFor = (name, size, lines) => {
+    const whole = estimateWidth(name, { size });
+    const word = Math.max(...String(name).split(/\s+/).map((one) => estimateWidth(one, { size })));
+    for (let room = Math.max(word, whole / lines); room < whole; room += 3) {
+      if (!wrapLabel(name, { room, size, maxLines: lines }).truncated) return room + 1;
+    }
+    return whole + 1;
+  };
+
+  /* What a side has to keep outside the lattice, worked out from the names in
+     the order they are written along their edge: the first of each is the one
+     at the corner, and each after it begins a step further in. So what a side
+     keeps is the widest *overhang* rather than the widest name — „Erwartung an
+     das Ablagesystem" three steps in costs nothing if the drawing is three
+     steps wide there. Tilted, a name reaches across by its own width less the
+     tilt, which is where the run comes in.
+
+     The reserve and the step turn on each other — a wider step carries more of
+     the names — so the two are walked onto from the widest step down, each pass
+     only ever shrinking. */
+  const settle = (size, lines) => {
+    const needs = [categoryText, requirementText].map((names) =>
+      names.map((name) => asksFor(name, size, lines)),
+    );
+    /* A tilted block of lines is wider than its longest line: the second line
+       hangs half a line's height off the baseline, and half a line's height on
+       the diagonal is that much further out. */
+    const stack = (RISE * (lines - 1) * Math.round(size * 1.2 * 10)) / 20;
+    const reserve = (need, step) =>
+      (GAP + NUMBER) * RUN +
+      EDGE +
+      1 +
+      stack +
+      Math.max(0, ...need.map((one, k) => RUN * one - (k + 0.5) * step));
+    let across = 38;
+    for (let pass = 0; pass < 12; pass += 1) {
+      const asks = needs.map((need) => reserve(need, across));
+      across = Math.max(12, Math.min(38, (WIDTH - asks[0] - asks[1]) / lattices));
+    }
+    return {
+      size,
+      lines,
+      line: Math.round(size * 1.2 * 10) / 10,
+      across,
+      asks: needs.map((need) => reserve(need, across)),
+    };
+  };
+
+  /* The largest type at which every name is written whole — and at each size,
+     broken over two lines before it is left on one. Not because two lines read
+     better, but because a name is set on the diagonal here: left on one line it
+     reaches as far down the sheet as it does across, and a study of six
+     requirements came out as a small city over a great fan of writing. Broken,
+     it asks for half of both. Short names are unaffected either way; there is
+     nowhere to break them.
+
+     Room *between* the lines of writing is the other half of it, and on this
+     lattice at this tilt that room is exactly one step across — so the type has
+     to come down until a name fits between two neighbours as well as beside
+     them. Where even the smallest fails, the step has hit the floor under it,
+     the study has more names than a sheet this wide can carry, and what does
+     not fit is shortened with its whole self kept in the element's title. */
+  const plan =
+    [9.5, 9, 8.5, 8, 7.5, 7, 6.5]
+      .flatMap((size) => [
+        [size, 2],
+        [size, 1],
+      ])
+      .map(([size, lines]) => settle(size, lines))
+      // `across` off its floor is the width test: the reserve and the step are
+      // settled against each other until they exactly fill the sheet, so asking
+      // whether they fit is asking a coin toss in the last decimal. What the
+      // floor means is that they no longer do.
+      .find(
+        (one) => one.lines * one.line + CLEAR <= LANE * one.across && one.across > 12.01,
+      ) ??
+    settle(6.5, 1);
+  /* Both sides keep a minimum whatever the plan says. Thirty categories and
+     thirty requirements are sixty steps to lay down, and sixty of the smallest
+     step is the whole sheet with nothing left beside it for a single letter —
+     the layout came out with a *negative* margin for the first name. There the
+     lattice gives way rather than the names: a floor nobody can read the edges
+     of is not a figure, and the names shorten and say so with an ellipsis. */
+  const LEAST = GAP + NUMBER + EDGE + 26;
+  const LINES = plan.lines;
+  const ACROSS = Math.min(plan.across, (WIDTH - 2 * LEAST) / lattices);
+  /* And the type with it, so the tilted lines keep clear of each other at the
+     narrower step too. Above the pinch this is `plan.size` exactly: the plan
+     was chosen against that very condition. */
+  const SIZE =
+    Math.round(Math.max(5.5, Math.min(plan.size, (LANE * ACROSS - CLEAR) / (1.2 * LINES))) * 2) /
+    2;
+  const LINE = Math.round(SIZE * 1.2 * 10) / 10;
+  const DOWN = ISO * ACROSS;
+  /* How tall the tallest tower stands, in proportion to the ground it stands
+     on. Ninety-six over a cell of thirty is a building; over a cell of twelve —
+     which is what a study of thirty categories and requirements comes down to —
+     it is a splinter, and a field of splinters is not a skyline. */
+  const TALL = Math.min(96, Math.max(48, 3.4 * ACROSS));
+
+  /* And the least a tower may be, as a share of that.
+
+     Straight proportion is right until the counts are lopsided, and they are:
+     one cell of a real catalog carried 39 citations and most carried one or
+     two. At 1/39 of the height a tower is a plate on the floor — the cell is
+     still there and still coloured, but the height, which is the whole reason
+     this figure exists beside the flat one, says nothing for all but a handful
+     of cells. So every tower stands, and the rest of the height is shared out
+     in proportion above that.
+
+     A floor and not a squeeze: every height above it stays exactly
+     proportional, so no difference a reader can see is a difference that is not
+     there. What is under it is lifted to the same minimum and is therefore
+     *not* told apart — which is the honest thing to say about one citation and
+     two against a maximum of thirty-nine, and the table underneath still
+     carries each of them. Where nothing is lifted, nothing is said; where something is,
+     the key says so, because a height read as a quantity that silently is not
+     one is the one thing a figure must not do. */
+  const STAND = 0.15;
+  const rise = (n) => TALL * Math.max(n / max, STAND);
+  // Asked of the smallest tower there actually is, not of the largest one:
+  // where the counts sit close together nothing is lifted, and a key that
+  // explains a compression the figure did not make sends the reader looking
+  // for one.
+  const stands = Math.min(...counts.values()) / max < STAND;
+
+  const spread = lattices * DOWN;
+  /* Where the left corner of the lattice falls. What the two sides asked for if
+     it fits, with whatever is over shared evenly so the picture stays centred;
+     and if it does not — more names than the sheet can carry — split in the
+     proportion they asked in, and what still does not fit is shortened below. */
+  const asked = plan.asks[0] + plan.asks[1];
+  const spare = WIDTH - lattices * ACROSS;
+  const leftEdge =
+    asked <= spare
+      ? plan.asks[0] + (spare - asked) / 2
+      : Math.max(EDGE, (spare * plan.asks[0]) / asked);
+  const placed = leftEdge + withCitations.length * ACROSS;
+
+  // Back to front: the far corner is where i and j are both small.
+  const cells = [];
+  for (let i = 0; i < withCitations.length; i += 1) {
+    for (let j = 0; j < columns.length; j += 1) {
+      const n = counts.get(`${withCitations[i].id}|${columns[j].category}`) ?? 0;
+      if (n) cells.push({ i, j, n });
+    }
+  }
+  cells.sort((a, b) => a.i + a.j - (b.i + b.j));
+
+  /* What the towers need above the lattice, asked of the towers rather than
+     reserved for the tallest one that could have stood in the far corner. Every
+     row forward lowers the roof by a step down, so a full-height tower at the
+     front reaches nowhere near as high on the sheet as one at the back — and a
+     figure that keeps the room for it anyway opens with a hand's width of
+     white it never uses. */
+  const headroom =
+    26 +
+    Math.max(
+      0,
+      ...cells.map(({ i, j, n }) => rise(n) - (i + j + 2 * INSET) * DOWN),
+    );
+
+  /* Both sets of names, set before the sheet is measured, because how far they
+     hang below their own edge is what the sheet has to be tall enough for.
+
+     Each is given the room its own place on the edge leaves: a name further
+     along begins further out and has that much more of the sheet in front of
+     it. Divided by the run, because a tilted name reaches across by less than
+     its length. */
+  // Where a name begins, which is out along its own row rather than out to the
+  // side: the gap and the count, reckoned along the line and not across it.
+  const OUT = (GAP + NUMBER) * RUN;
+  const anchorX = {
+    left: (j) => placed + (j + 0.5 - withCitations.length) * ACROSS - OUT,
+    right: (i) => placed + (columns.length - i - 0.5) * ACROSS + OUT,
+  };
+  const STACK = (RISE * (LINES - 1) * LINE) / 2;
+  /* Set into the room it has, but broken *evenly* when it has to break at all.
+     Wrapping is greedy — hand it the whole of a wide margin and it fills the
+     first line to the last word it can take and leaves „geht" alone on the
+     second. So a name that fits on one line is given the margin, and a name
+     that does not is given the narrowest width it still comes out of in two,
+     which is the most even break there is. */
+  const setIn = (name, given) => {
+    // Never less than a few letters, however crowded: what a name is cut to is
+    // still a name, and its whole self is in the title either way.
+    const room = Math.max(given, 4 * SIZE);
+    const whole = estimateWidth(name, { size: SIZE });
+    const even = whole <= room ? room : Math.min(room, asksFor(name, SIZE, LINES));
+    return wrapLabel(name, { room: even, size: SIZE, maxLines: LINES });
+  };
+  const categoryLabels = categoryText.map((name, j) =>
+    setIn(name, (anchorX.left(j) - EDGE - STACK) / RUN),
+  );
+  const requirementLabels = requirementText.map((name, i) =>
+    setIn(name, (WIDTH - EDGE - STACK - anchorX.right(i)) / RUN),
+  );
+
+  /* How far the drawing reaches below its own lattice: a name runs downward as
+     it runs outward, and the longest of them decides. Measured off the name as
+     it came out rather than off the room it was given — most names are shorter
+     than their room, and a foot kept for the longest one that could have been
+     there is white nobody asked for. */
+  const drop = (labels, rowOf) =>
+    Math.max(
+      0,
+      ...labels.map((label, k) => {
+        const run = Math.max(...label.lines.map((line) => estimateWidth(line, { size: SIZE })));
+        // The name starts a gap and a count out along its own row, which is
+        // already downward, and runs on from there.
+        return rowOf(k) + RISE * (GAP + NUMBER + run) + (label.lines.length * LINE) / 2 - spread;
+      }),
+    );
+  const below = Math.max(
+    drop(categoryLabels, (j) => (withCitations.length + j + 0.5) * DOWN),
+    drop(requirementLabels, (i) => (columns.length + i + 0.5) * DOWN),
+  );
+  const top = headroom;
+  const canvas = top + spread + Math.max(20, below + EDGE + SIZE);
+
+  /* And the whole of it centred on what is drawn rather than on what was
+     reserved. Each side keeps room for its own names, and a study whose
+     categories are one word and whose requirements are a sentence keeps twice
+     as much on one side as on the other — which is right for the reserve and
+     wrong for the eye: the city ends up hard against one edge of the sheet with
+     the white all on the other. Measured off the names as they came out, and
+     never far enough to push the far side off the sheet. */
+  const outer = (labels, anchor, sign) =>
+    labels.map((label, k) => {
+      const run = Math.max(...label.lines.map((line) => estimateWidth(line, { size: SIZE })));
+      return anchor(k) + sign * (RUN * run + STACK);
+    });
+  const reaches = [
+    Math.min(...outer(categoryLabels, anchorX.left, -1), placed - withCitations.length * ACROSS),
+    Math.max(...outer(requirementLabels, anchorX.right, 1), placed + columns.length * ACROSS),
+  ];
+  const midX =
+    placed +
+    Math.min(
+      Math.max((WIDTH - reaches[1] - reaches[0]) / 2, EDGE - reaches[0]),
+      WIDTH - EDGE - reaches[1],
+    );
   const foot = (i, j) => ({
-    x: midX + (j - i) * CELL * COS,
-    y: top + (j + i) * CELL * SIN,
+    x: midX + (j - i) * ACROSS,
+    y: top + (j + i) * DOWN,
   });
-  const canvas = top + spread + 34;
 
   /* The lattice first, so a tower stands on a visible square and an empty cell
      is a hole in a floor rather than nothing at all. */
@@ -1574,67 +1860,126 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
     lattice += `<line class="floor" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"></line>`;
   }
 
-  // Back to front: the far corner is where i and j are both small.
-  const cells = [];
-  for (let i = 0; i < withCitations.length; i += 1) {
-    for (let j = 0; j < columns.length; j += 1) {
-      const n = counts.get(`${withCitations[i].id}|${columns[j].category}`) ?? 0;
-      if (n) cells.push({ i, j, n });
-    }
-  }
-  cells.sort((a, b) => a.i + a.j - (b.i + b.j));
-
   const towers = cells
     .map(({ i, j, n }) => {
       const row = withCitations[i];
-      const rise = (n / max) * TALL;
       const a = foot(i + INSET, j + INSET);
       const b = foot(i + INSET, j + 1 - INSET);
       const c = foot(i + 1 - INSET, j + 1 - INSET);
       const d = foot(i + 1 - INSET, j + INSET);
-      const up = (point) => `${point.x.toFixed(1)} ${(point.y - rise).toFixed(1)}`;
+      const up = (point) => `${point.x.toFixed(1)} ${(point.y - rise(n)).toFixed(1)}`;
       const down = (point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
-      const tip = t("reachTip", { title: row.title, category: columns[j].name, n });
+      const only = sole.has(columns[j].category);
+      const tip = only
+        ? t("reachTipSole", { title: row.title, category: columns[j].name, n })
+        : t("reachTip", { title: row.title, category: columns[j].name, n });
       const level = moscowClass(row.moscow);
+      /* The one building that answers a category nothing else answers, roofed
+         in a colour that is in no scale of this figure.
+         It was a ring, drawn beside the name out where the counts stand — a
+         mark about a *block* set down in the column of figures, where it read
+         as belonging to the number it happened to land next to. What the mark
+         is about is the block, so it is on the block. And on the roof of it:
+         the three faces carry the MoSCoW level and are the one thing that must
+         not be overwritten, while the roof is the face a reader looks straight
+         down at from up here — it changes colour and the level is still there
+         on the two walls under it. */
+      /* The three faces of a block seen from above and in front: the roof, and
+         the two walls that hang from the roof's two *near* edges — the ones
+         running down from its lowest corner.
+
+         They used to hang from d→c and from a→d, and a→d is a far edge: that
+         wall stood behind the block and was drawn over the front of it, which
+         put a second colour across the left half of every roof at the opacity
+         of a wall. That is the line through the roof, and it is why a tower
+         looked like two shapes rather than one — a coloured half and a pale
+         half — and why the block came out half as wide as the footprint it
+         stands on. The wall on the other near edge, c→b, was never drawn at
+         all. Both are drawn now, and the roof is left whole. */
+      const roof = `${up(a)} ${up(b)} ${up(c)} ${up(d)}`;
+      const west = `${up(d)} ${up(c)} ${down(c)} ${down(d)}`;
+      const east = `${up(c)} ${up(b)} ${down(b)} ${down(c)}`;
       return (
-        `<g class="tower" data-row="${escape(row.title)}" data-category="${escape(columns[j].name)}"` +
-        ` data-value="${n}" data-tip="${escape(tip)}">` +
-        `<polygon class="face top ${level}" points="${up(a)} ${up(b)} ${up(c)} ${up(d)}"></polygon>` +
-        `<polygon class="face left ${level}" points="${up(a)} ${up(d)} ${down(d)} ${down(a)}"></polygon>` +
-        `<polygon class="face right ${level}" points="${up(d)} ${up(c)} ${down(c)} ${down(d)}"></polygon>` +
+        `<g class="tower${only ? " sole" : ""}" data-row="${escape(row.title)}"` +
+        ` data-category="${escape(columns[j].name)}"` +
+        ` data-value="${n}" data-sole="${only}" data-tip="${escape(tip)}">` +
+        `<polygon class="face top ${only ? "sole-roof" : level}" points="${roof}"></polygon>` +
+        `<polygon class="face left ${level}" points="${west}"></polygon>` +
+        `<polygon class="face right ${level}" points="${east}"></polygon>` +
         `</g>`
       );
     })
     .join("");
 
-  /* Names flat along the two *near* edges, each running outward from the city.
-     Which two edges those are is the whole of it: put on a far edge, a label
-     sits exactly where the towers of its own row rise through, and no amount of
-     nudging saves it. The near-left edge belongs to the categories and its
-     outside is to the left; the near-right edge belongs to the requirements and
-     its outside is to the right. Written flat, consecutive labels are a whole
-     cell apart in the vertical, which is what keeps them off each other.
+  /* Names on the two *near* edges, each hung off its own count and running
+     outward from the city. Which two edges those are is the whole of it: put on
+     a far edge, a label sits exactly where the towers of its own row rise
+     through, and no amount of nudging saves it. The near-left edge belongs to
+     the categories and its outside is down and to the left; the near-right edge
+     belongs to the requirements and its outside is down and to the right. The
+     two run away from the near corner like the shadow of the city.
 
      Each carries the same count the flat figure prints at the same place: how
      many categories a requirement reaches, how many requirements answer a
      category. They are the reading of a row and of a column, and this is the
      same matrix — a reader who takes the two figures for the same thing and
-     finds a number in one of them and not in the other is right to wonder
-     which one is holding something back.
+     finds a number in one of them and not in the other is right to wonder which
+     one is holding something back. */
+  /* Everything an edge carries stands *on the line of its own row*, and that is
+     the whole of it.
 
-     One line each: consecutive labels are only half a cell apart in the
-     vertical here, so a second line would land on the neighbour. What does not
-     fit is shortened, and the whole name stays in the element's title. */
-  /* `NAMES` is the least a name may have — it is what the cell size was worked
-     out against. What a name actually gets is what the drawing leaves: the
-     diamond is centred and its half-width is known once the cell is, so a small
-     city gives its labels three times the reserve and a large one falls back to
-     it. The reserve was being spent whether the city needed it or not, and
-     „Erwartung an das…" stood cut beside a third of a page of white. */
-  const NUMBER = 20;
-  const half = ((columns.length + withCitations.length) * CELL * COS) / 2;
-  const room = Math.max(60, WIDTH / 2 - half - 9 - NUMBER - 6);
-  const named = (text) => escape(shortenToWidth(text, room, { size: 8.5 }));
+     The line of a row is the one through the middles of its cells: for a
+     category, the middles of every tower in its column; for a requirement, the
+     middles of every tower in its row. It leaves the lattice at the point the
+     count is set against, and it runs on outward at the lattice's own angle.
+     So the count is set a gap out along *that line*, and the name a number's
+     width further out along it, and the name is written along it.
+
+     Set out horizontally instead — which is what they were — they walk off
+     their own line as they go: a gap of nine units to the side is five units
+     off a line that climbs at thirty degrees, and a name set a number's width
+     beyond that is seventeen. A row of this lattice is eight units tall. The
+     count therefore sat most of a row above the row it counted, and the name
+     two rows above the row it named, both of them drifting further out the
+     further they went. That is the kink, and it is why every name looked like
+     it belonged to its neighbour. */
+  const away = { x: RUN, y: RISE };
+  const along = (spot, out, back) => ({
+    x: spot.x + (back ? -out * away.x : out * away.x),
+    y: spot.y + out * away.y,
+  });
+
+  const named = (label, text, { at, back, quiet = false }) => {
+    /* The block of lines centred across the baseline, and the whole thing
+       pivoted about the point it hangs from — so the lines stack square to the
+       writing rather than square to the sheet. */
+    const first = at.y - ((label.lines.length - 1) * LINE) / 2 + SIZE * 0.35;
+    const tilt = back ? -SLANT : SLANT;
+    return (
+      `<text class="axis city${quiet ? " unmet" : ""}" x="${at.x.toFixed(1)}"` +
+      ` y="${first.toFixed(1)}" text-anchor="${back ? "end" : "start"}"` +
+      ` transform="rotate(${tilt} ${at.x.toFixed(1)} ${at.y.toFixed(1)})"` +
+      ` style="font-size:${SIZE}px">` +
+      `<title>${escape(text)}</title>` +
+      label.lines
+        .map(
+          (line, k) =>
+            `<tspan x="${at.x.toFixed(1)}"${k ? ` dy="${LINE}"` : ""}>${escape(line)}</tspan>`,
+        )
+        .join("") +
+      `</text>`
+    );
+  };
+
+  /* The count on the same line, and turned with it. Left upright it would sit
+     square to the sheet in a run of writing that is not, and — over the two
+     digits a count can run to — walk off the line it belongs to at the far end
+     of itself. */
+  const counted = (at, value, back, quiet) =>
+    `<text class="value${quiet ? " empty" : ""}" x="${at.x.toFixed(1)}"` +
+    ` y="${(at.y + 3.5).toFixed(1)}" text-anchor="${back ? "end" : "start"}"` +
+    ` transform="rotate(${back ? -SLANT : SLANT} ${at.x.toFixed(1)} ${at.y.toFixed(1)})">` +
+    `${value}</text>`;
 
   const categoryNames = columns
     .map((one, j) => {
@@ -1643,17 +1988,12 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
       // A category no requirement answers is the finding, here as there: the
       // count says nought and the name is set quietly rather than hidden.
       return (
-        `<text class="axis city${answered ? "" : " unmet"}" x="${(spot.x - 9 - NUMBER).toFixed(1)}"` +
-        ` y="${(spot.y + 3).toFixed(1)}" text-anchor="end">` +
-        `<title>${escape(one.name)}</title>${named(one.name)}</text>` +
-        `<text class="value${answered ? "" : " empty"}" x="${(spot.x - 11).toFixed(1)}"` +
-        ` y="${(spot.y + 3).toFixed(1)}" text-anchor="end">${answered}</text>` +
-        // The category only one requirement answers, marked as it is marked in
-        // the flat figure, so one key entry covers both.
-        (sole.has(one.category)
-          ? `<circle class="reach-sole" cx="${(spot.x - 4).toFixed(1)}"` +
-            ` cy="${spot.y.toFixed(1)}" r="4"></circle>`
-          : "")
+        counted(along(spot, GAP, true), answered, true, !answered) +
+        named(categoryLabels[j], one.name, {
+          at: along(spot, GAP + NUMBER, true),
+          back: true,
+          quiet: !answered,
+        })
       );
     })
     .join("");
@@ -1662,10 +2002,8 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
     .map((row, i) => {
       const spot = foot(i + 0.5, columns.length);
       return (
-        `<text class="axis city" x="${(spot.x + 9).toFixed(1)}" y="${(spot.y + 3).toFixed(1)}">` +
-        `<title>${escape(row.title)}</title>${named(row.title)}</text>` +
-        `<text class="value" x="${(spot.x + 9 + room + 6).toFixed(1)}"` +
-        ` y="${(spot.y + 3).toFixed(1)}">${links(row)}</text>`
+        counted(along(spot, GAP, false), links(row), false, false) +
+        named(requirementLabels[i], row.title, { at: along(spot, GAP + NUMBER, false) })
       );
     })
     .join("");
@@ -1682,13 +2020,18 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
       kind: "moscow",
       entries: [
         ...moscowKey(withCitations, t, nameOf),
-        ...(sole.size ? [{ paint: "sole", shape: "ring", label: t("reachSoleKey") }] : []),
+        /* The same statement the flat figure makes with a ring, in the mark
+           this figure makes it with: the key shows what is drawn, and a ring
+           beside a picture that has no rings in it sends the reader looking. */
+        ...(sole.size ? [{ paint: "sole-roof", label: t("reachSoleKey") }] : []),
         /* The height, named. The flat figure can draw the two ends of its scale
            as two dots and let the reader hold them against the picture; two
            towers in a key would be a second little drawing, and a tower is read
            against the lattice it stands on rather than against a swatch. So it
            is said in words — but said, which it was not. */
-        ...(max > 1 ? [{ label: t("cityHeightKey", { n: max }) }] : []),
+        ...(max > 1
+          ? [{ label: t(stands ? "cityHeightStandKey" : "cityHeightKey", { n: max }) }]
+          : []),
       ],
     },
     /* Every chart carries its numbers as a table as well. Here it matters more
@@ -1882,9 +2225,14 @@ export function stylesheet(theme = "light") {
     `.reach{stroke:${c.sheet};stroke-width:1}` +
     `.reach-sole{fill:none;stroke:${c.inkSoft};stroke-width:1}` +
     `.floor{stroke:${c.line}}` +
-    `.axis.city{font-size:8.5px}` +
     `.face{stroke:${c.sheet};stroke-width:.6}` +
-    `.face.left{opacity:.78}.face.right{opacity:.58}` +
+    `.face.left{opacity:.88}.face.right{opacity:.74}` +
+    /* The roof of the one building that answers its category alone. Out of the
+       warm end of the series palette, which nothing else in this figure uses:
+       any of the greens would be read as a MoSCoW level, and the level is what
+       the walls under the roof are still saying. */
+    `.face.sole-roof{fill:${c.series[1]}}` +
+    `.key-sole-roof{fill:${c.series[1]}}` +
     `.axis-title{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
     `.row-label{fill:${c.ink};font-size:11.5px;font-family:${FONTS.sans}}` +
     `.row-label.child{fill:${c.inkSoft}}` +

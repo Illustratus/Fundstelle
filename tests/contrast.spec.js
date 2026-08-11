@@ -93,6 +93,23 @@ const measure = () => {
     });
   }
 
+  /* The two quiet inks, measured as colours rather than through whichever
+     element happens to be on this screen. `--ink-faint` is the tool's word for
+     "a zero that means nothing is here" — the category no requirement answers,
+     in the reach figure and in the city — and both of those live in the
+     catalog, which this run never opens; `app.css` claims of it that this suite
+     keeps it above the threshold, and until now nothing did. It has 0.013 to
+     spare in the dark theme, which is exactly the margin a palette nudge would
+     spend without anybody noticing. */
+  for (const ink of ["--ink-soft", "--ink-faint"]) {
+    const probe = document.createElement("div");
+    probe.style.color = `var(${ink})`;
+    document.body.append(probe);
+    const colour = parse(getComputedStyle(probe).color);
+    probe.remove();
+    found.push({ what: ink, ratio: ratio(colour, surface), need: 4.5 });
+  }
+
   // Every series colour has to stand off the surface it is drawn on.
   for (let index = 1; index <= 8; index++) {
     const probe = document.createElement("div");

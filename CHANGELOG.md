@@ -97,6 +97,66 @@ lies, as every earlier shape still is.
   drawn away: a tall tower in front hides what stands behind it, which its
   caption says.
 
+  **Its names are written out, and set on the diagonal.** A name used to be
+  laid flat at its own row of the lattice and cut where the row ran out. A row
+  of a thirty-degree lattice is half a step tall, which is not enough for one
+  line of type at a size worth reading, let alone two — so either the names
+  were cut, or the lattice had to be stretched to fit them and stopped looking
+  like a view of anything.
+
+  Tilted thirty degrees across the run of its edge, a name has the distance
+  between two parallel lines of writing instead, which on this lattice comes to
+  a whole step across — twice the room, for nothing. So every name stands at
+  its own row, written out, in the largest type it fits in, broken evenly over
+  two lines when one will not do. The lattice keeps its thirty degrees and the
+  sheet grows downward instead, which costs nothing: a figure is drawn to one
+  width and scaled to the column it stands in.
+
+  **On the line of its own row**, and that is the point of the angle rather
+  than the angle itself. The line of a row is the one through the middles of its
+  cells; it leaves the lattice exactly where the count is set and carries on
+  outward at the lattice's own thirty degrees. The count is set a gap out along
+  that line and the name a count's width further along it, so a row and its name
+  are one straight run and the name is the row, written out.
+
+  Set out *horizontally* from that point instead — which is how it was first
+  built — and both walk off the line as they go: a gap of nine units to the side
+  is five units off a line that climbs at thirty degrees, and a name a count's
+  width beyond that is seventeen. A row is eight units tall. So the count sat
+  most of a row above the row it counted, the name two rows above the row it
+  named, and every name read as its neighbour's. That the anchor was on the line
+  was true and no comfort — what a reader follows is the writing.
+
+  **A tower is one block.** Two of its three faces were wrong from the start.
+  A block seen from above and in front shows its roof and the two walls hanging
+  from the roof's *near* edges; one wall was hung from a far edge instead —
+  from a line behind the block — and, drawn after the roof and downward from
+  there, it covered the roof's near half in the paint of a wall. Every tower
+  was two shapes with a seam down the middle that meant nothing, and, since the
+  wall on the other near edge was never drawn at all, half as wide as the
+  footprint it stood on. Both walls now hang where they belong, the roof is
+  whole, and the two of them are painted closer to it: at the old strengths one
+  wall read as missing rather than as turned away.
+
+  **And every tower stands.** The height was straight proportion, which is
+  right until the counts are lopsided — and they are: one cell of a real
+  catalog carried 39 citations where most carried one or two, and at a fortieth
+  of the height a tower is a plate on the floor. The third dimension, which is
+  the whole reason this figure stands beside the flat one, then says nothing
+  for all but a handful of cells. Every tower now has a minimum height, with
+  the rest of the scale exactly proportional above it, so no difference anybody
+  can see is a difference that is not there. Where nothing had to be lifted the
+  scale is untouched and the key says the plain thing; where something was, the
+  key says so.
+
+  The counts stand against the lattice at both edges, at the cell whose row or
+  column they count, rather than out behind the names. And the one requirement
+  that answers a category alone is roofed in a colour no scale of the figure
+  uses: the mark is on the building it is about, and the two walls under the
+  roof still carry the MoSCoW level. The tallest tower is now drawn in
+  proportion to the ground it stands on, so a study of thirty categories and
+  requirements is a skyline rather than a field of splinters.
+
   **A dot counts the coding units that cite this requirement and sit in this
   category.** One unit, one category — but a citation can carry several
   requirements and then stands in several rows, which is the thing about the

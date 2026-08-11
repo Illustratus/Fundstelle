@@ -704,6 +704,10 @@ export const TEXTS = {
       "Säule vorn verdeckt, was dahinter steht, und zwei gleich hohe Säulen wirken je nach Tiefe " +
       "verschieden hoch. Die Tabelle darunter nennt jede Zahl einzeln.",
     cityHeightKey: "Turmhöhe in Belegen: 1 bis {n}",
+    // Gesagt, wo die Mindesthöhe tatsächlich greift: eine Höhe, die als Menge
+    // gelesen wird und stillschweigend keine ist, wäre der eine Fehler, den
+    // eine Abbildung nicht machen darf.
+    cityHeightStandKey: "Turmhöhe in Belegen: 1 bis {n}, die kleinsten auf Mindesthöhe",
     summaryCity:
       "{rows} Anforderungen über {categories} Kategorien, in der Reihenfolge des Katalogs. " +
       "Am weitesten reicht „{top}“ mit {touched} Kategorien; {narrow} Anforderungen berühren nur " +
@@ -1435,6 +1439,7 @@ export const TEXTS = {
       "read differently depending on how far back they are. The table below names every figure " +
       "one by one.",
     cityHeightKey: "Tower height in citations: 1 to {n}",
+    cityHeightStandKey: "Tower height in citations: 1 to {n}, the smallest at a minimum height",
     summaryCity:
       "{rows} requirements across {categories} categories, in the order of the catalog. " +
       "“{top}” reaches furthest with {touched} categories; {narrow} requirements touch only one. " +

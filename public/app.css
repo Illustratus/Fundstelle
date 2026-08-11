@@ -2099,18 +2099,27 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .reach-sole { fill: none; stroke: var(--ink-soft); stroke-width: 1; }
 
 /* The city: the lattice a tower stands on, and the names along its two near
-   edges. Written flat rather than along their own axis — set along it, one
-   label lies on the line the next one starts on. */
+   edges. Set at thirty degrees across the run of the edge — flat, a name has
+   only the step down to live in, which is half the step across and never
+   enough; tilted, what it has is the distance between two parallel lines of
+   writing, which on this lattice is a whole step across. Their size and their
+   tilt are on the elements themselves: both are the figure's own decision,
+   taken against how many names there are and how long they run, and the
+   lattice is laid out around them. */
 .chart .floor { stroke: var(--line); }
-.chart .axis.city { font-size: 8.5px; }
 
 /* A column of the city, lit from the left: the same colour at three strengths,
    which is what makes a box read as a box rather than as three flat shapes. */
 .chart .face { stroke: var(--sheet); stroke-width: .6; }
 .chart .face.top { fill: var(--moscow); }
-.chart .face.left { fill: var(--moscow); opacity: .78; }
-.chart .face.right { fill: var(--moscow); opacity: .58; }
+.chart .face.left { fill: var(--moscow); opacity: .88; }
+.chart .face.right { fill: var(--moscow); opacity: .74; }
 .chart .tower:hover .face { opacity: 1; }
+/* The roof of the only requirement that answers its category. It was a ring out
+   in the column of counts, where a mark about a building sat among the figures;
+   on the roof it is on the building itself, and the two walls under it still
+   carry the MoSCoW colour. Warm, because every green in this figure is a level. */
+.chart .face.sole-roof { fill: var(--series-2); }
 /* A category no requirement reaches. Quieter, not hidden — it is the finding,
    and --ink-faint is the tool's word for "a zero that means nothing is here".
    It clears 4.5:1 in both themes; `npm run test:contrast` keeps it there. */
@@ -2127,6 +2136,10 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .point-label { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); pointer-events: none; }
 
 .chart-legend.moscow i { background: var(--moscow); border-radius: 50%; }
+/* The roof colour of the city. Square and after the rule above on purpose: this
+   entry stands in a MoSCoW key and is not a MoSCoW level, so neither the colour
+   nor the round shape that key would give it may stand. */
+.chart-legend .sole-roof i { background: var(--series-2); border-radius: 2px; }
 /* An outline, because the thing it stands for is a shape drawn around a dot
    rather than a colour. */
 .chart-legend .ring-key i {
