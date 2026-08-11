@@ -44,9 +44,26 @@ async function coded(request) {
   return interviews;
 }
 
-/** Every visible single-line field whose placeholder does not fit in it. */
+/**
+ * Every visible single-line field whose placeholder does not fit in it.
+ *
+ * With room to spare, and that is the point. „The proposition in one sentence"
+ * needed 220 of its 225 pixels here and 241 of them on the build server, where
+ * the fonts are the distribution's rather than this machine's: the same build
+ * was fine on one and cut a word in half on the other, and the check that let it
+ * through had measured it correctly on both. A placeholder that fits by five
+ * pixels does not fit; it is a placeholder waiting for the next machine.
+ *
+ * A tenth of the field is the margin. It is enough to cover the spread between
+ * the two font stacks this has actually been measured on, and it is small enough
+ * that no wording that reads comfortably falls foul of it — a placeholder that
+ * needs the last tenth of its field is one to shorten anyway, which is what the
+ * English wording of that one turned out to be.
+ */
+const SPARE = 0.1;
+
 async function clipped(page) {
-  return page.evaluate(() =>
+  return page.evaluate((spare) =>
     [...document.querySelectorAll("input[placeholder]")]
       .filter((field) => field.offsetParent)
       .map((field) => {
@@ -62,7 +79,8 @@ async function clipped(page) {
         return { text: field.placeholder, needed: Math.round(needed), room: Math.round(room) };
       })
       // A textarea wraps its placeholder; a single-line field cuts it off.
-      .filter((field) => field.needed > field.room),
+      .filter((field) => field.needed > field.room * (1 - spare)),
+    SPARE,
   );
 }
 

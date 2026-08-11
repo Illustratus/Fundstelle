@@ -6,6 +6,23 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## 0.9.1 — 2026-08-11
+
+### Fixed
+
+- **A placeholder that fit on one machine and not on the next.** „The
+  proposition in one sentence" needed 220 of its 225 pixels in the fonts of the
+  machine it was written on and 241 of them in the fonts of the build server, so
+  the English interface cut it off mid-word wherever the system fonts run a
+  little wider — Linux above all. The wording is shortened to the length the
+  German one already had.
+
+  The check that let it through had measured it correctly on both: it asked
+  whether the placeholder fits, and five pixels is a fit. It now asks for a
+  tenth of the field as spare, which is the spread between the two font stacks
+  this has been measured on. Text width is not something a layout may depend on,
+  and it is not something a check may measure to the pixel either.
+
 ## 0.9.0 — 2026-08-11
 
 ### Upgrading

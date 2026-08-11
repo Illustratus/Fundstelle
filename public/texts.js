@@ -898,7 +898,7 @@ export const TEXTS = {
     propositionsNote:
       "What the category system argues, and the colour every figure of the study is drawn in. " +
       "A top-level category carries a proposition, and its subcategories carry the same one.",
-    propositionPlaceholder: "The proposition in one sentence",
+    propositionPlaceholder: "Proposition in one sentence",
     propositionNameAria: "Wording of the proposition",
     propositionColorAria: "Colour of the proposition",
     propositionColorOf: "Colour of “{name}”",
