@@ -6,7 +6,15 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.9.0 — 2026-08-11
+
+### Upgrading
+
+Nothing to do. A study gains a `roles.json` beside its `requirements.json` the
+first time the role profiles are opened — empty until profiles are written into
+it, and read where it lies from then on. Every route that answered before
+answers the same, and every address that was bookmarked still leads somewhere:
+the tool had none to bookmark.
 
 ### Added
 
