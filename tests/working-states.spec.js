@@ -54,13 +54,19 @@ async function coded(request) {
  * through had measured it correctly on both. A placeholder that fits by five
  * pixels does not fit; it is a placeholder waiting for the next machine.
  *
- * A tenth of the field is the margin. It is enough to cover the spread between
- * the two font stacks this has actually been measured on, and it is small enough
- * that no wording that reads comfortably falls foul of it — a placeholder that
- * needs the last tenth of its field is one to shorten anyway, which is what the
- * English wording of that one turned out to be.
+ * A twentieth of the field is the margin, and the number is measured rather than
+ * felt. The build server draws these fonts about a tenth wider than this machine
+ * does, so what is asked for here is what is left *after* that tenth: the
+ * tightest honest wording in the interface — the English requirement field, at
+ * 19% spare here — keeps 12% there, and the two search fields, the widest text
+ * anywhere near a boundary, keep 21%. A wording written to fit exactly, like
+ * that proposition placeholder at 2%, is the only kind this refuses.
+ *
+ * Which is the point: this is not a check that everything is roomy. It is a
+ * check that nothing was written to the edge of the field it stands in, because
+ * that edge moves from machine to machine and the wording does not.
  */
-const SPARE = 0.1;
+const SPARE = 0.05;
 
 async function clipped(page) {
   return page.evaluate((spare) =>

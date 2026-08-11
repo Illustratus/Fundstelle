@@ -6,6 +6,19 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Fixed
+
+- **The margin the measurements support.** The spare a placeholder has to keep
+  was set to a tenth of its field on the strength of one measurement, and the
+  build server promptly failed a wording that fits it: 208 pixels in a 225 pixel
+  field, cut off nowhere, refused by a check that wanted 202. The number is
+  measured now rather than guessed. The runner draws these fonts about a tenth
+  wider than the machine here, so the margin is what is left after that tenth —
+  a twentieth — which the tightest honest wording in the interface clears with
+  room and a wording written to the edge of its field does not.
+
 ## 0.9.1 — 2026-08-11
 
 ### Fixed
