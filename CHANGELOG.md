@@ -6,6 +6,29 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Fixed
+
+- **The four marks of the citation filter, on a row of their own.** Loose in
+  the bar they were laid out by whatever room the three fields happened to
+  leave: two ended up beside the search field, looking like something that
+  field does, and the other two dropped to the left edge of the next line —
+  four controls of one kind in four different columns, and where the split fell
+  moved with the language.
+
+- **Every export on the evaluation ends on the page's right edge.** The one
+  under the notes sat wherever the third field of its bar happened to end,
+  which is a different place in each of the two languages and half a screen
+  from the others.
+
+- **Handing over nothing is not a handover.** Before the first coding, „export
+  my own coding" wrote a file of sixty-two bytes — `"interviews":{}` — and
+  whoever received it had nothing to code against and no way to tell that from
+  a file that failed to save. The way in stays: reading a second coding is what
+  somebody does with a file that arrived, and it does not depend on this side
+  having coded anything yet.
+
 ## 0.10.0 — 2026-08-12
 
 ### Added

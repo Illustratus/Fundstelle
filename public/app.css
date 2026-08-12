@@ -744,6 +744,15 @@ a.button-quiet { text-decoration: none; display: inline-block; }
   color: var(--ink-soft);
   padding-bottom: .15rem;
 }
+/* The marks, the count and the export are one row under the fields, whatever
+   the fields leave over and whichever language they are written in. */
+.citation-filter .filter-row {
+  flex: 1 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem 1rem;
+}
 .citation-filter .filter-status,
 .citation-filter #filter-clear { margin-left: auto; }
 .citation-filter .filter-status {
@@ -918,10 +927,17 @@ body.cannot-start .view { grid-template-columns: 1fr; }
 .note-search {
   display: flex;
   align-items: flex-end;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: .6rem 1rem;
   margin: .6rem 0 1rem;
 }
 .note-search input { min-width: 16rem; font-size: .78rem; }
+/* At the edge of the page, where every other export on this screen is: the
+   figures put theirs against the right rule, the cross table does, the slice of
+   citations does. This one sat wherever the third field happened to end, which
+   is a different place in each of the two languages and half a screen from the
+   others. */
+.note-search > .button-quiet { margin-left: auto; }
 .note-list { display: grid; gap: .6rem; }
 .note-entry {
   border-left: 2px solid var(--line-strong);

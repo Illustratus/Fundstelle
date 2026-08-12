@@ -24,6 +24,7 @@ import { expect, test } from "@playwright/test";
  */
 
 const box = (locator) => locator.evaluate((el) => el.getBoundingClientRect());
+const edge = (locator) => locator.evaluate((el) => Math.round(el.getBoundingClientRect().right));
 
 /* The transcript header ---------------------------------------------------- */
 
@@ -249,4 +250,103 @@ test("the coding view still keeps its own place", async ({ page }) => {
   await page.locator('.tab[data-view="code"]').click();
 
   expect(await edition.evaluate((el) => Math.round(el.scrollTop))).toBeGreaterThan(400);
+});
+
+/* Controls of one kind, in one column ------------------------------------- */
+
+/**
+ * The four marks of the citation filter stand on a row of their own.
+ *
+ * Loose in the bar they were laid out by whatever room the three fields
+ * happened to leave: two ended up beside the search field, looking like
+ * something that field does, and the other two dropped to the left edge of the
+ * next line. Four controls of one kind in four different columns — and where
+ * the split fell moved with the language.
+ */
+test("the marks in the citation filter stand on one line", async ({ page }) => {
+  for (const width of [1440, 1180]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/#/analysis");
+    await expect(page.locator("#citation-filter")).toBeVisible();
+
+    const row = await page.evaluate(() => {
+      const bar = document.querySelector("#citation-filter");
+      const boxes = [...bar.querySelectorAll(".filter-row .box")];
+      const tops = new Set(boxes.map((box) => Math.round(box.getBoundingClientRect().top)));
+      return {
+        count: boxes.length,
+        lines: tops.size,
+        startsWithTheBar:
+          Math.round(boxes[0].getBoundingClientRect().left) ===
+          Math.round(bar.querySelector(".filter-row").getBoundingClientRect().left),
+      };
+    });
+    expect(row.count, "all four are in the row").toBe(4);
+    expect(row.lines, `one line at ${width}px`).toBe(1);
+    expect(row.startsWithTheBar, "and it starts where the row starts").toBe(true);
+  }
+});
+
+/**
+ * Every export on the evaluation ends on the page's own right edge.
+ *
+ * The one under the notes sat wherever the third field of its bar happened to
+ * end — a different place in each of the two languages, and half a screen from
+ * the others.
+ */
+test("the exports on the evaluation share the right edge", async ({ page }) => {
+  await page.setViewportSize({ width: 1180, height: 900 });
+  await page.goto("/#/analysis");
+  const analysis = page.locator("#analysis");
+  await expect(analysis.locator("h2").first()).toBeVisible();
+
+  const right = await edge(analysis.locator("h2").first());
+  const notes = page.locator(".note-search > .button-quiet");
+  await expect(notes).toBeVisible();
+  expect(await edge(notes), "the notes export ends where the page does").toBe(right);
+});
+
+/**
+ * Handing over nothing is not a handover.
+ *
+ * Before the first coding, „export my own coding" wrote a file of sixty-two
+ * bytes — `"interviews":{}` — and whoever received it had nothing to code
+ * against and no way to tell that from a file that failed to save.
+ */
+test("the handover offers nothing to hand over until there is something", async ({
+  page,
+  request,
+}) => {
+  const interviews = await (await request.get("/api/interviews")).json();
+  for (const one of interviews) {
+    const data = await (await request.get(`/api/interviews/${one.id}`)).json();
+    for (const coding of data.codings) {
+      await request.delete(`/api/interviews/${one.id}/codings/${coding.id}`);
+    }
+  }
+  await page.goto("/#/analysis");
+  await expect(page.locator("#handover-choose")).toBeVisible();
+  await expect(page.locator("#handover-out"), "nothing coded, nothing to send").toHaveCount(0);
+
+  // One coding, and the way out is there.
+  const first = interviews[0];
+  const data = await (await request.get(`/api/interviews/${first.id}`)).json();
+  const turn = data.turns.find((one) => !one.interviewer && one.text.length > 70);
+  const categories = (await (await request.get("/api/categories")).json()).categories;
+  const made = await request.post(`/api/interviews/${first.id}/codings`, {
+    data: {
+      turn: turn.number,
+      start: 0,
+      end: 60,
+      category: categories[0].id,
+      text: turn.text.slice(0, 60),
+      reviewed: true,
+    },
+  });
+  expect(made.ok(), "the coding this rests on was written").toBe(true);
+
+  // Reload rather than navigate: the address has not changed, and a second
+  // `goto` to the same hash never leaves the document it is already in.
+  await page.reload();
+  await expect(page.locator("#handover-out")).toBeVisible();
 });

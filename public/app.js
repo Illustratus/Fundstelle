@@ -2615,6 +2615,13 @@ function citationsHTML(data, color) {
     // Trimming the ending is only allowed if it is said out loud.
     (wording.instead ? `<span class="instead">${t("searchedInstead", { word: escapeHTML(wording.instead) })}</span>` : "") +
     `</label>` +
+    /* The four marks on a row of their own, and the count and the export at the
+       end of it. Loose in the bar they were laid out by whatever room the three
+       fields happened to leave: two of them ended up beside the search field,
+       looking like something it does, and the other two dropped to the left
+       edge of the next line — four controls of one kind standing in four
+       different columns, and the split moved with the language. */
+    `<div class="filter-row">` +
     `<label class="box"><input type="checkbox" data-filter="anchor"${filter.anchor ? " checked" : ""}> ${t("anchorsOnly")}</label>` +
     `<label class="box"><input type="checkbox" data-filter="memo"${filter.memo ? " checked" : ""}> ${t("withNoteOnly")}</label>` +
     `<label class="box"><input type="checkbox" data-filter="withoutRequirement"` +
@@ -2626,7 +2633,7 @@ function citationsHTML(data, color) {
       : `<span class="filter-status">${all.length} ${plural(all.length, "citationOne", "citationMany")}</span>`) +
     `<a class="button-quiet" id="slice-export" download href="${exportHref("/api/export/citations.md", sliceQuery(filter))}">` +
     `${t("exportSlice")}</a>` +
-    `</div>`;
+    `</div></div>`;
 
   /* A study of twenty interviews reaches a thousand citations, and the list
      drawn in full is a hundred and thirty metres of scrolling with a select on
@@ -3327,14 +3334,23 @@ async function drawAgreement() {
  * Nothing about where the files live changes — this only does the copying.
  */
 function handoverHTML() {
+  /* Handing over nothing is not a handover. Before the first coding the export
+     wrote a file of sixty-two bytes — `"interviews":{}` — and whoever received
+     it had nothing to code against and no way to tell that from a file that
+     failed to save. The way in stays: reading a second coding is what somebody
+     does with a file that arrived, and it does not depend on this side having
+     coded anything yet. */
+  const anything = (state.analysis?.total ?? 0) > 0;
   return (
     `<div class="handover">` +
     `<p class="column-note">${t("handoverNote")}</p>` +
     // Its own class: `exports` belongs to the documents block above, and
     // borrowing it here put these two buttons into that block's counts.
     `<p class="handover-actions">` +
-    `<a class="button-quiet" id="handover-out" download href="${exportHref("/api/export/coding.json")}">` +
-    `${t("handoverExport")}</a>` +
+    (anything
+      ? `<a class="button-quiet" id="handover-out" download href="${exportHref("/api/export/coding.json")}">` +
+        `${t("handoverExport")}</a>`
+      : "") +
     `<button type="button" class="button-quiet" id="handover-choose">${t("handoverImport")}</button>` +
     `</p>` +
     `<input type="file" id="handover-file" accept=".json,application/json" hidden>` +
