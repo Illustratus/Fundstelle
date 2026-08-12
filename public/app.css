@@ -112,7 +112,11 @@ button, select, input, textarea {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  padding: 0 1.25rem;
+  /* The same inset the two columns keep, so the title stands over „Blöcke" and
+     the last button over the category counts instead of four pixels inside
+     them — a misalignment small enough to look like a rendering artefact and
+     large enough to see. */
+  padding: 0 1rem;
   background: var(--sheet);
   border-bottom: 1px solid var(--line);
 }
@@ -166,6 +170,12 @@ button, select, input, textarea {
 }
 
 .header-right { display: flex; align-items: center; gap: .75rem; }
+/* Every label up here is a symbol or two letters, and none of them is a
+   sentence that may be broken. „{ }" was: below about 1200 pixels the brace
+   for the interface reference wrapped onto a second line, and the button grew
+   taller than the four beside it — a control that looks broken standing in a
+   row of controls that do not. */
+.header-right .button-quiet { white-space: nowrap; }
 
 .field { display: flex; flex-direction: column; gap: .2rem; }
 /* `display: flex` beats the browser's own rule for [hidden], so a field told to
@@ -446,26 +456,27 @@ a.button-quiet { text-decoration: none; display: inline-block; }
 }
 /* What the transcript's own header records about the interview.
 
-   One grid for the whole block rather than one per row: each row used to size
-   its own two columns, so „Erhebung" and „Quelle" ended at different places and
-   their values began at different places — four edges where there should be
-   two. A value too long for its column then wrapped against the right edge and
-   set its second line adrift, under nothing.
-
-   Now the labels share a column as wide as the widest of them, the values share
-   the rest, and a value that wraps wraps under itself. */
+   Label above value, not beside it. Side by side, the label column sized itself
+   to the longest label a transcript happens to carry — „Nachweis der
+   maschinellen Eingriffe" is one of them — and in a column this narrow that
+   left the value nothing at all: „28. Juli 2026" came out one character per
+   line, a ribbon of letters down the sidebar. Stacked, every value gets the
+   full width and every label starts at the same left edge. */
 .about {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: .6rem;
-  row-gap: .3rem;
+  row-gap: .7rem;
   margin-top: 1.1rem;
   padding-top: .9rem;
   border-top: 1px solid var(--line);
   font-size: .76rem;
 }
-.about > div { display: contents; }
-.about > div > span { align-self: baseline; min-width: 0; overflow-wrap: break-word; }
+.about > div {
+  display: grid;
+  row-gap: .15rem;
+  min-width: 0;
+}
+.about > div > span { min-width: 0; overflow-wrap: break-word; }
+.about > div > span:last-child { line-height: 1.4; }
 .about .field-label { margin: 0; }
 
 /* The copy sits with the other handle on a citation, quieter than it. */
@@ -475,6 +486,13 @@ a.button-quiet { text-decoration: none; display: inline-block; }
 /* Nothing to say about an interview that is not there. */
 .column-left[data-empty="true"] > *:not(.column-title) { display: none; }
 .column-left[data-empty="true"] > .column-title { display: none; }
+/* And nothing to stand in, either. Emptying the column left the column: a
+   240-pixel band with a rule down it beside the first screen anybody sees, and
+   the panel that screen is made of pushed off centre by exactly that much. */
+.view:has(.column-left[data-empty="true"]) {
+  grid-template-columns: 0 minmax(0, 1fr) var(--column-right);
+}
+.column-left[data-empty="true"] { padding: 0; border-right: none; }
 
 .onboarding-lead { max-width: 40rem; }
 .onboarding-format { margin: 1.4rem 0 .8rem; }
@@ -1240,7 +1258,15 @@ mark.match.current {
 /* From citation back to its place ----------------------------------------- */
 
 .button-quiet.goto { font-size: .6rem; padding: 0 .3rem; }
+/* The two handles on a citation belong together and stand in one column.
+   Only the last of them was pushed to the right, so „copy citation" began
+   wherever the line above it happened to end — a different place in every
+   entry of a list that runs for pages, and the eye had to find the button
+   again for each one. Pushing the pair moves the gap between the facts and
+   the actions instead of the actions themselves. */
 .citation .head-row .goto, .citation-list .head-row .goto { margin-left: auto; }
+.citation .head-row .copy, .citation-list .head-row .copy { margin-left: auto; }
+.citation .head-row .copy ~ .goto, .citation-list .head-row .copy ~ .goto { margin-left: 0; }
 
 /* Detail of one coding -------------------------------------------------- */
 
@@ -1252,23 +1278,35 @@ mark.match.current {
   margin-bottom: 1.5rem;
   background: var(--paper);
 }
+/* One rhythm for the whole panel instead of a margin argued out per element.
+   Every second row here used to carry its own spacing — one in the stylesheet,
+   one as an inline style, one not at all — so „Change the passage" sat flush
+   against the checkboxes above it while the fields either side of it breathed.
+   The parts are a stack; the stack sets the distance, and the caption over the
+   quotation is the one deliberate exception, because it belongs to it. */
+.detail > * + * { margin-top: .7rem; }
+.detail h2 + blockquote { margin-top: .3rem; }
+
 .detail h2 {
   font-family: var(--mono);
   font-size: .62rem;
   text-transform: uppercase;
   letter-spacing: .1em;
   color: var(--ink-faint);
-  margin-bottom: .4rem;
 }
 .detail blockquote {
-  margin: 0 0 .6rem;
+  margin: 0;
   font-family: var(--serif);
   font-size: .92rem;
   line-height: 1.5;
 }
-.detail .row { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; flex-wrap: wrap; }
+.detail .row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
 .detail .row label { display: flex; align-items: center; gap: .35rem; font-size: .76rem; }
 .detail select, .detail textarea { width: 100%; }
+/* Away from the two marks it is not one of: they say what this coding is, it
+   ends it. Beside them it also moved with the label widths and stood somewhere
+   else in German than in English. */
+.detail .row .remove { margin-left: auto; }
 .detail .remove { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 40%, transparent); }
 
 /* Coding bar ------------------------------------------------------------ */
@@ -1354,7 +1392,11 @@ mark.match.current {
   font-size: .82rem;
 }
 .choice:hover, .choice:focus-visible { background: var(--paper); border-color: var(--line-strong); outline: none; }
-.choice[data-child="true"] { padding-left: 1.3rem; }
+/* A subcategory steps in from its parent — its name does, not its key. The
+   whole row used to move, and with it the digit you press, so the nine keys
+   stood in two staggered columns. In a list you drive by number, the number is
+   the one thing that has to be in a straight line. */
+.choice[data-child="true"] .choice-name { padding-left: .85rem; }
 .choice .key {
   font-family: var(--mono);
   font-size: .66rem;
@@ -1448,7 +1490,29 @@ mark.match.current {
   display: block;
 }
 
-.table-frame { overflow-x: auto; background: var(--sheet); border: 1px solid var(--line); border-radius: 2px; }
+/* Wider than its frame, and saying so. The number tables behind the figures
+   are what gets read off into the manuscript, and the widest of them — a
+   column per category — runs two columns past the right edge here. It scrolled
+   already; nothing on the page said it did, so a table that ends at „Transparenz"
+   looks like a table whose last category is Transparenz.
+
+   The same pair of gradients the category list uses, turned on its side: the
+   covering ones travel with the content (`local`), the shading ones stay put,
+   so a shade stands exactly where there is something beyond the edge and no
+   script has to measure. */
+.table-frame {
+  overflow-x: auto;
+  background:
+    linear-gradient(to right, var(--sheet) 30%, rgb(0 0 0 / 0)) left / 1.6rem 100% no-repeat local,
+    linear-gradient(to left, var(--sheet) 30%, rgb(0 0 0 / 0)) right / 1.6rem 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / .16), rgb(0 0 0 / 0)) left / .5rem 100%
+      no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / .16), rgb(0 0 0 / 0)) right / .5rem 100%
+      no-repeat scroll,
+    var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
 
 table { border-collapse: collapse; width: 100%; font-size: .84rem; }
 th, td { padding: .45rem .7rem; text-align: left; border-bottom: 1px solid var(--line); }
@@ -1523,6 +1587,15 @@ tbody tr:hover { background: var(--paper); }
 }
 .message[hidden] { display: none; }
 .message[data-kind="error"] { background: var(--warning); color: #fff; }
+/* Standing inside a sheet it is not a card floating over the page but a line of
+   that sheet, under the thing it is about. */
+dialog .message {
+  position: static;
+  transform: none;
+  margin: .9rem 0 0;
+  max-width: none;
+  box-shadow: none;
+}
 
 .empty-state {
   padding: 3rem 1rem;
@@ -1738,7 +1811,12 @@ tbody tr:hover { background: var(--paper); }
   padding: .45rem .6rem;
 }
 
-.catalog-list { display: grid; gap: .75rem; max-width: 64rem; }
+/* On the page's own line, like everything else that carries data. This list
+   kept a fourth width of its own — the cards stopped 160 pixels short of every
+   heading, figure, table and filter above them, so the right edge of the page
+   stepped in halfway down for no reason a reader could name. The measure for
+   running text belongs to running text; a requirement card is a record. */
+.catalog-list { display: grid; gap: .75rem; }
 
 .requirement {
   background: var(--sheet);
@@ -1794,14 +1872,21 @@ tbody tr:hover { background: var(--paper); }
 .field-block { display: grid; gap: .2rem; margin-top: .7rem; }
 .field-block .field-label { color: var(--ink-soft); }
 
+/* The definition and the note beside it are one pair and are dressed as one.
+   Only the note was ever styled, so the definition fell back to the browser's
+   own textarea — a heavier frame, two pixels of padding against the note's
+   eight — and the two boxes on a card started their text at different places
+   and were framed in different weights. */
+.requirement .definition,
 .requirement .description {
   width: 100%;
-  margin-top: .6rem;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 2px;
   padding: .4rem .5rem;
+  font-family: inherit;
   font-size: .84rem;
+  line-height: 1.45;
   resize: vertical;
 }
 
@@ -1877,7 +1962,7 @@ tbody tr:hover { background: var(--paper); }
 
 #view-roles .lead { max-width: var(--measure-prose, 46rem); }
 
-.role-list { display: grid; gap: .75rem; max-width: 64rem; }
+.role-list { display: grid; gap: .75rem; }
 
 .role {
   background: var(--sheet);
@@ -2399,12 +2484,64 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   #about-shell,
   #propositions-shell,
   .operations,
-  .exports-part { display: none !important; }
+  /* The same three words about three more of them: searching a sheet of paper,
+     writing a category onto it, choosing a file from it. Each was folded away
+     on screen and each was unfolded onto the page by the rule below, which
+     prints disclosures open — right for a citation list, wrong for a form. */
+  .search-bar,
+  #inductive-shell,
+  #codebook-shell { display: none !important; }
 
+  /* The export section goes, and what is still open stays.
+     A heading whose only content is buttons is not a section on paper, so the
+     whole block was dropped — and the one thing in it that is not a control
+     went with it: the study's own statement of what is missing from it. „Three
+     categories have no anchor example yet", „two interviews nobody has coded".
+     The supervisor never sees this screen; the appendix is the only place that
+     sentence can reach her, and it is the sentence she is looking for. Each
+     line says what it is on its own, which is why it needs no heading here. */
+  .exports-part > *:not(.still-open) { display: none !important; }
+  .exports-part .still-open { margin: 0; }
+
+  /* A field that carries something written keeps what is in it and takes off
+     the field. This is the other half of the thought above: the panels that
+     were only controls went, and the ones that hold the work stayed dressed as
+     controls — a definition and a working note framed with a resize grip, a
+     MoSCoW level inside a dropdown, a requirement's own title in an input box.
+     A card somebody had filled in came out of the printer looking like the
+     blank form for one. The checkboxes stay as they are: a box with a tick in
+     it is read on paper, not pressed. */
+  .requirement .title,
+  .requirement .level,
+  .requirement .definition,
+  .requirement .description,
+  #note {
+    appearance: none;
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    resize: none;
+    overflow: hidden;
+    color: var(--ink);
+  }
+
+  /* The scrolling columns are let out to their full length so the browser can
+     break them over pages. The three ids are named because that is the
+     specificity the screen sets `overflow` at; `display` is deliberately not
+     among them.
+
+     It was. An id beats `.view[hidden]`, so every view that had been *visited*
+     came back to life on paper: whoever looked at the catalog, then the role
+     profiles, then printed the evaluation, got the catalog and the profiles
+     printed in front of it — twenty-eight thousand pixels of the wrong
+     appendix, and nothing on screen to suggest it. Only the view standing in
+     front of the reader is the document. */
   .view,
   #view-analysis,
   #view-roles,
-  #view-catalog { display: block; overflow: visible; height: auto; }
+  #view-catalog { overflow: visible; height: auto; }
+  .view:not([hidden]) { display: block; }
   .column { overflow: visible; }
 
   /* A disclosure cannot be opened on paper, so it is printed open. */

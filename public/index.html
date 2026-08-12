@@ -78,9 +78,10 @@
              data-t-title="searchTitle" title="* steht für beliebige Zeichen im Wort. Findet ein Wort nichts, wird die Endung gekürzt."
              data-t-aria="searchAria" aria-label="Im Transkript suchen, * steht für beliebige Zeichen im Wort">
       <span class="search-status" id="search-status" aria-live="polite"></span>
-      <button type="button" class="button-quiet" id="search-previous"
+      <!-- Hidden until a second hit exists to step to; see showMatch(). -->
+      <button type="button" class="button-quiet" id="search-previous" hidden
               data-t-title="searchPreviousTitle" title="Voriger Treffer (Umschalt+Enter)" data-t-aria="searchPrevious" aria-label="Voriger Treffer">↑</button>
-      <button type="button" class="button-quiet" id="search-next"
+      <button type="button" class="button-quiet" id="search-next" hidden
               data-t-title="searchNextTitle" title="Nächster Treffer (Enter)" data-t-aria="searchNext" aria-label="Nächster Treffer">↓</button>
       <span class="keys" aria-hidden="true" data-t-html="keyHints"><kbd>/</kbd> suchen · <kbd>j</kbd><kbd>k</kbd> Beitrag</span>
     </div>

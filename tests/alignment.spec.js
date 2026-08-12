@@ -124,3 +124,64 @@ test("the jump button is a label, not a paragraph", async ({ page }) => {
   });
   expect(spacing).toBeLessThan(1.5);
 });
+
+/**
+ * And the same one line in the two views made of cards.
+ *
+ * "Two widths, and only two" was settled for the evaluation and then not
+ * carried into the catalog or the role profiles, both of which kept a width of
+ * their own for the list of cards: 64rem under a page of 78rem. So the right
+ * edge of the page stepped in by 160 pixels halfway down — under the headings,
+ * under the figures, under the filter bar — for no reason a reader could name,
+ * and exactly the misalignment the note above this file was written about.
+ */
+for (const [view, list] of [
+  ["catalog", ".catalog-list"],
+  ["roles", ".role-list"],
+]) {
+  test(`the ${view} keeps one right edge down the page`, async ({ page, request }) => {
+    if (view === "catalog") {
+      const { requirements } = await (await request.get("/api/requirements")).json();
+      if (!requirements.length) {
+        await request.post("/api/requirements", { data: { title: "Ein Ort für die Fassung" } });
+      }
+    }
+    await page.setViewportSize({ width: 1180, height: 900 });
+    await page.goto(`/#/${view}`);
+    const root = page.locator(`#view-${view} .analysis`);
+    await expect(root.locator("h2").first()).toBeVisible();
+    // Role profiles are the study's own file, which the fixtures do not carry
+    // unless the checks about them are writing it; without one there is no list
+    // to line up and saying so beats passing on nothing.
+    test.skip(!(await page.locator(list).count()), `this fixture study has no ${list}`);
+
+    const right = await edge(root.locator("h2").first());
+    expect(await edge(page.locator(list)), `${list} ends where the heading ends`).toBe(right);
+    expect(await start(page.locator(list)), `${list} begins where the heading begins`).toBe(
+      await start(root.locator("h2").first()),
+    );
+  });
+}
+
+/**
+ * A label in the header is a symbol or two letters, never a sentence.
+ *
+ * Below about 1200 pixels the brace on the interface reference wrapped, so
+ * „{ }" came out as one brace above the other and that button stood a line
+ * taller than the four beside it.
+ */
+test("no control in the header breaks over two lines", async ({ page }) => {
+  // Narrow enough that the row of controls is genuinely tight — which is where
+  // the brace used to fold, and where a wider window would prove nothing.
+  await page.setViewportSize({ width: 1040, height: 900 });
+  await page.goto("/");
+  await expect(page.locator("#api-docs")).toBeVisible();
+
+  const heights = await page.evaluate(() =>
+    [...document.querySelectorAll(".header-right .button-quiet")]
+      .filter((el) => el.getClientRects().length)
+      .map((el) => Math.round(el.getBoundingClientRect().height)),
+  );
+  expect(heights.length).toBeGreaterThan(3);
+  expect(Math.max(...heights) - Math.min(...heights), "all one line tall").toBeLessThanOrEqual(1);
+});

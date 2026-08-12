@@ -451,6 +451,54 @@ test.describe("in the interface", () => {
     await expect(page.locator("#import-found")).toBeHidden();
   });
 
+
+  /**
+   * The answer to a file lands where the file was dropped.
+   *
+   * A sheet opened as a modal lives in the browser's top layer, and nothing
+   * outside it can be painted over that — no z-index reaches. So „this file
+   * could not be read" was reported 251 pixels below the drop zone and behind
+   * the sheet's own dimming, in a strip the reader could not even click. The
+   * one message in this tool moves into the sheet while a sheet is open, and
+   * leaves with it.
+   */
+  test("what a dropped file is answered with stands inside the sheet", async ({ page }) => {
+    await page.goto("/?lang=de");
+    await page.waitForSelector(".turn");
+    await drop(page, "nichts.txt", "\n\n   \n");
+
+    const message = page.locator("#message");
+    await expect(message).toBeVisible();
+    await expect(message).toContainText("WebVTT");
+
+    const placed = await page.evaluate(() => {
+      const element = document.querySelector("#message");
+      const sheet = document.querySelector("#import-sheet");
+      const zone = document.querySelector("#import-drop").getBoundingClientRect();
+      const box = element.getBoundingClientRect();
+      const middle = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return {
+        inSheet: sheet.contains(element),
+        below: Math.round(box.top - zone.bottom),
+        // Behind the backdrop the hit test answers with the dialog itself.
+        onTop: middle?.id === "message",
+      };
+    });
+    expect(placed.inSheet, "in the sheet it belongs to").toBe(true);
+    expect(placed.onTop, "in front of the sheet's dimming, not behind it").toBe(true);
+    expect(placed.below, "under the drop zone rather than a screen away").toBeLessThan(60);
+
+    // And it leaves with the sheet rather than waiting there for the next file.
+    await page.locator("#import-close").click();
+    await expect(page.locator("#import-sheet")).toBeHidden();
+    const after = await page.evaluate(() => {
+      const element = document.querySelector("#message");
+      return { parent: element.parentElement.tagName.toLowerCase(), hidden: element.hidden };
+    });
+    expect(after.parent).toBe("body");
+    expect(after.hidden).toBe(true);
+  });
+
   test("the sheet speaks the language of the interface", async ({ page }) => {
     await page.goto("/?lang=en");
     await page.waitForSelector(".turn");

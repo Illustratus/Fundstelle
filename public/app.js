@@ -37,6 +37,7 @@ const STORAGE = {
   interview: "fundstelle.interview",
   theme: "fundstelle.theme",
   readingPosition: (interview) => `fundstelle.readingPosition.${interview}`,
+  viewPosition: (view) => `fundstelle.viewPosition.${view}`,
 };
 
 /* The address ------------------------------------------------------------
@@ -229,6 +230,19 @@ let offer = null;
  */
 function notify(text, kind = "info", handle = null, { keep = false } = {}) {
   const element = $("#message");
+  /* A sheet opened as a modal lives in the browser's top layer, and nothing
+     outside it can be painted over that — no z-index reaches. So the answer to
+     a file dropped into the import sheet was reported 251 pixels below the drop
+     zone and behind the sheet's own dimming: „this file could not be read",
+     said somewhere the reader was not looking, in a place they could not click.
+     The reply to something done inside a sheet belongs inside it.
+
+     The one element moves rather than a second one living in every sheet:
+     there is one message in this tool and it says the same thing wherever it
+     stands. */
+  const sheet = document.querySelector("dialog[open]");
+  const home = sheet ?? document.body;
+  if (element.parentElement !== home) home.append(element);
   element.dataset.kind = kind;
   element.innerHTML =
     escapeHTML(text) +
@@ -250,6 +264,25 @@ function notify(text, kind = "info", handle = null, { keep = false } = {}) {
     },
     handle ? 15000 : kind === "error" ? 6000 : 3200,
   );
+}
+
+/**
+ * A message shown inside a sheet belongs to that sheet, and goes when it does.
+ *
+ * Otherwise it stays parked in a closed dialog: invisible, because the dialog
+ * is, and still standing there when the sheet is opened again — an old answer
+ * to an old file, waiting under the drop zone for a new one.
+ */
+function watchSheets() {
+  for (const sheet of $$("dialog")) {
+    sheet.addEventListener("close", () => {
+      const element = $("#message");
+      if (!sheet.contains(element)) return;
+      element.hidden = true;
+      offer = null;
+      document.body.append(element);
+    });
+  }
 }
 
 /** What to say about a failure, and whether to leave it standing. */
@@ -658,6 +691,13 @@ function showMatch(scroll) {
       ? t("searchPosition", { i: state.matchIndex + 1, n: count }) +
         (state.instead ? ` · ${quoted(state.instead)}` : "")
       : t("searchNoMatch");
+
+  /* Two arrows that step between hits are only worth their place once there is
+     a second hit to step to. Before that they sat in the bar all day offering
+     to move a coder from the one place they were already at. */
+  const steppable = count > 1;
+  $("#search-previous").hidden = !steppable;
+  $("#search-next").hidden = !steppable;
   if (scroll && count) {
     state.matches[state.matchIndex].scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -948,7 +988,13 @@ function drawSections() {
               `${t("toThatInterview")}</button>`
             : "")
         : "") +
-    `<button type="button" class="button-quiet jump" id="jump">${t("nextUntouched")}</button>`;
+    /* Only while there is one to go to. The two buttons above it already come
+       and go with what is left open; this one stood there to the end of an
+       interview and answered the click with „every turn is coded" — a button
+       whose whole purpose, once the work is done, is to say it has none. */
+    (touchedCount < codable.length
+      ? `<button type="button" class="button-quiet jump" id="jump">${t("nextUntouched")}</button>`
+      : "");
 
   /* Everything else the transcript's header records. The format has parsed
      these lines from the beginning and exactly one of them was ever shown, so a
@@ -1575,7 +1621,7 @@ function drawDetail() {
       )
       .join("") +
     `</select></label>` +
-    `<label class="field" style="margin-top:.5rem"><span class="field-label">${t("memo")}</span>` +
+    `<label class="field"><span class="field-label">${t("memo")}</span>` +
     `<textarea id="detail-memo" rows="2" placeholder="${escapeHTML(t("memoPlaceholder"))}">${escapeHTML(coding.memo ?? "")}</textarea></label>` +
     `<div class="row">` +
     `<label><input type="checkbox" id="detail-anchor"${coding.anchor ? " checked" : ""}> ${t("anchorExample")}</label>` +
@@ -2073,7 +2119,7 @@ function drawBarChoices() {
             `<button type="button" class="choice" data-category="${category.id}" data-child="${Boolean(category.parent)}"` +
             ` style="--mark-color:${colorOf(category.id)}">` +
             `<span class="key">${index < 9 ? index + 1 : ""}</span><span class="dot"></span>` +
-            `<span>${escapeHTML(category.name)}</span></button>`,
+            `<span class="choice-name">${escapeHTML(category.name)}</span></button>`,
         )
         .join("")
     : `<p class="empty-state">${escapeHTML(t("noCategoryContains", { filter: state.filter }))}</p>`;
@@ -2101,8 +2147,15 @@ function select(selection) {
   const wanted =
     spaceBelow > height + 16 ? selection.rect.bottom + 8 : selection.rect.top - height - 8;
   // If the selection lies outside the viewport, after a jump into a section
-  // say, the bar still has to stay on screen.
-  const top = Math.min(Math.max(8, wanted), Math.max(8, window.innerHeight - height - 8));
+  // say, the bar still has to stay on screen — but below the header, not over
+  // it. Coding a passage near the top of the sheet used to bury the interview
+  // picker and the tabs under the bar, which reads as a broken overlay rather
+  // than as a panel that ran out of room.
+  const floor = ($(".header")?.getBoundingClientRect().bottom ?? 0) + 8;
+  const top = Math.min(
+    Math.max(floor, wanted),
+    Math.max(floor, window.innerHeight - height - 8),
+  );
   const left = Math.min(
     Math.max(8, selection.rect.left),
     Math.max(8, window.innerWidth - width - 8),
@@ -2700,10 +2753,18 @@ function chartSummaryHTML(id, sentence) {
  */
 function chartFiguresHTML(id, { caption, columns, rows }) {
   if (!rows.length) return "";
+  /* Which columns are number columns, read off the numbers rather than assumed
+     from the position. Every column but the first counted as one, while the
+     cells under it decided per value — so a column of levels („Must have") or
+     of category names hung its heading against the right edge over text set
+     against the left one, and the heading stood over the column beside it. */
+  const numeric = columns.map(
+    (column, index) => index > 0 && rows.every((row) => typeof row[index] === "number"),
+  );
   const head = columns
     .map(
       (column, index) =>
-        `<th scope="col"${index ? ' class="num"' : ""}>${escapeHTML(String(column))}</th>`,
+        `<th scope="col"${numeric[index] ? ' class="num"' : ""}>${escapeHTML(String(column))}</th>`,
     )
     .join("");
   const body = rows
@@ -3009,16 +3070,21 @@ async function drawAnalysis() {
       ? `<p class="drift-line" role="status">${escapeHTML(t("analysisDisplaced", { n: data.displaced }))}</p>`
       : "");
 
+  /* A share of nothing is not a hundred per cent, and this is the one place
+     where saying so costs the most: a study with no coding in it yet opened on
+     „100 % reviewed" over „0 coding units", which reads as a finished check
+     rather than as work not begun. The dash the block list already uses for the
+     same situation says what is true — there is nothing here to have reviewed. */
   const allCitations = Object.values(data.citations).flat();
   const reviewedShare = allCitations.length
-    ? Math.round(
+    ? `${Math.round(
         (allCitations.filter((citation) => citation.reviewed).length / allCitations.length) * 100,
-      )
-    : 100;
+      )} %`
+    : "—";
   const metrics =
     `<div class="metrics">` +
     `<div class="metric"><div class="value">${data.total}</div><span class="label">${t("metricUnits")}</span></div>` +
-    `<div class="metric"><div class="value">${reviewedShare} %</div><span class="label">${t("reviewed")}</span></div>` +
+    `<div class="metric"><div class="value">${reviewedShare}</div><span class="label">${t("reviewed")}</span></div>` +
     `<div class="metric"><div class="value">${data.departments.length}</div><span class="label">${t("departments")}</span></div>` +
     `<div class="metric"><div class="value">${data.progress.length}</div><span class="label">${t("interviews")}</span></div>` +
     `<div class="metric"><div class="value">${data.rows.filter((row) => row.origin === "inductive").length}</div>` +
@@ -3072,10 +3138,16 @@ async function drawAnalysis() {
       .join("") +
     `</div>`;
 
-  const progress =
-    `<h3>${t("progressPerInterview")}</h3><div class="table-frame"><table><thead><tr>` +
+  /* Five column headings over nothing at all is a table that looks broken
+     rather than one that has nothing to report yet. */
+  const progress = !data.progress.length
+    ? `<h3>${t("progressPerInterview")}</h3>` +
+      `<p class="empty-state">${t("noInterviewYet")}</p>`
+    : `<h3>${t("progressPerInterview")}</h3><div class="table-frame"><table><thead><tr>` +
     `<th>${t("interview")}</th><th>${t("department")}</th><th class="num">${t("metricUnits")}</th>` +
-    `<th class="num">${t("turnsTouched")}</th><th>${t("materialCoded")}</th></tr></thead><tbody>` +
+    // Right, like the cells under it: the column is numbers, and a heading set
+    // to the other edge of a column reads as a heading over a different one.
+    `<th class="num">${t("turnsTouched")}</th><th class="num">${t("materialCoded")}</th></tr></thead><tbody>` +
     data.progress
       .map(
         (entry) =>
@@ -3991,6 +4063,152 @@ function restoreReadingPosition() {
   showFocus();
 }
 
+/* Notes at the height of what is in them ------------------------------------
+   A textarea lets its overflow show through its own bottom padding, so a
+   working note longer than its rows came out as two whole lines and the upper
+   halves of a third — a row of decapitated letters that reads as a broken font
+   rather than as „there is more here". Every note in this tool is prose
+   somebody wrote in order to read it again: the definition of a requirement,
+   what was noticed while coding, why a category was cut this way. None of it
+   is served by being shown two lines at a time.
+
+   One observer rather than a call at the end of every draw: the notes are
+   written into eight different places and the ninth would have been forgotten.
+   A box the reader has dragged to a height of their own keeps it — the drag
+   says more than the measurement does. */
+
+function fitNote(field) {
+  if (field.dataset.height === "by-hand") return;
+  // Everything here is border-box, and scrollHeight counts the padding but not
+  // the border. Without the two the last line sat on the frame.
+  const style = getComputedStyle(field);
+  const frame =
+    Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.borderBottomWidth);
+  field.style.height = "auto";
+  field.style.height = `${field.scrollHeight + frame}px`;
+}
+
+function fitNotes(root) {
+  if (root.nodeType !== 1) return;
+  if (root.matches?.("textarea")) fitNote(root);
+  root.querySelectorAll?.("textarea").forEach(fitNote);
+}
+
+function watchNotes() {
+  fitNotes(document.body);
+  new MutationObserver((records) => {
+    for (const record of records) record.addedNodes.forEach(fitNotes);
+  }).observe(document.body, { childList: true, subtree: true });
+
+  document.addEventListener("input", (event) => {
+    if (event.target.matches("textarea")) fitNote(event.target);
+  });
+  // The resize handle is a statement of intent, and honouring it costs one
+  // comparison: a height that no longer matches the measured one was dragged.
+  document.addEventListener("pointerup", (event) => {
+    const field = event.target.closest?.("textarea");
+    if (!field) return;
+    const measured = Math.round(Number.parseFloat(field.style.height) || 0);
+    if (measured && Math.abs(field.offsetHeight - measured) > 2) {
+      field.dataset.height = "by-hand";
+    }
+  });
+}
+
+/* Reading position in the generated views ----------------------------------
+   Catalog, roles and evaluation are built from scratch on every visit, and
+   until now every visit began at the top. Someone checking the eleventh
+   requirement against the figure two screens below it scrolled back down
+   after every reload, after every step into a transcript and back, and after
+   every edit that redrew the page — while the coding view, the one place that
+   did remember, made the loss of it obvious.
+
+   A heading and an offset, not a scroll height, for the same reason as in the
+   transcript: these pages get longer with every coding, and a height then
+   points at something else, whereas „under Categories by department" is still
+   the same place. No heading above the fold means the top, which is where one
+   was. */
+
+const SCROLLING_VIEWS = { catalog: "#view-catalog", roles: "#view-roles", analysis: "#view-analysis" };
+
+function viewScroller(view) {
+  const selector = SCROLLING_VIEWS[view];
+  return selector ? $(selector) : null;
+}
+
+function viewPosition(container) {
+  const boundary = container.getBoundingClientRect().top;
+  let mark = null;
+  for (const heading of container.querySelectorAll("h2, h3, h4")) {
+    if (heading.getBoundingClientRect().top > boundary + 4) break;
+    mark = heading;
+  }
+  if (!mark) return null;
+  return {
+    heading: mark.textContent.trim(),
+    offset: Math.max(0, Math.round(boundary - mark.getBoundingClientRect().top)),
+  };
+}
+
+function rememberViewPosition(view = state.view) {
+  const container = viewScroller(view);
+  if (!container || container.hidden) return;
+  try {
+    const position = viewPosition(container);
+    if (position) localStorage.setItem(STORAGE.viewPosition(view), JSON.stringify(position));
+    else localStorage.removeItem(STORAGE.viewPosition(view));
+  } catch {
+    /* Full or blocked storage must not hold up the reading. */
+  }
+}
+
+function restoreViewPosition(view) {
+  const container = viewScroller(view);
+  if (!container) return;
+  let position = null;
+  try {
+    position = JSON.parse(localStorage.getItem(STORAGE.viewPosition(view)) ?? "null");
+  } catch {
+    /* Unreadable remembered state is like nothing remembered. */
+  }
+  const place = () => {
+    if (!position?.heading) return container.scrollTo({ top: 0, behavior: "instant" });
+    const mark = [...container.querySelectorAll("h2, h3, h4")].find(
+      (heading) => heading.textContent.trim() === position.heading,
+    );
+    // The heading is gone — a requirement deleted, a coder's agreement no
+    // longer there. Landing somewhere near where it used to be would be a
+    // guess; the top is honest.
+    if (!mark) return container.scrollTo({ top: 0, behavior: "instant" });
+    const top =
+      mark.getBoundingClientRect().top -
+      container.getBoundingClientRect().top +
+      container.scrollTop;
+    container.scrollTo({ top: Math.max(0, top + (position.offset ?? 0)), behavior: "instant" });
+  };
+  place();
+  // The figures draw after the page does and every one of them makes it
+  // longer, so the place is taken again once they have.
+  requestAnimationFrame(() => requestAnimationFrame(place));
+}
+
+/** Each generated view keeps its own place while it is being read. */
+function watchViews() {
+  for (const view of Object.keys(SCROLLING_VIEWS)) {
+    const container = viewScroller(view);
+    if (!container) continue;
+    let timer = null;
+    container.addEventListener("scroll", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => rememberViewPosition(view), 200);
+    });
+  }
+  addEventListener("pagehide", () => rememberViewPosition());
+  addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") rememberViewPosition();
+  });
+}
+
 /* Putting it together ----------------------------------------------------- */
 
 /** Shows in the bar which section the eye currently rests in. */
@@ -4178,6 +4396,11 @@ function headerSubtitle() {
  * reader to believe the evaluation below it is about the one interview named
  * in it. The same for reading in a transcript, which only the coding view has
  * anywhere to put.
+ *
+ * The key sheet stays, though the keys it lists hold in one view: it is the
+ * only way into them from anywhere else, because the `?` that opens it is
+ * itself one of those keys. A reference about the tool is not the same kind of
+ * thing as a control over the material.
  */
 function drawChrome() {
   const perInterview = state.view === "code";
@@ -4187,6 +4410,9 @@ function drawChrome() {
 }
 
 function setView(name, { route = true, push = false } = {}) {
+  // The place in the view being left has to be taken before it is hidden: a
+  // hidden element has no geometry to read it from.
+  if (state.view !== name) rememberViewPosition(state.view);
   state.view = name;
   $$(".tab").forEach((tab) => tab.setAttribute("aria-current", String(tab.dataset.view === name)));
   $("#view-code").hidden = name !== "code";
@@ -4195,9 +4421,12 @@ function setView(name, { route = true, push = false } = {}) {
   $("#view-analysis").hidden = name !== "analysis";
   drawChrome();
   if (route) writeRoute({ push });
-  if (name === "analysis") drawAnalysis().catch((error) => complain(error));
-  if (name === "catalog") drawCatalog().catch((error) => complain(error));
-  if (name === "roles") drawRoles().catch((error) => complain(error));
+  const drawn = { analysis: drawAnalysis, catalog: drawCatalog, roles: drawRoles }[name];
+  if (drawn) {
+    drawn()
+      .then(() => restoreViewPosition(name))
+      .catch((error) => complain(error));
+  }
 }
 
 function setTheme(value) {
@@ -5353,6 +5582,9 @@ async function start() {
     drawAll();
     connectEvents();
     watchSections();
+    watchViews();
+    watchNotes();
+    watchSheets();
     setView(route.view ?? "code");
     if (state.view === "code") restoreReadingPosition();
   } catch (error) {

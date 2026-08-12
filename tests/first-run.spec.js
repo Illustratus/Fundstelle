@@ -243,3 +243,60 @@ test("nothing on the first screen is a control over nothing", async ({ page }) =
   await expect(bare.locator("#inductive-summary")).toBeVisible();
   await bare.close();
 });
+
+/**
+ * And the column those controls were in goes with them.
+ *
+ * Emptying it left it standing: 240 pixels of nothing with a rule down the
+ * side of the very first screen anybody sees, and the panel that screen is
+ * made of pushed off centre by exactly that much.
+ */
+test("an empty column takes no room on the first screen", async ({ page }) => {
+  const bare = await page.context().newPage();
+  await bare.goto(`${BARE}/?lang=de`);
+  await bare.waitForSelector(".onboarding");
+
+  const column = bare.locator(".column-left");
+  expect(await column.evaluate((el) => Math.round(el.getBoundingClientRect().width))).toBe(0);
+
+  // The panel stands in the middle of what is left, not beside a hole.
+  const centred = await bare.evaluate(() => {
+    const panel = document.querySelector(".onboarding").getBoundingClientRect();
+    const room = document.querySelector(".edition").getBoundingClientRect();
+    return Math.abs(panel.left - room.left - (room.right - panel.right));
+  });
+  expect(centred, "the same air on both sides").toBeLessThan(4);
+  await bare.close();
+});
+
+/**
+ * A share of nothing is not a hundred per cent.
+ *
+ * The evaluation of a study with no coding in it opened on „100 % reviewed"
+ * over „0 coding units" — the one number in this tool that is a judgement, and
+ * it read as a finished check rather than as work not begun. Beside it, five
+ * column headings stood over a table with no rows.
+ */
+test("an evaluation with nothing in it claims nothing", async ({ page }) => {
+  const bare = await page.context().newPage();
+  await bare.goto(`${BARE}/?lang=de#/analysis`);
+  await bare.waitForSelector("#analysis .metrics");
+
+  const reviewed = bare.locator(".metric", { hasText: /geprüft|reviewed/i }).first();
+  await expect(reviewed.locator(".value")).toHaveText("—");
+
+  /* The table of interviews says it has none rather than standing there as
+     five headings over nothing. The cross table beside it keeps its rows: the
+     start system exists before any coding does, and a category with a zero
+     against it is the point of that one. */
+  const under = await bare.evaluate(() => {
+    const heading = [...document.querySelectorAll("#analysis h3")].find((one) =>
+      /Stand je Interview|Progress per interview/i.test(one.textContent),
+    );
+    const next = heading?.nextElementSibling;
+    return { tag: next?.tagName.toLowerCase(), text: next?.textContent.trim() };
+  });
+  expect(under.tag, "no empty table under the heading").toBe("p");
+  expect(under.text).toMatch(/Noch kein Interview/);
+  await bare.close();
+});

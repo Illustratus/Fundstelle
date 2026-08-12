@@ -6,6 +6,133 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **Every view keeps the place it was being read from.** The coding view has
+  always come back to the turn it was left on; the catalog, the role profiles
+  and the evaluation began at the top again after every reload, after every
+  step into a transcript and back, and after every edit that redrew them.
+  Someone checking the eleventh requirement against a figure two screens below
+  it scrolled there again each time. Each of the three now remembers a heading
+  and an offset — not a scroll height, for the same reason as in the
+  transcript: these pages get longer with every coding, and a height then
+  points at something else, while „under Categories by department" is still
+  the same place. A heading that is gone means the top, which is honest;
+  landing near where it used to be would be a guess.
+
+### Fixed
+
+- **The interview's own header, in a column too narrow for two of them.** The
+  label column sized itself to the longest label a transcript happens to carry
+  — „Nachweis der maschinellen Eingriffe" is one — and left the value nothing
+  at all: the value column measured zero pixels, and „28. Juli 2026" came down
+  the sidebar one character per line. Label above value now, so every value has
+  the full width and every label starts on the same edge.
+
+- **Notes shown two lines at a time.** A textarea lets its overflow through its
+  own bottom padding, so a working note longer than its rows came out as two
+  whole lines and the upper halves of a third — a row of decapitated letters
+  that reads as a broken font rather than as „there is more here". Every note
+  in this tool is prose somebody wrote in order to read it again, and each now
+  takes the height of what is in it. A box dragged to a height of its own keeps
+  it.
+
+- **A definition and the note beside it, dressed alike.** Only the note had
+  ever been styled, so the definition fell back to the browser's own textarea —
+  a heavier frame, two pixels of padding against the note's eight — and the two
+  boxes on one card started their text at different places.
+
+- **A number table that ran past its frame without saying so.** The figures
+  behind the charts are what gets read off into a manuscript, and the widest of
+  them — a column per category — runs two columns past the right edge. It
+  scrolled already; nothing said it did, so a table ending at „Transparenz"
+  looked like a table whose last category is Transparenz.
+
+- **One right edge down the page.** „Two widths, and only two" was settled for
+  the evaluation and never carried into the catalog or the role profiles, both
+  of which kept a third for their list of cards: 64rem under a page of 78rem.
+  The right edge of the page stepped in by 160 pixels halfway down, under the
+  headings, the figures and the filter bar, for no reason a reader could name.
+
+- **The keys you press, in one column.** A subcategory in the coding bar was
+  indented as a whole row, and with it the digit that selects it, so the nine
+  keys stood in two staggered columns — in the one list that is driven by
+  number. The name steps in now; the key does not.
+
+- **A coding bar that buried the header.** Coding a passage near the top of the
+  transcript put the bar over the tabs and the interview picker, which reads as
+  a broken overlay rather than as a panel that ran out of room.
+
+- **Controls that had nothing to do.** The two arrows for stepping between
+  search hits stood in the bar before there was a search, offering to move a
+  coder from the one place they were already at; and the jump to the next
+  uncoded turn stayed to the end of an interview and then answered the click
+  with „every turn is coded".
+
+- **The header and the columns on one line,** four pixels apart until now — far
+  enough to see, small enough to look like a rendering artefact. And no label
+  up there breaks over two lines: below about 1100 pixels the brace on the
+  interface reference wrapped, so „{ }" came out as one brace above the other
+  and that button stood a line taller than the four beside it.
+
+- **One rhythm in the panel of a coding unit.** Every second row carried its own
+  spacing — one in the stylesheet, one as an inline style, one not at all — so
+  „Change the passage" sat flush against the checkboxes above it while the
+  fields either side of it breathed. Delete moved to the edge as well: beside
+  the two marks it is not one of, it also stood somewhere else in German than
+  in English.
+
+- **A heading over the column beside it.** Whether a table column is a column
+  of numbers was assumed from its position rather than read off the numbers, so
+  a column of MoSCoW levels or of category names hung its heading against the
+  right edge over text set against the left one.
+
+- **„Copy citation" in the same place in every entry.** Only the last of the two
+  handles on a citation was pushed to the right, so the first began wherever
+  the line above it happened to end — a different place in every entry of a
+  list that runs for pages.
+
+- **A share of nothing is not a hundred per cent.** The evaluation of a study
+  with no coding in it opened on „100 % reviewed" over „0 coding units" — the
+  one number here that is a judgement, read as a finished check rather than as
+  work not begun. It is a dash now. Beside it, five column headings stood over
+  a table with no rows.
+
+- **The empty column on the first screen took no less room for being empty.**
+  240 pixels with a rule down them beside the first thing anybody sees, and the
+  panel that screen is made of pushed off centre by exactly that much.
+
+- **The answer to a dropped file, where the file was dropped.** A sheet opened
+  as a modal lives in the browser's top layer and nothing outside it can be
+  painted over that, so „this file could not be read" was reported 251 pixels
+  below the drop zone and behind the sheet's own dimming, in a strip that could
+  not even be clicked. The message stands in the sheet now, and leaves with it
+  rather than waiting there as an old answer to an old file.
+
+- **Only the view on screen goes to the printer.** The print rule that lets the
+  scrolling views out to their full length named them by id, and an id beats
+  `[hidden]` — so every view that had been *visited* came back for the printer.
+  Looking at the catalog, then at the role profiles, then printing the
+  evaluation put the catalog and the profiles on the paper in front of it, and
+  nothing on screen suggested it.
+
+- **A card that has been filled in no longer prints as the blank form for one.**
+  The panels that are nothing but controls were already dropped for the
+  printer; the fields that carry the work were left dressed as fields, so a
+  requirement with a definition and a working note came off the printer as two
+  framed boxes with resize grips and a dropdown. The search bar and two empty
+  forms are gone from the paper as well.
+
+- **What is still open is printed.** „Three categories have no anchor example
+  yet" shared a container with the export buttons, and the whole container was
+  dropped for the printer on the grounds that a heading whose only content is
+  buttons is not a section on paper. That is true of the buttons and was wrong
+  about the one thing in there that is not a control: the study's own statement
+  of what is missing from it. The supervisor never sees the screen, and the
+  appendix is the only place that sentence reaches her.
+
 ## 0.9.2 — 2026-08-11
 
 ### Fixed
