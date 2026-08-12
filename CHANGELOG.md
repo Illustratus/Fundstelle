@@ -6,7 +6,7 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.10.0 — 2026-08-12
 
 ### Added
 
