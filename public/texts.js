@@ -696,7 +696,9 @@ export const TEXTS = {
       "X sind die Kategorien, Y die Anforderungen. Ein Turm zählt die Kodiereinheiten, die diese " +
       "Anforderung belegen und in dieser Kategorie liegen — je eine Einheit, eine Kategorie, " +
       "aber ein Beleg kann mehrere Anforderungen tragen und dann in mehreren Reihen stehen. Die " +
-      "Höhe misst am höchsten Turm dieser Abbildung; die Farbe trägt die MoSCoW-Stufe. Die Zahl " +
+      "Höhe misst am höchsten Turm dieser Abbildung; der Grundriss trägt die MoSCoW-Stufe — so " +
+      "viele Kanten wie die Stufe Stufen hat: Viereck „Must have“, Dreieck „Should have“, " +
+      "Ellipse „Could have“, Kreis „Won't have“. Die Zahl " +
       "an einer Anforderung sagt, wie viele Kategorien sie berührt, die an einer Kategorie, wie " +
       "viele Anforderungen sie berühren; eine Null dort ist eine Kategorie, aus der noch nichts " +
       "geworden ist. Die Reihen stehen in der Reihenfolge des Katalogs, die Kategorien in der " +
@@ -722,8 +724,9 @@ export const TEXTS = {
       "Ein Punkt zählt die Kodiereinheiten, die diese Anforderung belegen und in dieser " +
       "Kategorie liegen — je eine Einheit, eine Kategorie, aber ein Beleg kann mehrere " +
       "Anforderungen tragen und dann in mehreren Zeilen stehen. Die Größe misst am größten " +
-      "Punkt dieser Abbildung und vergleicht nur innerhalb von ihr; die Farbe trägt die " +
-      "MoSCoW-Stufe. " +
+      "Punkt dieser Abbildung und vergleicht nur innerhalb von ihr; die Form trägt die " +
+      "MoSCoW-Stufe — so viele Kanten wie die Stufe Stufen hat: Viereck „Must have“, Dreieck " +
+      "„Should have“, Ellipse „Could have“, Kreis „Won't have“. " +
       "Die Zahl rechts sagt, wie viele Kategorien eine Anforderung berührt, die Zahl über einem " +
       "Kategorienamen, wie viele Anforderungen sie berühren; eine Null dort ist eine Kategorie, " +
       "aus der noch nichts geworden ist. " +
@@ -777,7 +780,7 @@ export const TEXTS = {
       "Je Anforderung: nennende Bereiche, blockierte Operationen, Belege und Stufe.",
     chartPriorityTitle: "Priorisierung: Bereiche und blockierte Operationen",
     chartPriorityCaption:
-      "Waagerecht die Zahl der nennenden Bereiche, aus den Belegen gezählt; senkrecht die Zahl der blockierten Operationen, von dir eingetragen. Punktgröße = Belege, Punktfarbe = MoSCoW-Stufe. Rechts oben liegt, was die Stufe „Must have“ trägt.",
+      "Waagerecht die Zahl der nennenden Bereiche, aus den Belegen gezählt; senkrecht die Zahl der blockierten Operationen, von dir eingetragen. Punktgröße = Belege, Punktform = MoSCoW-Stufe: so viele Kanten wie die Stufe Stufen hat — Viereck „Must have“, Dreieck „Should have“, Ellipse „Could have“, Kreis „Won't have“. Rechts oben liegt, was die Stufe „Must have“ trägt.",
     axisDepartmentsNaming: "nennende Bereiche",
     axisBlockedOperations: "blockierte Operationen",
     priorityTip: "{title} · {departments} Bereiche · {blocked} blockiert · {citations} Belege",
@@ -1469,7 +1472,9 @@ export const TEXTS = {
       "the categories, Y the requirements. A tower counts the coding units that cite this " +
       "requirement and sit in this category — one unit, one category, but a citation can carry " +
       "several requirements and then stands in several rows. The height is measured against the " +
-      "tallest tower of this figure; the colour carries the MoSCoW level. The number beside a " +
+      "tallest tower of this figure; the ground plan carries the MoSCoW level — as many edges " +
+      "as the level has steps: a square for “Must have”, a triangle for “Should have”, an " +
+      "ellipse for “Could have”, a circle for “Won't have”. The number beside a " +
       "requirement is how many categories it reaches, the one beside a category how many " +
       "requirements reach it; a zero there is a category nothing has been made of yet. The rows " +
       "stand in the order of the catalog, the categories in the order of the interview guide, " +
@@ -1493,7 +1498,9 @@ export const TEXTS = {
       "it. A dot counts the coding units that cite this requirement and sit in this category — " +
       "one unit, one category, but a citation can carry several requirements and then stands in " +
       "several rows. The size is measured against the largest dot of this figure and compares " +
-      "within it only; the colour carries the MoSCoW level. " +
+      "within it only; the shape carries the MoSCoW level — as many edges as the level has " +
+      "steps: a square for “Must have”, a triangle for “Should have”, an ellipse for “Could " +
+      "have”, a circle for “Won't have”. " +
       "The number on the right is how many categories a requirement reaches, the number above a " +
       "category name how many requirements reach it; a zero there is a category nothing has been " +
       "made of yet. " +
@@ -1547,7 +1554,7 @@ export const TEXTS = {
       "Per requirement: naming departments, blocked operations, citations and level.",
     chartPriorityTitle: "Prioritization: departments and blocked operations",
     chartPriorityCaption:
-      "Horizontally the number of naming departments, counted from the citations; vertically the number of blocked operations, entered by you. Dot size = citations, dot color = MoSCoW level. Whatever carries “Must have” sits in the upper right.",
+      "Horizontally the number of naming departments, counted from the citations; vertically the number of blocked operations, entered by you. Dot size = citations, dot shape = MoSCoW level: as many edges as the level has steps — a square for “Must have”, a triangle for “Should have”, an ellipse for “Could have”, a circle for “Won't have”. Whatever carries “Must have” sits in the upper right.",
     axisDepartmentsNaming: "naming departments",
     axisBlockedOperations: "blocked operations",
     priorityTip: "{title} · {departments} departments · {blocked} blocked · {citations} citations",

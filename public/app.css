@@ -2273,24 +2273,29 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 
 /* MoSCoW: an ordinal scale, so one hue with falling weight. „Won't have" steps
    out of the ramp into grey, because it is a decision against, not a weaker
-   yes; „open" stays unfilled, because nothing has been decided yet. */
+   yes; „open" stays unfilled, because nothing has been decided yet.
+   These four are the band's, and the band's alone: it is one bar of segments
+   side by side, where the colour is all a segment has to say which level it is.
+   Everything that draws one mark per requirement says the level by its shape
+   and takes `--moscow-mark` — four shades of one green were four things nobody
+   could tell apart at the size a dot is drawn. */
 :root {
   --moscow-must: #1f4f4a; --moscow-should: #45897b; --moscow-could: #a3c6bd;
-  --moscow-wont: #9aa3a5; --moscow-open: #c3c8c1;
+  --moscow-wont: #9aa3a5; --moscow-open: #c3c8c1; --moscow-mark: #1f4f4a;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --moscow-must: #79c4b4; --moscow-should: #459181; --moscow-could: #2c6a5f;
-    --moscow-wont: #6b7477; --moscow-open: #3b4348;
+    --moscow-wont: #6b7477; --moscow-open: #3b4348; --moscow-mark: #79c4b4;
   }
 }
 :root[data-theme="light"] {
   --moscow-must: #1f4f4a; --moscow-should: #45897b; --moscow-could: #a3c6bd;
-  --moscow-wont: #9aa3a5; --moscow-open: #c3c8c1;
+  --moscow-wont: #9aa3a5; --moscow-open: #c3c8c1; --moscow-mark: #1f4f4a;
 }
 :root[data-theme="dark"] {
   --moscow-must: #79c4b4; --moscow-should: #459181; --moscow-could: #2c6a5f;
-  --moscow-wont: #6b7477; --moscow-open: #3b4348;
+  --moscow-wont: #6b7477; --moscow-open: #3b4348; --moscow-mark: #79c4b4;
 }
 
 .moscow-must { --moscow: var(--moscow-must); }
@@ -2303,19 +2308,26 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .moscow-band:hover { opacity: .85; }
 .chart .band-value { fill: var(--sheet); font-size: 10px; font-family: var(--mono); pointer-events: none; }
 .chart .band-value.dim { fill: var(--ink); }
+/* A requirement in the field, in the shape of its level: four edges for „Must
+   have", three for „Should have", two for „Could have", one for „Won't have" —
+   a square, a triangle, an ellipse, a circle. One paint for all of them. */
 .chart .point {
-  fill: var(--moscow);
+  fill: var(--moscow-mark);
   stroke: var(--sheet);
   stroke-width: 1.5;
 }
+/* Nothing decided yet, so nothing to be one of the four: it stays the pale
+   grey it always was, and stays a circle. */
+.chart .point.moscow-open,
+.chart .reach.moscow-open { fill: var(--moscow-open); }
 .chart .point:hover { stroke: var(--ink); }
 
-/* A link between a requirement and a category, in the requirement's MoSCoW
-   colour. Dots and not cells: a requirement rests on a handful of a study's
-   categories, so the honest picture is mostly empty, and a grid of empty boxes
-   reads as a wall with something wrong in it. The thin ring is the sheet
-   colour, so two dots that land beside each other stay two dots. */
-.chart .reach { fill: var(--moscow); stroke: var(--sheet); stroke-width: 1; }
+/* A link between a requirement and a category, in the shape of the
+   requirement's MoSCoW level. Marks and not cells: a requirement rests on a
+   handful of a study's categories, so the honest picture is mostly empty, and a
+   grid of empty boxes reads as a wall with something wrong in it. The thin ring
+   is the sheet colour, so two marks that land beside each other stay two. */
+.chart .reach { fill: var(--moscow-mark); stroke: var(--sheet); stroke-width: 1; }
 .chart .reach:hover { stroke: var(--ink); }
 /* Circled: the only requirement that reaches this category. Drawn around the
    dot rather than in it, because it says something about the column and the dot
@@ -2332,12 +2344,15 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
    lattice is laid out around them. */
 .chart .floor { stroke: var(--line); }
 
-/* A column of the city, lit from the left: the same colour at three strengths,
-   which is what makes a box read as a box rather than as three flat shapes. */
-.chart .face { stroke: var(--sheet); stroke-width: .6; }
-.chart .face.top { fill: var(--moscow); }
-.chart .face.left { fill: var(--moscow); opacity: .88; }
-.chart .face.right { fill: var(--moscow); opacity: .74; }
+/* A building of the city, lit from the left: the same colour at three
+   strengths, which is what makes a body read as a body rather than as flat
+   shapes. Which body it is says the level — four edges on the ground for „Must
+   have", three for „Should have", two for „Could have", one for „Won't have" —
+   so all of them take the one paint the marks take. */
+.chart .face { fill: var(--moscow-mark); stroke: var(--sheet); stroke-width: .6; }
+.chart .face.left { opacity: .88; }
+.chart .face.right { opacity: .74; }
+.chart .face.moscow-open { fill: var(--moscow-open); }
 .chart .tower:hover .face { opacity: 1; }
 /* The roof of the only requirement that answers its category. It was a ring out
    in the column of counts, where a mark about a building sat among the figures;
@@ -2359,7 +2374,17 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .saturation-point { fill: var(--accent); }
 .chart .point-label { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); pointer-events: none; }
 
-.chart-legend.moscow i { background: var(--moscow); border-radius: 50%; }
+/* The band's key, and now the only key of colours there is. Square, like the
+   segments it stands for and like the swatch the saved file draws: it was round
+   when every MoSCoW mark was a dot, and a round swatch in a key whose other
+   figures draw a circle for „Won't have" would be saying something it does
+   not mean. */
+.chart-legend.moscow i { background: var(--moscow); border-radius: 2px; }
+/* A level drawn as the shape it is drawn as in the figure. */
+.chart-legend .mark-key { display: inline-flex; align-items: center; gap: .3rem; }
+.chart-legend .mark-key svg { overflow: visible; }
+.chart-legend .key-mark { fill: var(--moscow-mark); }
+.chart-legend .key-mark.moscow-open { fill: var(--moscow-open); }
 /* The roof colour of the city. Square and after the rule above on purpose: this
    entry stands in a MoSCoW key and is not a MoSCoW level, so neither the colour
    nor the round shape that key would give it may stand. */

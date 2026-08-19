@@ -15,6 +15,7 @@ import {
   estimateWidth,
   heatmapChart,
   moscowBand,
+  moscowMark,
   pillarChart,
   priorityField,
   reachChart,
@@ -2856,6 +2857,18 @@ function keyHTML(legend) {
   );
 
   function one(entry) {
+    /* The shape a level is drawn in. The four levels share one paint, so a
+       coloured square here would name nothing — what the reader has to be able
+       to hold against the picture is the form. */
+    if (entry.shape === "level") {
+      const box = 15;
+      return (
+        `<span class="mark-key"><svg width="${box}" height="${box}"` +
+        ` viewBox="0 0 ${box} ${box}" aria-hidden="true">` +
+        moscowMark(entry.level, { cx: box / 2, cy: box / 2, r: 4.5, className: "key-mark" }) +
+        `</svg>${escapeHTML(entry.label)}</span>`
+      );
+    }
     // An outline rather than a colour: the entry is about a shape drawn around
     // a dot, so the key has to show that shape and not a swatch.
     if (entry.shape === "ring") {

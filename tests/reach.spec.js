@@ -74,17 +74,21 @@ async function study(request, links) {
   return { made, categories, wanted };
 }
 
-/** The figure read back off the screen: every dot, and every column tally. */
+/** The figure read back off the screen: every mark, and every column tally.
+    A mark is whichever shape its MoSCoW level gave it — a square, a triangle,
+    an ellipse, a circle — so where it sits and how much room it takes are asked
+    of the mark itself rather than of the attributes one of the four happens to
+    carry. */
 async function drawn(page) {
   return page.evaluate(() => ({
-    dots: [...document.querySelectorAll("#reach circle.reach")].map((one) => ({
+    dots: [...document.querySelectorAll("#reach .reach")].map((one) => ({
       row: one.dataset.row,
       category: one.dataset.category,
       value: Number(one.dataset.value),
       level: [...one.classList].find((name) => name.startsWith("moscow-")),
-      radius: Number(one.getAttribute("r")),
-      cx: Number(one.getAttribute("cx")),
-      cy: Number(one.getAttribute("cy")),
+      radius: Number(one.dataset.r),
+      cx: Number(one.dataset.cx),
+      cy: Number(one.dataset.cy),
     })),
     headings: [...document.querySelectorAll("#reach text.heading")].map((one) => ({
       name: one.querySelector("title").textContent,
@@ -480,7 +484,7 @@ test("the figure comes back from the API as well, in both themes", async ({ requ
   const one = await light.text();
   const other = await dark.text();
   expect(one, "nothing points at a stylesheet that is not there").not.toContain("var(--");
-  expect(one).toContain("circle");
+  expect(one, "the marks carry their level").toMatch(/class="reach moscow-/);
   expect(one === other, "the themes are two different files").toBe(false);
 
   // It is the one figure drawn from both bodies of data; the route has to fetch
@@ -693,7 +697,7 @@ test("the city carries what the flat figure carries", async ({ page, request }) 
     const axis = (selector, read) => [...document.querySelectorAll(selector)].map(read);
     return {
       reach: {
-        cells: cells("#reach circle.reach"),
+        cells: cells("#reach .reach"),
         table: table("reach"),
         rows: axis("#reach text.row-label", (one) =>
           [...one.querySelectorAll("tspan")].map((line) => line.textContent).join(" "),
@@ -746,7 +750,7 @@ test("the only requirement carrying a category is circled", async ({ page, reque
 
   // And the dot says so where a mouse asks, not only where the eye can see it.
   const said = await page.evaluate(
-    () => document.querySelector("#reach circle.reach[data-sole='true']")?.dataset.tip,
+    () => document.querySelector("#reach .reach[data-sole='true']")?.dataset.tip,
   );
   expect(said).toContain(alone);
   expect(said, "the tip names what the ring means").toMatch(/einzige/i);
@@ -857,7 +861,7 @@ test("a tower of one citation is still a tower, and the key says when", () => {
 });
 
 /**
- * A tower is one block, and its roof is nobody's wall.
+ * A tower is one body, and its roof is nobody's wall.
  *
  * Seen from above and in front, a block shows three faces: the roof, and the
  * two walls hanging from the roof's two *near* edges — the pair that meet at
@@ -870,7 +874,10 @@ test("a tower of one citation is still a tower, and the key says when", () => {
  * footprint it stood on.
  *
  * Checked at the joint rather than by eye: both walls have to start at the
- * roof's lowest corner, and they must not start at the same edge.
+ * roof's lowest corner, and they must not start at the same edge. Asked of a
+ * „Must have", which is the level that stands on four corners — the other
+ * levels stand on three, on an oval and on a circle, and are asked further
+ * down.
  */
 test("both walls of a tower hang from the roof's near edges", () => {
   const spec = cityPlot(
@@ -881,7 +888,7 @@ test("both walls of a tower hang from the roof's near edges", () => {
         moscow: "must",
         citations: [{ category: "c0" }, { category: "c0" }, { category: "c1" }],
       },
-      { id: "r1", title: "Ablage nach Vorgang", citations: [{ category: "c1" }] },
+      { id: "r1", title: "Ablage nach Vorgang", moscow: "must", citations: [{ category: "c1" }] },
     ],
     [
       { id: "c0", category: "c0", name: "Ablage", sum: 3 },
@@ -910,13 +917,15 @@ test("both walls of a tower hang from the roof's near edges", () => {
   expect(towers.length, "there are towers to look at").toBe(3);
 
   for (const faces of towers) {
-    expect(faces.map((one) => one.kind)).toEqual(["top", "left", "right"]);
-    const roof = faces[0].corners;
+    // The walls first and the roof over them: a wall that meets a curved roof
+    // does so along a chord, and drawn after it would stand a hair above it.
+    expect(faces.map((one) => one.kind)).toEqual(["right", "left", "top"]);
+    const roof = faces.at(-1).corners;
     // The lowest corner of the roof, which is the one both walls come down from.
     const near = roof.reduce((low, one) =>
       Number(one.split(",")[1]) > Number(low.split(",")[1]) ? one : low,
     );
-    const edges = faces.slice(1).map((wall) => wall.corners.slice(0, 2));
+    const edges = faces.slice(0, -1).map((wall) => wall.corners.slice(0, 2));
     for (const edge of edges) {
       expect(edge, "a wall hangs from a near edge of its own roof").toContain(near);
       expect(roof, "and from the roof, not from thin air").toContain(edge[0]);
@@ -972,18 +981,23 @@ test("a name and its count stand on the line of their own row", () => {
         return all;
       }, []);
 
-  /* Where each tower stands on the floor: the two walls carry three of the four
-     corners of the footprint between them, and the middle is the midpoint of
-     the two opposite ones. */
+  /* Where each tower stands on the floor: a wall is its top edge and then the
+     same edge on the ground, so the second half of every wall traces the near
+     side of the footprint. Its leftmost and rightmost points are opposite
+     corners of the block, and the middle is between them. */
   const towers = [...spec.body.matchAll(/<g class="tower[^]*?<\/g>/g)].map((one) => {
-    const faces = [...one[0].matchAll(/class="face (left|right)[^"]*" points="([^"]+)"/g)];
-    const west = points(faces.find(([, kind]) => kind === "left")[2]);
-    const east = points(faces.find(([, kind]) => kind === "right")[2]);
+    const feet = [...one[0].matchAll(/class="face (?:left|right)[^"]*" points="([^"]+)"/g)]
+      .flatMap(([, attribute]) => {
+        const all = points(attribute);
+        return all.slice(all.length / 2);
+      });
+    const west = feet.reduce((low, at) => (at[0] < low[0] ? at : low));
+    const east = feet.reduce((high, at) => (at[0] > high[0] ? at : high));
     return {
       row: one[0].match(/data-row="([^"]*)"/)[1],
       category: one[0].match(/data-category="([^"]*)"/)[1],
-      x: (west[3][0] + east[2][0]) / 2,
-      y: (west[3][1] + east[2][1]) / 2,
+      x: (west[0] + east[0]) / 2,
+      y: (west[1] + east[1]) / 2,
     };
   });
   expect(towers).toHaveLength(size * size);

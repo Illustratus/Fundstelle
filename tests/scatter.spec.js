@@ -133,10 +133,12 @@ test("the drawn field keeps its dots apart and inside their cell", async ({ page
     return {
       lines: vertical.map((line) => Number(line.getAttribute("x1"))).sort((a, b) => a - b),
       width: Number(svg.getAttribute("viewBox").split(" ")[2]),
-      dots: [...svg.querySelectorAll("circle.point")].map((dot) => ({
-        cx: Number(dot.getAttribute("cx")),
-        cy: Number(dot.getAttribute("cy")),
-        r: Number(dot.getAttribute("r")),
+      /* Whatever shape the level gave it: how much room a mark takes is what
+         the packing is about, and that is the reach and not the radius. */
+      dots: [...svg.querySelectorAll(".point")].map((dot) => ({
+        cx: Number(dot.dataset.cx),
+        cy: Number(dot.dataset.cy),
+        r: Number(dot.dataset.reach),
       })),
     };
   });

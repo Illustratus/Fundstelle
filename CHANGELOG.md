@@ -6,6 +6,35 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Changed
+
+- **A MoSCoW level is a shape now, and the shape counts its steps.** The three
+  figures that draw one mark per requirement — the prioritization field, the
+  reach figure and the city — told the four levels apart by four shades of one
+  green, which is four things nobody can tell apart at the size a dot is drawn:
+  „Should have" and „Could have" were the same colour across a field of them,
+  and every mark had to be taken back to the key. They are one paint and four
+  forms instead, and the form is not arbitrary — a level has as many edges as it
+  has steps to go: „Must have" four, „Should have" three, „Could have" two,
+  „Won't have" one. A square, a triangle, an ellipse, a circle. In the city,
+  where a mark is a body rather than a shape, the same count is the ground plan
+  it stands on: a block, a wedge, an oval tower, a round one. What carries no
+  level yet stays a pale circle, because it is the absence of a decision and not
+  a fifth level.
+
+  The band of the MoSCoW distribution keeps its colours: it is one bar of
+  segments side by side, where the width is the quantity and a shape has nowhere
+  to be. The keys of the other three show the shape itself rather than a swatch,
+  on the screen and in the saved file alike, and the captions say the rule.
+
+  Everything the figures are laid out by is measured at the room a shape takes
+  rather than at a radius: the packing of a pile in the field, the margin that
+  has to hold the last gridline, the ring around the one requirement that
+  carries a category alone, and the space over the top line of the field, which
+  a pile used to be drawn half out of.
+
 ## 0.10.1 — 2026-08-12
 
 ### Fixed

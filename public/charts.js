@@ -66,6 +66,8 @@ export const THEMES = {
       wont: "#9aa3a5",
       open: "#c3c8c1",
     },
+    // One paint for every mark that carries a level: the level is a shape now.
+    moscowMark: "#1f4f4a",
   },
   dark: {
     sheet: "#1a1e20",
@@ -84,6 +86,7 @@ export const THEMES = {
       wont: "#6b7477",
       open: "#3b4348",
     },
+    moscowMark: "#79c4b4",
   },
 };
 
@@ -100,6 +103,91 @@ const MOSCOW_ORDER = ["must", "should", "could", "wont"];
 
 export const moscowClass = (level) =>
   `moscow-${MOSCOW_ORDER.includes(level) ? level : "open"}`;
+
+/* The level as a shape rather than as a colour.
+   Four shades of one hue are four things nobody can tell apart at the size a
+   dot is drawn: across a field of them „Should have" and „Could have" are the
+   same green, and a reader who has to go back to the key for every dot is
+   reading a key, not a figure. So the level is a form here, and the form
+   counts — a level has as many edges as it has steps: „Must have" four, „Should
+   have" three, „Could have" two, „Won't have" one. A square, a triangle, an
+   ellipse, a circle. Every mark takes the same paint; only what carries no
+   level yet keeps its own pale one, because that is the absence of a decision
+   and not a fifth level. */
+const MOSCOW_EDGES = { must: 4, should: 3, could: 2, wont: 1, open: 1 };
+
+/** How many edges this level is drawn with; anything undecided counts as one. */
+const edgesOf = (level) => MOSCOW_EDGES[MOSCOW_ORDER.includes(level) ? level : "open"];
+
+/* The shapes, sized against the circle they replace. A form is read by how much
+   ink it puts on the page, so the four are drawn to roughly one area — the
+   triangle a little under, because a point aimed upwards carries further than
+   its area says. */
+const TRIANGLE = 1.4;
+/* Wide and flat rather than a circle with a dent in it: at the size a mark is
+   drawn, an ellipse of nearly equal axes is a circle, and two levels that look
+   the same are the thing this whole change is about. */
+const ELLIPSE_WIDE = 1.5;
+const ELLIPSE_TALL = 0.62;
+const SQUARE = 0.95;
+
+/**
+ * How far a mark of this size reaches from its middle.
+ *
+ * The furthest any of the four shapes stands out — the ellipse at its rim, the
+ * triangle at its apex — and one figure for all of them, because a layout that
+ * gave each shape its own room would space a row of marks by which levels
+ * happened to be in it. Every layout is done with this rather than with the
+ * radius: the packing of a pile, the margin that has to hold the last gridline,
+ * the ring drawn around a mark. Two marks that would not overlap as circles do
+ * not overlap as shapes either.
+ */
+export const markReach = (r) => r * Math.max(TRIANGLE, ELLIPSE_WIDE);
+
+/**
+ * One mark, in the shape its MoSCoW level has.
+ *
+ * Whatever the shape, the mark carries where it sits and how much room it takes
+ * as data attributes: a reader — the tooltip, a test, anything measuring the
+ * picture — can ask a mark for its place without first having to work out which
+ * of four elements it turned out to be.
+ */
+export function moscowMark(level, { cx, cy, r, className = "", attrs = "" }) {
+  const n = (value) => Number(value.toFixed(2));
+  /* Two sizes, and they are different questions. `data-r` is the size scale the
+     figure is drawing to — what the key of a size means and what a reader
+     compares — and `data-reach` is how far the shape actually stands out from
+     its middle, which is what a layout has to keep clear. */
+  const common =
+    `class="${className} ${moscowClass(level)}" data-cx="${n(cx)}" data-cy="${n(cy)}"` +
+    ` data-r="${n(r)}" data-reach="${n(markReach(r))}"${attrs ? ` ${attrs}` : ""}`;
+  const edges = edgesOf(level);
+  if (edges === 4) {
+    const s = r * SQUARE;
+    return (
+      `<rect ${common} x="${n(cx - s)}" y="${n(cy - s)}" width="${n(s * 2)}"` +
+      ` height="${n(s * 2)}" rx="1"></rect>`
+    );
+  }
+  if (edges === 3) {
+    const R = r * TRIANGLE;
+    const points = [
+      [cx, cy - R],
+      [cx + R * 0.866, cy + R * 0.5],
+      [cx - R * 0.866, cy + R * 0.5],
+    ]
+      .map(([px, py]) => `${n(px)},${n(py)}`)
+      .join(" ");
+    return `<polygon ${common} points="${points}"></polygon>`;
+  }
+  if (edges === 2) {
+    return (
+      `<ellipse ${common} cx="${n(cx)}" cy="${n(cy)}" rx="${n(r * ELLIPSE_WIDE)}"` +
+      ` ry="${n(r * ELLIPSE_TALL)}"></ellipse>`
+    );
+  }
+  return `<circle ${common} cx="${n(cx)}" cy="${n(cy)}" r="${n(r)}"></circle>`;
+}
 
 export function escape(text) {
   return String(text).replace(
@@ -362,18 +450,27 @@ export function categoryAxis(categories) {
  * The MoSCoW key, holding the levels the figure actually draws and no others.
  *
  * A key entry for something not drawn is worse than none: it sends the reader
- * hunting for a colour that is not there and, in a catalog where nothing has
+ * hunting for a shape that is not there and, in a catalog where nothing has
  * been postponed, quietly suggests that something has. The band of the
  * distribution has dropped its empty levels from the beginning — it is built
  * from counts, so it could hardly do otherwise — while the three figures that
  * draw one mark per requirement listed all five whatever they held.
+ *
+ * The entries carry the level itself, not only a class: the key of these three
+ * figures shows the shape a level is drawn in, and a swatch cannot be worked
+ * out from a colour name.
  */
 export function moscowKey(rows, t, nameOf) {
   const level = (row) => (MOSCOW_ORDER.includes(row.moscow) ? row.moscow : "open");
   const present = new Set(rows.map(level));
   return [...MOSCOW_ORDER, "open"]
     .filter((id) => present.has(id))
-    .map((id) => ({ paint: moscowClass(id), label: id === "open" ? t("open") : nameOf(id) }));
+    .map((id) => ({
+      paint: moscowClass(id),
+      shape: "level",
+      level: id,
+      label: id === "open" ? t("open") : nameOf(id),
+    }));
 }
 
 /** The largest row, named — the one thing a reader takes from a bar chart. */
@@ -1050,7 +1147,6 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
   const nameOf = (level) => moscow.find((one) => one.id === level)?.name ?? t("open");
 
   const LEFT = 150;
-  const TOP = 16;
   const BOTTOM = 42;
   const maxX = Math.max(1, departmentCount);
   // At least one line to stand on. The operations are the study's own now, so a
@@ -1071,16 +1167,18 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
 
   const maxCitations = Math.max(1, ...rows.map((row) => row.citations.length));
   const radius = (count) => 5 + Math.round((count / maxCitations) * 5);
-  // One slot for the widest dot in the chart plus a gap, so the packing is the
-  // same everywhere and two piles can be compared by eye.
-  const slot = radius(maxCitations) * 2 + 3;
+  // One slot for the widest mark in the chart plus a gap, so the packing is the
+  // same everywhere and two piles can be compared by eye. Measured at the reach
+  // of a shape and not at its radius: a triangle is the same size as the circle
+  // it replaces and still stands further out than one.
+  const slot = markReach(radius(maxCitations)) * 2 + 3;
 
   /* The right-hand margin has to hold whatever sits on the last gridline, and
      that is the common case rather than the exception: a requirement every
      department named lands exactly there. The margin and the step depend on
      each other — a pile may be no wider than its own cell — so they are settled
      by running the layout twice, which is enough to converge. */
-  let RIGHT = Math.ceil(10 + radius(maxCitations));
+  let RIGHT = Math.ceil(10 + markReach(radius(maxCitations)));
   let stepX = (WIDTH - LEFT - RIGHT) / maxX;
   let placed = new Map();
   for (let pass = 0; pass < 2; pass += 1) {
@@ -1090,13 +1188,19 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
     );
     const onLastLine = [...buckets.keys()].filter((key) => Number(key.split("|")[0]) === maxX);
     const reach = Math.max(0, ...onLastLine.map((key) => placed.get(key).width / 2));
-    RIGHT = Math.ceil(10 + radius(maxCitations) + reach);
+    RIGHT = Math.ceil(10 + markReach(radius(maxCitations)) + reach);
   }
 
   // A pile that wrapped into rows needs the room to do it in; the cell grows
-  // rather than the dots being drawn on top of each other.
+  // rather than the marks being drawn on top of each other.
   const tallest = Math.max(0, ...[...placed.values()].map((one) => one.height));
   const CELL = Math.max(46, Math.ceil(tallest + 8));
+  /* And the pile on the top line has half of itself above that line. Asked of
+     the piles rather than kept as a fixed sixteen: a requirement blocking every
+     operation there is sits on the highest line of the figure, which is the
+     ordinary case for anything that matters, and half a pile drawn off the top
+     edge is a requirement that has left the picture. */
+  const TOP = Math.max(16, Math.ceil(tallest / 2) + 2);
   const height = TOP + maxY * CELL + BOTTOM;
 
   const track = WIDTH - LEFT - RIGHT;
@@ -1129,10 +1233,13 @@ export function priorityField(rows, t, { departmentCount, operationCount = 3, mo
           blocked: (entry.row.blockedOperations ?? []).length,
           citations: entry.row.citations.length,
         });
-        return (
-          `<circle class="point ${moscowClass(entry.row.moscow)}" cx="${cx}" cy="${cy}"` +
-          ` r="${radius(entry.row.citations.length)}" data-tip="${escape(tip)}"></circle>`
-        );
+        return moscowMark(entry.row.moscow, {
+          cx,
+          cy,
+          r: radius(entry.row.citations.length),
+          className: "point",
+          attrs: `data-tip="${escape(tip)}"`,
+        });
       }),
     )
     .join("");
@@ -1278,9 +1385,12 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
   const { size, line: LINE, labels, tallest } = labelColumn(names, { room: LABEL - 12 });
   const CELL = Math.max(24, Math.ceil(tallest * LINE) + 8);
 
-  // A dot says how many citations tie the two together, by area rather than by
-  // width: area is what the eye compares when it compares circles.
-  const radius = (n) => 3.2 + Math.sqrt(n / max) * 4.3;
+  /* A mark says how many citations tie the two together, by area rather than by
+     width: area is what the eye compares. A shade under what it was, because a
+     mark now reaches further than its radius — the widest of them plus the ring
+     that may be drawn around it has to stand inside its own row, and a row is
+     the height of a line of writing. */
+  const radius = (n) => 2.9 + Math.sqrt(n / max) * 3.7;
 
   /* The headings run at an angle into the space under the row labels, as the
      heatmap's do — a column the width of a thumbnail holds no category name
@@ -1388,7 +1498,6 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
     .map((row, index) => {
       const y = TOP + index * CELL;
       const middle = y + CELL / 2;
-      const level = moscowClass(row.moscow);
       const marks = columns
         .map((one, k) => {
           const n = counts.get(`${row.id}|${one.category}`) ?? 0;
@@ -1400,17 +1509,24 @@ export function reachChart(rows, categories, t, { moscow = [] } = {}) {
             ? t("reachTipSole", { title: row.title, category: one.name, n })
             : t("reachTip", { title: row.title, category: one.name, n });
           return (
-            // The ring first, so the dot sits on top of it rather than inside
-            // it. It carries the same tip: it is drawn wider than the dot, and
-            // the band standing out beyond it is a place the mouse lands.
+            // The ring first, so the mark sits on top of it rather than inside
+            // it. It carries the same tip: it is drawn wider than the mark, and
+            // the band standing out beyond it is a place the mouse lands. Wide
+            // enough for the shape it goes around, not for a dot — a triangle
+            // inside a ring cut for a circle would stand on it.
             (only
               ? `<circle class="reach-sole" cx="${cx}" cy="${middle}"` +
-                ` r="${(r + 2.6).toFixed(2)}" data-tip="${escape(tip)}"></circle>`
+                ` r="${(markReach(r) + 2.6).toFixed(2)}" data-tip="${escape(tip)}"></circle>`
               : "") +
-            `<circle class="reach ${level}" cx="${cx}" cy="${middle}"` +
-            ` r="${r.toFixed(2)}" data-row="${escape(row.title)}"` +
-            ` data-category="${escape(one.name)}" data-value="${n}"` +
-            ` data-sole="${only}" data-tip="${escape(tip)}"></circle>`
+            moscowMark(row.moscow, {
+              cx,
+              cy: middle,
+              r,
+              className: "reach",
+              attrs:
+                `data-row="${escape(row.title)}" data-category="${escape(one.name)}"` +
+                ` data-value="${n}" data-sole="${only}" data-tip="${escape(tip)}"`,
+            })
           );
         })
         .join("");
@@ -1562,6 +1678,56 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
   );
 
   const INSET = 0.2;
+
+  /* What a building stands on, and what says which level it carries.
+     The walls were four shades of one green, which is four things nobody can
+     tell apart across a city of them. So the level is the ground plan now, and
+     the plan counts its edges: „Must have" four, „Should have" three, „Could
+     have" two, „Won't have" one — a block, a wedge, an oval tower, a round one.
+     A flat figure can say that with a shape; here it is a body, which is the
+     one thing this figure has that the flat one does not.
+
+     All four are drawn to about the room the block always had, so a city of
+     mixed plans still stands as far apart as a city of blocks — the height is
+     the quantity, and a footprint that grew with the level would be a second
+     scale nobody asked for. */
+  const ROUND = 0.36;
+  const OVAL_WIDE = 0.48;
+  const OVAL_DEEP = 0.17;
+  const WEDGE = 0.42;
+  // Enough segments that an outline reads as a curve and not as a polygon.
+  const SEGMENTS = 28;
+
+  /* A point of a ground plan, said in what a reader sees rather than in the
+     lattice: how far it lies toward the viewer, and how far to the right. The
+     two lattice axes run away from the near corner at equal angles, so the one
+     is turned into the other by half a right angle. */
+  const planPoint = (i, j, toward, right) => ({
+    i: i + 0.5 + (toward - right) / Math.SQRT2,
+    j: j + 0.5 + (toward + right) / Math.SQRT2,
+  });
+  const ring = (i, j, deep, wide, count) =>
+    Array.from({ length: count }, (unused, k) => {
+      const angle = (k / count) * Math.PI * 2;
+      return planPoint(i, j, Math.cos(angle) * deep, Math.sin(angle) * wide);
+    });
+  /* The wedge points at the reader. Its one near vertex and its two far ones
+     are what tells it from the block at a glance, and a wedge turned the other
+     way shows the reader its flat back. */
+  const groundPlan = (level, i, j) => {
+    const edges = edgesOf(level);
+    if (edges === 4) {
+      return [
+        { i: i + INSET, j: j + INSET },
+        { i: i + INSET, j: j + 1 - INSET },
+        { i: i + 1 - INSET, j: j + 1 - INSET },
+        { i: i + 1 - INSET, j: j + INSET },
+      ];
+    }
+    if (edges === 3) return ring(i, j, WEDGE, WEDGE, 3);
+    if (edges === 2) return ring(i, j, OVAL_DEEP, OVAL_WIDE, SEGMENTS);
+    return ring(i, j, ROUND, ROUND, SEGMENTS);
+  };
 
   /* What stands between the lattice and a name: the gap and the number. The
      counts stand against the city — against the cell at the edge whose row or
@@ -1762,7 +1928,7 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
   for (let i = 0; i < withCitations.length; i += 1) {
     for (let j = 0; j < columns.length; j += 1) {
       const n = counts.get(`${withCitations[i].id}|${columns[j].category}`) ?? 0;
-      if (n) cells.push({ i, j, n });
+      if (n) cells.push({ i, j, n, plan: groundPlan(withCitations[i].moscow, i, j) });
     }
   }
   cells.sort((a, b) => a.i + a.j - (b.i + b.j));
@@ -1777,7 +1943,10 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
     26 +
     Math.max(
       0,
-      ...cells.map(({ i, j, n }) => rise(n) - (i + j + 2 * INSET) * DOWN),
+      // The far corner of the roof, which is the highest point on the sheet —
+      // asked of the ground plan, because not every plan has its corner where
+      // the block has one.
+      ...cells.map(({ n, plan }) => rise(n) - Math.min(...plan.map((one) => one.i + one.j)) * DOWN),
     );
 
   /* Both sets of names, set before the sheet is measured, because how far they
@@ -1880,12 +2049,9 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
   }
 
   const towers = cells
-    .map(({ i, j, n }) => {
+    .map(({ i, j, n, plan }) => {
       const row = withCitations[i];
-      const a = foot(i + INSET, j + INSET);
-      const b = foot(i + INSET, j + 1 - INSET);
-      const c = foot(i + 1 - INSET, j + 1 - INSET);
-      const d = foot(i + 1 - INSET, j + INSET);
+      const ground = plan.map((one) => foot(one.i, one.j));
       const up = (point) => `${point.x.toFixed(1)} ${(point.y - rise(n)).toFixed(1)}`;
       const down = (point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
       const only = sole.has(columns[j].category);
@@ -1899,32 +2065,80 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
          mark about a *block* set down in the column of figures, where it read
          as belonging to the number it happened to land next to. What the mark
          is about is the block, so it is on the block. And on the roof of it:
-         the three faces carry the MoSCoW level and are the one thing that must
-         not be overwritten, while the roof is the face a reader looks straight
-         down at from up here — it changes colour and the level is still there
-         on the two walls under it. */
-      /* The three faces of a block seen from above and in front: the roof, and
-         the two walls that hang from the roof's two *near* edges — the ones
-         running down from its lowest corner.
+         the roof is the face a reader looks straight down at from up here, so
+         it can take a colour of its own — and the level is not lost with it,
+         because the level is the shape the whole body stands in and the walls
+         under the roof are still standing in it. */
+      /* A body seen from above and in front: the roof, and the walls that hang
+         from the edges of the ground plan facing the reader.
 
-         They used to hang from d→c and from a→d, and a→d is a far edge: that
-         wall stood behind the block and was drawn over the front of it, which
-         put a second colour across the left half of every roof at the opacity
-         of a wall. That is the line through the roof, and it is why a tower
-         looked like two shapes rather than one — a coloured half and a pale
-         half — and why the block came out half as wide as the footprint it
-         stands on. The wall on the other near edge, c→b, was never drawn at
-         all. Both are drawn now, and the roof is left whole. */
-      const roof = `${up(a)} ${up(b)} ${up(c)} ${up(d)}`;
-      const west = `${up(d)} ${up(c)} ${down(c)} ${down(d)}`;
-      const east = `${up(c)} ${up(b)} ${down(b)} ${down(c)}`;
+         Which edges those are is worked out rather than named. A block has two
+         of them and they used to be written down — and one of the two written
+         down was a *far* edge, so that wall stood behind the block and was
+         drawn over the front of it, which put a second colour across half of
+         every roof at the opacity of a wall. A plan with twenty-eight edges
+         cannot be written down at all, so each edge is asked which way it
+         faces: outward and toward the reader, and it is a wall.
+
+         The walls come out as one shape per side rather than one per edge. Each
+         face is drawn with a hairline in the sheet colour so that two buildings
+         standing behind each other stay two buildings — a round tower cut into
+         twenty-eight strips would wear every one of those hairlines and read as
+         a fluted column. */
+      const middle = ground.reduce(
+        (sum, point) => ({ x: sum.x + point.x / ground.length, y: sum.y + point.y / ground.length }),
+        { x: 0, y: 0 },
+      );
+      const walls = [];
+      for (let k = 0; k < ground.length; k += 1) {
+        const from = ground[k];
+        const to = ground[(k + 1) % ground.length];
+        let nx = to.y - from.y;
+        let ny = from.x - to.x;
+        const outward =
+          nx * ((from.x + to.x) / 2 - middle.x) + ny * ((from.y + to.y) / 2 - middle.y);
+        if (outward < 0) {
+          nx = -nx;
+          ny = -ny;
+        }
+        // Down the sheet is toward the reader: an edge whose outside faces the
+        // other way is behind the body, and its wall is inside it.
+        if (ny <= 0) continue;
+        const side = nx < 0 ? "left" : "right";
+        const last = walls[walls.length - 1];
+        if (last && last.side === side && last.points[last.points.length - 1] === from) {
+          last.points.push(to);
+        } else {
+          walls.push({ side, points: [from, to] });
+        }
+      }
+      /* A run that wrapped past the last edge is one wall in two pieces: the
+         list starts wherever the plan happens to start, and a seam there would
+         be a hairline down a wall that has none. */
+      if (
+        walls.length > 1 &&
+        walls[0].side === walls[walls.length - 1].side &&
+        walls[walls.length - 1].points[walls[walls.length - 1].points.length - 1] ===
+          walls[0].points[0]
+      ) {
+        walls[0].points = [...walls.pop().points.slice(0, -1), ...walls[0].points];
+      }
+      const roof = ground.map(up).join(" ");
       return (
         `<g class="tower${only ? " sole" : ""}" data-row="${escape(row.title)}"` +
         ` data-category="${escape(columns[j].name)}"` +
         ` data-value="${n}" data-sole="${only}" data-tip="${escape(tip)}">` +
+        walls
+          .map(
+            (wall) =>
+              `<polygon class="face ${wall.side} ${level}" points="${
+                wall.points.map(up).join(" ")
+              } ${[...wall.points].reverse().map(down).join(" ")}"></polygon>`,
+          )
+          .join("") +
+        // The roof last, so a wall that meets it along a chord of a curve stops
+        // at the roof rather than a hair over it.
         `<polygon class="face top ${only ? "sole-roof" : level}" points="${roof}"></polygon>` +
-        `<polygon class="face left ${level}" points="${west}"></polygon>` +
-        `<polygon class="face right ${level}" points="${east}"></polygon>` +
         `</g>`
       );
     })
@@ -2285,18 +2499,22 @@ export function stylesheet(theme = "light") {
     )
     .join("");
   const level = c.level.map((colour, index) => `.cell.level-${index + 1}{fill:${colour}}`).join("");
-  const bands = Object.entries(c.moscow)
-    .map(
-      ([id, colour]) =>
-        `.moscow-band.moscow-${id}{fill:${colour}}` +
-        `.point.moscow-${id}{fill:${colour}}` +
-        `.reach.moscow-${id}{fill:${colour}}` +
-        `.face.moscow-${id}{fill:${colour}}`,
-    )
-    .join("");
+  /* Only the band still divides the levels by colour: it is one bar of five
+     segments side by side, where a shape has no room to say anything. The marks
+     that carry a level — the field, the reach dots, the walls of the city — are
+     one paint and four shapes now, and the one exception is what has no level
+     yet, which keeps its pale grey because it is not a level. */
+  const bands =
+    Object.entries(c.moscow)
+      .map(([id, colour]) => `.moscow-band.moscow-${id}{fill:${colour}}`)
+      .join("") +
+    `.point,.reach,.face,.key-mark{fill:${c.moscowMark}}` +
+    `.point.moscow-open,.reach.moscow-open,.face.moscow-open,.key-mark.moscow-open` +
+    `{fill:${c.moscow.open}}`;
   const swatches = [
     ...c.series.map((colour, index) => `.key-series-s${index + 1}{fill:${colour}}`),
     ...c.level.map((colour, index) => `.key-level-${index + 1}{fill:${colour}}`),
+    // The band's key, which is a key of colours and the only one left.
     ...Object.entries(c.moscow).map(([id, colour]) => `.key-moscow-${id}{fill:${colour}}`),
   ].join("");
   return (
@@ -2428,6 +2646,16 @@ function drawKey(legend, width, measure) {
         `<circle class="key-dot" cx="${(x + entry.radius).toFixed(2)}"` +
         ` cy="${y - SIZE / 2 + 1}" r="${entry.radius.toFixed(2)}"></circle>`;
       x += mark;
+    } else if (entry.shape === "level") {
+      // The level's own shape, at the size a swatch has. A key of squares beside
+      // four names would be a key of colours again, and there are none left.
+      markup += moscowMark(entry.level, {
+        cx: x + SIZE / 2,
+        cy: y - SIZE / 2 + 1,
+        r: SIZE / 2,
+        className: "key-mark",
+      });
+      x += SIZE + 5;
     } else if (entry.shape === "ring") {
       markup +=
         `<circle class="key-ring" cx="${x + SIZE / 2}" cy="${y - SIZE / 2 + 1}"` +

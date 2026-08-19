@@ -1897,11 +1897,11 @@ test("a requirement counts departments across interviews", async ({ page }) => {
      inside the picture rather than half over its own axis label. */
   const strays = await page.locator("#priority svg").evaluate((svg) => {
     const [, , width, height] = svg.getAttribute("viewBox").split(/\s+/).map(Number);
-    return [...svg.querySelectorAll("circle.point")]
+    return [...svg.querySelectorAll(".point")]
       .map((point) => ({
-        cx: Number(point.getAttribute("cx")),
-        cy: Number(point.getAttribute("cy")),
-        r: Number(point.getAttribute("r")),
+        cx: Number(point.dataset.cx),
+        cy: Number(point.dataset.cy),
+        r: Number(point.dataset.reach),
       }))
       .filter(
         ({ cx, cy, r }) => cx - r < 0 || cx + r > width || cy - r < 0 || cy + r > height,
