@@ -6,9 +6,162 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.11.0 — 2026-08-23
 
 ### Changed
+
+- **Was blockiert wird, wird jetzt beeinträchtigt.** „Blockiert" behauptet, dass eine Operation
+  ohne die Anforderung gar nicht stattfindet, und das ist fast nie der Fall: sie gelingt über eine
+  Umgehung, mit Aufwand, unvollständig. Die Erhebung stützt sich auf das, was Bereiche in den
+  Anforderungsinterviews gesagt haben, also auf eine *wahrgenommene* Beeinträchtigung — und ein
+  Wort, das mehr behauptet als die Erhebung trägt, wandert in die Arbeit und wird dort geglaubt.
+  Die deutschen Texte sagen es überall, wo sie es vorher anders sagten: auf der Karte, in der
+  Abbildung, in der Fehlermeldung, in der Katalogtabelle. Die englischen bleiben vorerst bei
+  „blocked". Kein Datenformat berührt: welche Operationen es gibt und wie sie heißen, gehört der
+  Studie und stand nie in diesen Texten.
+
+- **A new catalog figure: which operations a requirement holds up, as a Venn diagram of the
+  three.** The catalog knew which operations each requirement holds up and could only print them
+  as a comma-separated column. What a column cannot say is which *combinations* occur — and the
+  combination that does not occur is as much a finding as the one that does. Not a Sankey either:
+  the relation is a membership and not a quantity, so every ribbon would have been the same width
+  and the widest channel of that form would have carried nothing.
+
+  A Venn rather than an Euler diagram, and that was tried both ways. The Euler moved its frames
+  around the material — where no requirement held up two operations at once, the column those two
+  would have shared was taken away and they stopped overlapping. It is the more honest picture of
+  a shape, and it is the worse figure to read, because the shape changes as the study is worked
+  on and a reader who learned where a combination lives has to learn it again. The Venn keeps a
+  place for all seven, so a reader can point at an area and read a nought there — a statement the
+  picture can only make if the area is on the page to begin with. It also draws the eighth area,
+  which a diagram of three sets forgets: the frame the sets have always implicitly stood in, and
+  the band inside it for what lies in none of them. Reachable as `blocked-operations`.
+
+  **The requirements stand in the figure, each in its own frame.** A count says how many and then
+  leaves the reader to go and find them, and the names are what a catalog is for — so every
+  requirement is written into the area it belongs to, on a card of its own. Set as running text
+  they were sentences with nothing between them but a gap, and a title that wrapped could not be
+  told from the next one. Nothing is cut short: the columns take room in proportion to the
+  writing they hold and the rows grow to whatever their cards need, because the figure is drawn
+  to one width and grows downward, and downward is what a figure on a page has spare.
+
+  **And beside each requirement, who asked for it.** A pie cut into as many pieces as the study
+  has departments, each piece in that department's own colour and filled where that department
+  names the requirement. It says the two things a number could only have said one of — how many
+  asked for it, and *which* — and it is the one thing about a requirement this figure could not
+  otherwise say, because where a card stands says what the requirement holds up and nothing at
+  all about how widely it was asked for. How many departments name it is counted from the coding
+  units and never entered, which is what keeps it tied to the material; a piece nobody filled is
+  still drawn, because the pieces together are how many departments there are and „three of five"
+  is the reading, not „three". The colours are not this figure's own: they come from the same
+  place every other figure takes them, so a piece here and a band in the citation figure below
+  are the same department without anybody having to check, and the key above the figure is that
+  same key rather than a second one.
+
+  It is drawn at a size that survives a press. Five millimetres across for five pieces, worked
+  back from the hundred and sixty-two this figure is printed over: at eight units of radius it
+  came out at three and a half, and a piece nobody had filled was a tenth of a millimetre of
+  outline and nothing else, which no printer can be relied on to hold. The piece is a grey fill
+  now with the outline over it — the grey carries it at any size and the line only sharpens the
+  edge.
+
+  What went the other way is the count per area. There is no number saying how many requirements
+  a combination holds any more: at the sizes a catalog runs to a reader sees it, the cards are
+  the answer, and the table under the figure has it exactly. What an empty area needed instead
+  was a word. Left blank it is the finding this whole figure exists for — that this combination
+  does not occur in the material — and it reads as a slip of the pen; „keine" settles it.
+
+  **The key says all six things, and stands where the figure stands.** Five colours were
+  explained and the sixth was not: grey is a piece of every pie on the page and means „this
+  department did not name it", and a reader had to work that out. It is named now, and the key
+  says again that the colours are the circle beside each requirement rather than leaving that to
+  the caption — it runs to two lines at that length, which is where it was going the moment a
+  study had a sixth department anyway.
+
+  A key of six wants columns rather than a flow. Run on, its entries broke onto a second line
+  whose swatches stood wherever the words of the first happened to end, and the eye had no column
+  to come down. Four columns at the most now — a key is read across, and past four the names
+  stand shoulder to shoulder — so the swatches stand under one another and a study that gains a
+  department gains a cell rather than a new arrangement. The sentence about the key stands in a
+  column of its own beside them, down the whole height of them: it is a sentence about the key
+  and not one of its entries, and set into a cell it would either be cut to the width of a swatch
+  and a name or make every cell as wide as itself.
+
+  The page is told the column count, the word's own column and the step from one column to the
+  next rather than working any of them out for itself, because it measures its own type and the
+  file measures an estimate — left to it, three swatches stood two hundred apart on the screen
+  and ninety apart in print. It is one grid rather than a grid inside a box for the same reason:
+  a column given as a share of the figure's width resolves against whatever box it is in, and
+  inside the inner one it came out at half the step the file uses.
+
+  And the key begins at the figure's own left edge instead of at nought. Flush at nought under a
+  picture inset by ten units, it hung out past the text block of the page it was printed on and
+  read as a bleed. The inset belongs to the figure rather than to keys in general: the band of
+  MoSCoW levels really does begin at nought, and a key flush under it is a key in the right
+  place — so a figure states its own, and one that has none keeps what it had.
+
+  **The frame around all of it says what it is.** It had been drawn and left unnamed, which made
+  it a visible difference carrying no information — and it encloses the band of requirements that
+  hold nothing up as well, so a reader had no way to know it meant the whole catalog rather than
+  a fourth set. It says so now.
+
+  **Rectangles rather than circles, and rounded rather than square.** This began as three
+  rectangles laid over a grid and read as a table with coloured borders: all three frames began
+  and ended within three pixels of one another, and a gutter drew boundaries the sets had not.
+  Circles fixed that and cost the thing the figure is for — a circle spends its corners on
+  nothing and its lenses are the one place on a page a sentence cannot go, so the requirements
+  had to be listed underneath instead of standing where they belong. Rounded frames, each
+  standing out from its own cells by its own distance so that no two share an edge, read as sets
+  and hold their writing.
+
+  Each set is washed in its own hue at a weight that lets two and three of them lie over one
+  another, so the deepest area — the requirement that stops all three — comes out the darkest
+  thing on the page without anyone having to declare that it should. One wash per set, over that
+  set's whole frame: while the Euler diagram stood beside this one the ground had to be painted
+  area by area, because leaving an area out is that figure's whole business and a wash belonging
+  to a frame cannot be told to stop being a colour in one place. Area by area it had to be swept
+  into axis-aligned patches, and a rounded corner is not axis-aligned — where a frame's corner
+  curved away, a sliver lay inside one set and inside no area's patch, and the page showed
+  through it as a black notch. A frame washing its own rounded rectangle has the corner exactly
+  right, because it is the same rectangle.
+
+- **Fixed: the figure was drawn in the tool's words rather than the study's.** Which operations
+  there are to block is the study's own vocabulary — it can rename them and it can have more than
+  three — and this one figure took its three names out of the interface dictionary instead. A
+  study that had renamed „Ablage" saw the old word here and nowhere else, and a study with a
+  fourth operation had it counted, silently and in print, among the requirements that block
+  nothing. It reads the catalog's operations now. A vocabulary three frames cannot hold
+  is declined with its own reason rather than approximated: a missing figure is recoverable, a
+  wrong sentence about the material printed in an appendix is not.
+
+- **Fixed: the figure had no paint on the screen at all.** Its class names were declared in the
+  stylesheet that travels inside a saved file and in neither of the two places a figure has to be
+  painted. The saved SVG was perfect; on the screen and in the printed appendix the same figure
+  was three rectangles of default black laid over every requirement title, at the document's type
+  size, with nothing in the console to say so. Nothing in the suite could see it, because
+  everything that opens a saved figure was looking at the half that worked. The check is on the
+  pair now: whatever the file's stylesheet paints, `app.css` paints too.
+
+- **The catalog says how many figures it is waiting for, and it was one behind.** „Two figures
+  are still missing here" was written when there were two; the blocked operations made three, and
+  a screen that miscounts what it is about to show is a screen nobody trusts the rest of.
+
+- **The city's floor stands at forty degrees, so its names can be read on
+  paper.** A name in that figure is written along its own row, so the room it
+  has between two lines of writing is twice the sine of the floor's angle times
+  the step across. At the thirty degrees it was drawn at, twice the sine is
+  exactly one and a name had the bare step to live in — with five and twenty
+  rows on a sheet this wide that is fifteen units, and the largest type the
+  layout could then choose was eight pixels. Printed at the width of a thesis
+  text block that is five point, against six for the flat figure of the same
+  matrix and ten for the prose around it: the smallest type in the document, in
+  the one figure a reader was most likely to be shown on a screen and never at
+  size. Forty gives a quarter more room and the type comes out at nine and a
+  half, which is what the flat figure is set in. It is paid for in height, which
+  is the one thing a figure on a page has spare, and the figure grows from a
+  hundred to a hundred and thirty-five millimetres. The angle is one constant
+  now and the writing takes its tilt from it, because two numbers that have to
+  agree are two numbers that one day will not.
 
 - **A MoSCoW level is a shape now, and the shape counts its steps.** The three
   figures that draw one mark per requirement — the prioritization field, the

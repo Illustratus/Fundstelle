@@ -961,6 +961,9 @@ const server = createServer(async (request, response) => {
                   ...new Set(all.map((interview) => interview.transcript.department)),
                 ],
                 operationCount: operations.length,
+                // The names as well, not only how many: the Euler figure of the
+                // blocked operations is drawn in the study's own words.
+                operations,
               }
             : null,
         language,

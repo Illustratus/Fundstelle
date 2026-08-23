@@ -355,9 +355,10 @@ export const TEXTS = {
       "die Datei kommt hierher zurück und landet als coding.NAME.json in jedem Interviewordner. Gelesen " +
       "wird sie danach nur noch.",
     catalogNotJudgedYet:
-      "Zwei Abbildungen fehlen hier noch: die Verteilung der MoSCoW-Stufen und das Prioritätsfeld. Beide " +
-      "brauchen eine Einschätzung, die an der einzelnen Anforderung getroffen wird — Stufe und blockierte " +
-      "Operationen stehen unten auf jeder Karte. Sobald die erste eingetragen ist, stehen sie hier.",
+      "Drei Abbildungen fehlen hier noch: die Verteilung der MoSCoW-Stufen, das Prioritätsfeld und die " +
+      "beeinträchtigten Operationen. Alle drei brauchen eine Einschätzung, die an der einzelnen Anforderung " +
+      "getroffen wird — Stufe und beeinträchtigte Operationen stehen unten auf jeder Karte. Sobald die erste " +
+      "eingetragen ist, stehen sie hier.",
     handoverExport: "Eigene Kodierung ausgeben",
     handoverImport: "Zweitkodierung einlesen",
     handoverDone: "Zweitkodierung für {n} Interviews übernommen.",
@@ -428,17 +429,17 @@ export const TEXTS = {
     requirementRenamed: "Anforderung lautet jetzt „{title}“.",
     requirementLevelSet: "Stufe: {level}.",
     requirementDefinitionSaved: "Definition der Anforderung festgehalten.",
-    requirementBlocks: "Blockiert: {operations}.",
-    requirementBlocksNothing: "Keine Operation mehr als blockiert vermerkt.",
+    requirementBlocks: "Beeinträchtigt: {operations}.",
+    requirementBlocksNothing: "Keine Operation mehr als beeinträchtigt vermerkt.",
 
-    /* Die Operationen, deren Blockade eine Anforderung wiegt. */
-    operationsSummary: "Blockierbare Operationen ({n})",
+    /* Die Operationen, deren Beeinträchtigung eine Anforderung wiegt. */
+    operationsSummary: "Beeinträchtigbare Operationen ({n})",
     operationsNote:
       "Woran gemessen wird, was das Fehlen einer Anforderung kostet. Die Zahl daneben sagt, wie viele " +
       "Anforderungen die Operation nennen; wird eine aufgelöst, fällt sie überall dort weg.",
     operationNameAria: "Name der Operation",
     operationPlaceholder: "Weitere Operation",
-    operationNewAria: "Neue blockierbare Operation",
+    operationNewAria: "Neue beeinträchtigbare Operation",
     operationRemoveTitle: "Operation auflösen",
     operationRemoveAria: "Operation „{name}“ auflösen",
     operationRemoveConfirm:
@@ -652,7 +653,7 @@ export const TEXTS = {
 
     catalogTitle: "Anforderungskatalog",
     catalogLead:
-      "Eine Anforderung bündelt Kodiereinheiten über Interviews hinweg. Wie viele Bereiche sie nennen, zählt das Werkzeug aus den Belegen; welche Operationen ihr Fehlen blockiert, trägst du ein. Beides zusammen trägt die MoSCoW-Stufe.",
+      "Eine Anforderung bündelt Kodiereinheiten über Interviews hinweg. Wie viele Bereiche sie nennen, zählt das Werkzeug aus den Belegen; welche Operationen ihr Fehlen beeinträchtigt, trägst du ein. Beides zusammen trägt die MoSCoW-Stufe.",
     requirementSentencePlaceholder: "Anforderung in einem Satz",
     requirementTitleAria: "Titel der Anforderung",
     withoutLevel: "noch ohne Stufe",
@@ -670,7 +671,7 @@ export const TEXTS = {
     chooseTarget: "— Ziel wählen —",
     merge: "Überführen",
     targetRequirementAria: "Zielanforderung",
-    blocks: "Blockiert",
+    blocks: "Beeinträchtigt",
     operationFiling: "Ablage",
     operationRetrieval: "Abruf",
     operationTransfer: "Transfer",
@@ -686,6 +687,16 @@ export const TEXTS = {
     metricRequirements: "Anforderungen",
     metricCited: "belegt",
     metricPrioritized: "mit Stufe",
+    chartVennTitle: "Beeinträchtigte Operationen — alle Kombinationen (Venn)",
+    chartVennCaption:
+      "Ein Rahmen je Operation, jede Anforderung als eigene Karte in der Fläche, die ihr zusteht. Alle sieben Kombinationen haben hier ihren festen Platz, auch die, in der keine Anforderung steht — eine leere Fläche heißt, dass diese Kombination im Material nicht vorkommt. Je mehr Rahmen übereinanderliegen, desto dunkler die Fläche: am dunkelsten steht, was alle drei Operationen aufhält. Der Kreis neben einer Anforderung ist in so viele Stücke geteilt, wie die Studie Bereiche hat; gefüllt sind die Stücke der Bereiche, die sie nennen.",
+    blockedOutside: "beeinträchtigt keine der drei Operationen",
+    blockedNamedBy: "Kreis je Anforderung: welche Bereiche sie nennen",
+    blockedNotNaming: "nennt nicht",
+    blockedNone: "keine",
+    blockedUniverse: "Alle Anforderungen des Katalogs",
+    blockedFiguresCaption: "Anforderungen je Kombination beeinträchtigter Operationen",
+    columnCombination: "Kombination",
     chartMoscowTitle: "Verteilung der MoSCoW-Stufen",
     chartMoscowCaption:
       "Eine Anforderung ohne Stufe ist noch nicht entschieden; sie steht als „offen“ am Ende.",
@@ -762,10 +773,13 @@ export const TEXTS = {
       "Wärmekarte: {rows} Kategorien über {sections} Erzählanstöße. Die stärkste Zelle ist " +
       "{top} im Anstoß {section} mit {value} Kodiereinheiten.",
     summaryMoscow: "Verteilung von {total} Anforderungen auf die Stufen — {levels}.",
+    summaryVenn:
+      "Venn-Diagramm: alle sieben Kombinationen der drei Operationen, {shown} davon belegt. " +
+      "{total} Anforderungen, davon beeinträchtigen {free} keine Operation. Je Operation — {operations}.",
     summaryPriority:
       "Streudiagramm: {rows} Anforderungen, waagerecht die nennenden Bereiche (bis {departments}), " +
-      "senkrecht die blockierten Operationen. Oben rechts, also von allen genannt und mehrfach " +
-      "blockierend: {urgent} — {names}.",
+      "senkrecht die beeinträchtigten Operationen. Oben rechts, also von allen genannt und mehrfach " +
+      "beeinträchtigend: {urgent} — {names}.",
     summaryNone: "keine",
     showFigures: "Zahlen als Tabelle",
     table: "Tabelle",
@@ -777,13 +791,13 @@ export const TEXTS = {
     coverageFiguresCaption: "Belege je Anforderung und Bereich.",
     moscowFiguresCaption: "Anzahl der Anforderungen je MoSCoW-Stufe.",
     priorityFiguresCaption:
-      "Je Anforderung: nennende Bereiche, blockierte Operationen, Belege und Stufe.",
-    chartPriorityTitle: "Priorisierung: Bereiche und blockierte Operationen",
+      "Je Anforderung: nennende Bereiche, beeinträchtigte Operationen, Belege und Stufe.",
+    chartPriorityTitle: "Priorisierung: Bereiche und beeinträchtigte Operationen",
     chartPriorityCaption:
-      "Waagerecht die Zahl der nennenden Bereiche, aus den Belegen gezählt; senkrecht die Zahl der blockierten Operationen, von dir eingetragen. Punktgröße = Belege, Punktform = MoSCoW-Stufe: so viele Kanten wie die Stufe Stufen hat — Viereck „Must have“, Dreieck „Should have“, Ellipse „Could have“, Kreis „Won't have“. Rechts oben liegt, was die Stufe „Must have“ trägt.",
+      "Waagerecht die Zahl der nennenden Bereiche, aus den Belegen gezählt; senkrecht die Zahl der beeinträchtigten Operationen, von dir eingetragen. Punktgröße = Belege, Punktform = MoSCoW-Stufe: so viele Kanten wie die Stufe Stufen hat — Viereck „Must have“, Dreieck „Should have“, Ellipse „Could have“, Kreis „Won't have“. Rechts oben liegt, was die Stufe „Must have“ trägt.",
     axisDepartmentsNaming: "nennende Bereiche",
-    axisBlockedOperations: "blockierte Operationen",
-    priorityTip: "{title} · {departments} Bereiche · {blocked} blockiert · {citations} Belege",
+    axisBlockedOperations: "beeinträchtigte Operationen",
+    priorityTip: "{title} · {departments} Bereiche · {blocked} beeinträchtigt · {citations} Belege",
     catalogChartsEmpty: "Sobald eine Anforderung belegt ist, zeigt sich hier ihre Lage.",
 
     tabRoles: "Rollen",
@@ -809,6 +823,9 @@ export const TEXTS = {
     metricRoleEntries: "Zuschreibungen",
     metricFromOthers: "aus fremder Stimme",
     figureNeedsProfiles: "Noch kein belegtes Rollenprofil.",
+    figureNeedsBlockade:
+      "Diese Abbildung braucht genau drei Operationen im Katalog und mindestens eine Anforderung, die " +
+      "eine davon beeinträchtigt.",
     chartVoicesTitle: "Wer über wen spricht",
     chartVoicesCaption:
       "Je Profil die Belege, aufgeteilt nach dem Interview, aus dem sie stammen. Ein einfarbiger Balken ist eine Selbstauskunft; erst ein zweiter Farbanteil ist eine Fremdaussage über den Bereich. Bereiche ohne eigenes Interview tragen die eigene Farbe gar nicht.",
@@ -1143,9 +1160,10 @@ export const TEXTS = {
       "back to this side and lands as coding.NAME.json in every interview folder. After that it is only " +
       "ever read.",
     catalogNotJudgedYet:
-      "Two figures are still missing here: the spread of MoSCoW levels and the priority field. Both need a " +
-      "judgment that is made on the single requirement — the level and the blocked operations sit at the " +
-      "foot of every card below. As soon as the first one is entered, they appear here.",
+      "Three figures are still missing here: the spread of MoSCoW levels, the priority field and the " +
+      "blocked operations. All three need a judgment that is made on the single requirement — the level " +
+      "and the blocked operations sit at the foot of every card below. As soon as the first one is " +
+      "entered, they appear here.",
     handoverExport: "Export my own coding",
     handoverImport: "Read in a second coding",
     handoverDone: "Second coding taken over for {n} interviews.",
@@ -1462,6 +1480,16 @@ export const TEXTS = {
     metricRequirements: "Requirements",
     metricCited: "cited",
     metricPrioritized: "with a level",
+    chartVennTitle: "Operations blocked — every combination (Venn)",
+    chartVennCaption:
+      "One frame per operation, every requirement a card of its own in the area it belongs to. All seven combinations keep a place here, including the ones no requirement stands in — an empty area means that combination does not occur in the material. The more frames lie over one another, the darker the area: darkest of all is what holds up all three operations. The circle beside a requirement is cut into as many pieces as the study has departments; the filled ones are the departments that name it.",
+    blockedOutside: "blocks none of the three operations",
+    blockedNamedBy: "circle per requirement: which departments name it",
+    blockedNotNaming: "does not name it",
+    blockedNone: "none",
+    blockedUniverse: "Every requirement in the catalog",
+    blockedFiguresCaption: "Requirements per combination of blocked operations",
+    columnCombination: "Combination",
     chartMoscowTitle: "Distribution of MoSCoW levels",
     chartMoscowCaption:
       "A requirement without a level has not been decided yet; it sits at the end as “open”.",
@@ -1536,6 +1564,9 @@ export const TEXTS = {
       "Heatmap: {rows} categories across {sections} guide sections. The strongest cell is " +
       "{top} in section {section} with {value} coding units.",
     summaryMoscow: "Distribution of {total} requirements across the levels — {levels}.",
+    summaryVenn:
+      "Venn diagram: all seven combinations of the three operations, {shown} of them occurring. " +
+      "{total} requirements, {free} of which block no operation. Per operation — {operations}.",
     summaryPriority:
       "Scatter plot: {rows} requirements, horizontally the naming departments (up to {departments}), " +
       "vertically the blocked operations. Upper right, named by all and blocking more than one: " +
@@ -1582,6 +1613,9 @@ export const TEXTS = {
     metricRoleEntries: "Attributions",
     metricFromOthers: "in another voice",
     figureNeedsProfiles: "No cited role profile yet.",
+    figureNeedsBlockade:
+      "This figure needs exactly three operations in the catalog and at least one requirement that " +
+      "blocks one of them.",
     chartVoicesTitle: "Who speaks about whom",
     chartVoicesCaption:
       "Per profile the citations, split by the interview they come from. A single-color bar is self-description; only a second color is another department speaking about this one. Departments without an interview of their own carry none of their own color.",

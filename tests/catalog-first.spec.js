@@ -94,7 +94,7 @@ test("a figure that needs a judgment nobody has made is not drawn", async ({ pag
   const note = page.locator("#catalog-charts .column-note", { hasText: "fehlen hier noch" });
   await expect(note).toBeVisible();
   await expect(note).toContainText("MoSCoW");
-  await expect(note).toContainText("blockierte Operationen");
+  await expect(note).toContainText("beeinträchtigte Operationen");
 
   // The one that counts citations does not need a judgment and stays.
   await expect(page.locator("#coverage")).toBeVisible();

@@ -9,7 +9,9 @@
 
 import {
   FONTS,
+  WIDTH,
   categoryChart,
+  blockedVenn,
   cityPlot,
   coverageChart,
   estimateWidth,
@@ -2848,8 +2850,60 @@ function keyHTML(legend) {
     else runs.push([entry]);
   }
 
+  /* Ruled rather than flowed, when the key asks for it: as many equal columns
+     as fit the widest entry, so the swatches stand under one another however the
+     names fall. Measured with the same reckoning the saved file uses, so the two
+     come out with the same number of columns. */
+  const cell = legend.grid
+    ? Math.max(
+        60,
+        ...legend.entries
+          .filter((entry) => entry.paint || entry.shape)
+          // The saved file's own reckoning, in the units a figure is drawn to.
+          .map((entry) => 14 + estimateWidth(entry.label ?? "", { size: 10, tight: true })),
+      )
+    : 0;
+  /* The column *count* rather than a column width, and worked out the way the
+     saved file works it out — so the page and the file break in the same place
+     rather than each measuring its own type and landing on a different number.
+     Four at the most: a key is read across, and past four the names stand
+     shoulder to shoulder with no air between them. */
+  // The word about the key stands to the left of the columns, not above them.
+  const head = legend.grid
+    ? Math.max(
+        0,
+        ...legend.entries
+          .filter((entry) => !(entry.paint || entry.shape))
+          .map((entry) => estimateWidth(entry.label ?? "", { size: 10, tight: true })),
+      ) + 28
+    : 0;
+  const across = cell
+    ? Math.max(
+        1,
+        Math.min(4, Math.floor((WIDTH - (legend.inset ?? 0) - head + 14) / (cell + 14))),
+      )
+    : 0;
+  /* The step from one column to the next as well, as a share of the figure's
+     width — so a column of the page begins where the same column of the saved
+     file begins. Left to stretch across the whole line, three marks stood two
+     hundred apart on the screen and ninety apart in print. */
+  /* Every measure the page needs, as a share of the figure's width — the word's
+     own column, the step from one column of swatches to the next, and how many
+     rows they run to, so the word can span them all and the swatches begin
+     where the saved file begins them. */
+  const share = (units) => `${((units / WIDTH) * 100).toFixed(2)}%`;
+  const rows = across
+    ? Math.ceil(legend.entries.filter((entry) => entry.paint || entry.shape).length / across)
+    : 0;
+  const ruled = across
+    ? ` style="--key-head:${share(head)};--key-cols:${across};` +
+      `--key-pitch:${share(cell + 14)};--key-rows:${rows}"`
+    : "";
+
   return (
-    `<div class="chart-legend${classed ? " moscow" : ""}">` +
+    // Inset to the figure's own left edge, where the figure has one.
+    `<div class="chart-legend${classed ? " moscow" : ""}${legend.inset ? " inset" : ""}` +
+    `${legend.grid ? " ruled" : ""}"${ruled}>` +
     runs
       .map((run) => (run.length > 1 ? `<span class="key-run">${run.map(one).join("")}</span>` : one(run[0])))
       .join("") +
@@ -3664,7 +3718,12 @@ function catalogFiguresHTML(rows, departments) {
       ? chartHTML(moscowBand(rows, t, shared)) +
         chartHTML(
           priorityField(rows, t, { ...shared, departmentCount: departments.length }),
-        )
+        ) +
+        /* The blocked operations come from a judgment as well, so they wait
+           with the other two until one has been made. The study's own
+           vocabulary goes with them: which operations there are to block is
+           the catalog's opinion and not this figure's. */
+        chartHTML(blockedVenn(rows, state.operations, departments, t))
       : "") +
     chartHTML(coverageChart(rows, departments, t)) +
     /* This one needs no judgment either — it is made of citations, which exist

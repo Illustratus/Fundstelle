@@ -37,6 +37,7 @@ const NAMES = [
   "prioritization",
   "citations-per-requirement",
   "requirement-reach",
+  "blocked-operations",
   "catalog-city",
   "role-voices",
   "evidence-per-pillar",

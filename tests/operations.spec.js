@@ -130,7 +130,7 @@ test("the catalog works on them where the checkboxes are", async ({ page, reques
   const box = page.locator('.requirement [data-blocked="wiederauffinden"]');
   await expect(box).toBeVisible();
   await box.check();
-  await expect(page.locator("#message")).toContainText("Blockiert: Wiederauffinden");
+  await expect(page.locator("#message")).toContainText("Beeinträchtigt: Wiederauffinden");
 
   // And renaming it renames it on the card.
   const field = page.locator('.operation[data-operation="wiederauffinden"] input[type="text"]');

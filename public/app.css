@@ -2196,6 +2196,34 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   font-size: .8rem;
   color: var(--ink-soft);
 }
+/* A key belongs to its figure, so it begins where the figure begins. Ten of
+   the seven hundred and twenty units a figure is drawn to, which is what the set
+   diagram insets its outer frame by; a key flush at nought under it hung out
+   past the text block of the printed page and read as a bleed. */
+.chart-legend.inset { padding-left: 1.39%; }
+/* A key of six wants columns, not a flow: run on, the swatches of the second
+   line stood wherever the words of the first happened to end and the eye had no
+   column to come down. Every entry takes the width of the widest, so a study
+   that gains a department gains a cell rather than a new arrangement. The word
+   about the key keeps its own line — set into a cell it would either be cut to
+   the width of a swatch and a name or make every cell as wide as itself. */
+.chart-legend.ruled {
+  display: grid;
+  grid-template-columns: var(--key-head, auto) repeat(var(--key-cols, 3), var(--key-pitch, 9rem));
+  grid-template-rows: repeat(var(--key-rows, 1), auto);
+  column-gap: 0;
+  row-gap: .35rem;
+  align-items: baseline;
+}
+/* The word stands in a column of its own beside the swatches, down the whole
+   height of them: laid out as one grid rather than as a box inside a box,
+   because a column given as a share of the figure's width resolves against
+   whatever box it is in, and inside the inner one it came out at half the step
+   the saved file uses. */
+.chart-legend.ruled .key-note { grid-column: 1; grid-row: 1 / -1; align-self: start; }
+/* The grey a piece nobody filled is drawn in, so the key can name it: five
+   colours were explained and the sixth thing in the pie was left to be guessed. */
+.chart-legend i.unnamed { background: var(--line); }
 .chart-legend i {
   display: inline-block;
   width: .7rem;
@@ -2333,6 +2361,82 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
    dot rather than in it, because it says something about the column and the dot
    already says something about the row. */
 .chart .reach-sole { fill: none; stroke: var(--ink-soft); stroke-width: 1; }
+
+/* Blockierte Operationen, as a Venn diagram and as an Euler diagram of the same
+   three sets. One circle per operation, each washed in its own hue at a weight
+   that lets two and three of them lie over one another and still be written on:
+   the overlaps darken by themselves, which is what makes a set diagram legible
+   without a key, and the deepest of them — the requirement that stops all three
+   — comes out the darkest thing on the page. Blue, green and amber: the three
+   of the series that stay apart when they are laid over each other. */
+/* One wash per set and per zone, so that leaving a zone out is leaving it out:
+   a wash that belonged to a whole circle could not be told to stop being a
+   colour in one place, and the Euler's whole business is not drawing a zone
+   that holds nothing. */
+.chart .op-wash { fill-opacity: .22; stroke: none; }
+@media (prefers-color-scheme: dark) { .chart .op-wash { fill-opacity: .3; } }
+:root[data-theme="light"] .chart .op-wash { fill-opacity: .22; }
+:root[data-theme="dark"] .chart .op-wash { fill-opacity: .3; }
+.chart .op-edge { fill: none; stroke-width: 1.4; }
+/* Named on both classes rather than on the set alone. A set's colour is a fill
+   on its wash and a stroke on its rim, and written as one rule for the set it
+   also filled the rim: the same weight as `.op-edge { fill: none }` and later
+   in the sheet, so three hairline circles came out as three solid discs, each
+   hiding the one drawn before it. */
+.chart .op-wash.op-set-1 { fill: var(--series-1); }
+.chart .op-edge.op-set-1 { stroke: var(--series-1); }
+.chart .op-wash.op-set-2 { fill: var(--series-3); }
+.chart .op-edge.op-set-2 { stroke: var(--series-3); }
+.chart .op-wash.op-set-3 { fill: var(--series-4); }
+.chart .op-edge.op-set-3 { stroke: var(--series-4); }
+.chart .op-name {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+/* The badge on a card: how many departments name that requirement. Counted from
+   the coding units and not entered, which is what keeps it tied to the material
+   — and the one thing about a requirement this figure could not otherwise say,
+   because where a card stands says what it holds up and nothing at all about how
+   widely it was asked for. A nought is a requirement no citation carries yet, so
+   it is drawn as the absence it is rather than as a value: the pill steps back
+   to a hairline and the figure to the quiet ink kept for „nothing here". */
+.chart .op-slice { fill: var(--series); stroke: var(--sheet); stroke-width: .6; }
+/* A piece nobody filled still has to be counted, because the pieces together are
+   how many departments the study has — so it takes the ink this tool keeps for
+   „nothing is here“ rather than a rule colour, which came to 1.7 against the
+   card and could not be made out. */
+/* A piece nobody filled still has to be counted, because the pieces together are
+   how many departments the study has. A hairline alone came to a tenth of a
+   millimetre in print, which no press holds, so it is a fill with an outline
+   over it: the grey carries it at any size, the line only sharpens the edge. */
+.chart .op-slice.none { fill: var(--line); stroke: var(--ink-faint); stroke-width: .6; }
+/* An area with nothing in it has to say so, or the finding this figure exists
+   for reads as a slip of the pen. The reading ink, because an area may lie under
+   three washes at once where a grey does not reach the threshold; the italic is
+   what keeps the word from looking like a requirement. */
+.chart .op-empty { fill: var(--ink); font-size: 9.5px; font-style: italic; }
+/* And the outer frame's own word. Drawn and unnamed it was a visible difference
+   carrying no information — and it encloses the requirements that hold nothing
+   up as well, so it has to say that it means the whole catalog. */
+.chart .op-whole { fill: var(--ink-soft); font-size: 10px; letter-spacing: .04em; }
+/* One card per requirement. Set as running text, four titles in a zone were
+   four sentences with nothing between them but a gap, and a title that wrapped
+   could not be told from the next one. The card also gives the writing the one
+   ground in this figure that is the same everywhere — the washes under it are
+   one, two or three deep. */
+.chart .op-card { fill: var(--sheet); stroke: var(--line); stroke-width: 1; }
+/* The sheet a set's name is written on, so its frame breaks for the word rather
+   than running under it: written beside a frame the name could belong to either
+   of the two lines nearest it, written on one it can belong to nothing else. */
+.chart .op-plate { fill: var(--sheet); stroke-width: 1.4; }
+/* The frame every Venn diagram implicitly stands in, drawn because what lies in
+   none of the three has to lie somewhere. Dashed and quiet: it is the edge of
+   what was looked at, not a set of its own. */
+.chart .op-universe { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.chart .op-item { fill: var(--ink); font-size: 9.5px; }
+.chart .op-outside { fill: var(--ink-soft); font-size: 10.5px; font-weight: 600; }
 
 /* The city: the lattice a tower stands on, and the names along its two near
    edges. Set at thirty degrees across the run of the edge — flat, a name has

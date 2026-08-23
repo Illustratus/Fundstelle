@@ -1609,7 +1609,7 @@ test("the catalog orders by level and names the citations", async ({ page, reque
   await expect(page.locator(".requirement .title").first()).toHaveValue("Vorrangig");
 
   const text = await (await request.get("/api/export/requirements-catalog.md?lang=de")).text();
-  expect(text).toContain("| Anforderung | MoSCoW | Bereiche | Belege | blockiert |");
+  expect(text).toContain("| Anforderung | MoSCoW | Bereiche | Belege | beeinträchtigt |");
   expect(text.indexOf("Vorrangig")).toBeLessThan(text.indexOf("Zweitrangig"));
 });
 
@@ -1732,10 +1732,16 @@ test("the catalog works the requirements up graphically", async ({ page, request
 
   // The coverage chart stacks the citations by department, like the analysis.
   await expect(page.locator("#coverage .segment")).toHaveCount(3);
-  await expect(page.locator(".chart-legend:not(.moscow) span")).toHaveText([
-    "Marketing",
-    "Vertrieb",
-  ]);
+  /* The coverage chart's own key, taken by the figure it belongs to rather than
+     by being the only one of its kind. It is not: the set diagram of the
+     blocked operations names the same departments in the same colours, because
+     the pie beside each requirement is drawn in them — and a figure that will
+     be saved on its own has to carry its own key. */
+  await expect(
+    page.locator(
+      'xpath=//figure[@id="coverage"]/preceding-sibling::div[contains(@class,"chart-legend")][1]/span',
+    ),
+  ).toHaveText(["Marketing", "Vertrieb"]);
 
   // Hovering names the requirement with both its numbers.
   await page.locator("#priority .point.moscow-must").hover();

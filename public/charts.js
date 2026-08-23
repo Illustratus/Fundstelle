@@ -1739,35 +1739,56 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
   const NUMBER = 20;
   const EDGE = 4;
   const CLEAR = 5;
-  /* The lattice keeps the thirty degrees it is drawn at. It is what makes the
-     picture a city rather than a diagram of one, and the moment the names were
-     allowed to stretch it — a row is only as tall as the step down, and two
-     lines of type need three times that — the floor tipped up to something
-     nobody would call a view. So the names no longer set the step. */
-  const ISO = Math.tan(Math.PI / 6);
+  /* The angle the floor is drawn at, and the one number the names are read at.
+
+     A name is written along its own row, so the room it has is the distance
+     between two *parallel* lines of writing, and on this lattice at this tilt
+     that distance is twice the sine of the angle, times the step across. The
+     floor stood at thirty degrees, where twice the sine is exactly one: a name
+     had the bare step to live in, and with five and twenty rows on a sheet this
+     wide the step is fifteen units, which came out as eight-pixel type. Printed
+     in a thesis at the width of its text block that is five point, against six
+     for the flat figure of the same matrix and ten for the prose around it —
+     the smallest type in the document, and the picture was praised on a screen
+     where nobody had to read it that small.
+
+     Forty gives a quarter more room between the lines and the type goes up to
+     nine and a half, which is the size the flat figure is set in. What it costs
+     is height, and height is what a figure on a page has spare: it is drawn to
+     one width and scaled to the column it stands in, so growing downward is
+     free and growing sideways is not. This one grows from a hundred to a
+     hundred and thirty-five millimetres and still stands on its page with its
+     key and its caption.
+
+     What it must not do is *follow* the names — that was the old failure, where
+     a floor stretched to fit two lines of type tipped up into something nobody
+     would call a view. Forty is set here and the names are fitted to it, not
+     the other way round. */
+  const FLOOR = 40;
+  const ISO = Math.tan((FLOOR * Math.PI) / 180);
 
   /* And they no longer need to. A name set flat has the step down to live in,
      which is half the step across and never enough; set at an angle, what it
      has is the distance between two *parallel* lines of writing, which is a
      good deal more.
 
-     Thirty, which is the lattice's own angle, because the name has to run along
-     the row it names and not merely start on it. A row of this figure is a line
-     of cells, and that line leaves the lattice at exactly the point the count
-     stands at and carries on outward: written along it, a name lies on its own
-     row from its first letter to its last. Written at any other angle it
-     crosses out of its row as it goes, and a reader who follows the writing
-     inward — which is what a reader does — arrives at the wrong one.
-
-     What it costs is height, which a figure on a page can spend: it is drawn to
-     one width and scaled to the column it stands in, so growing downward is
-     free and growing sideways is not. */
-  const SLANT = 30;
+     The lattice's own angle, and taken from it rather than written down twice,
+     because the name has to run along the row it names and not merely start on
+     it. A row of this figure is a line of cells, and that line leaves the
+     lattice at exactly the point the count stands at and carries on outward:
+     written along it, a name lies on its own row from its first letter to its
+     last. Written at any other angle it crosses out of its row as it goes, and
+     a reader who follows the writing inward — which is what a reader does —
+     arrives at the wrong one. Two constants that have to agree are two
+     constants that one day will not. */
+  const SLANT = FLOOR;
   const RUN = Math.cos((SLANT * Math.PI) / 180);
   const RISE = Math.sin((SLANT * Math.PI) / 180);
   // How much room one step across leaves between two names, at this tilt on
   // this lattice: what a step contributes across the writing rather than along
-  // it. At thirty degrees it is exactly the step; here it is a little more.
+  // it. Written along its own row it comes to twice the sine of the floor's
+  // angle — one whole step at thirty degrees, a little over a quarter more at
+  // forty, which is what the names are set from.
   const LANE = RISE + ISO * RUN;
 
   const categoryText = columns.map((one) => one.name);
@@ -2298,6 +2319,440 @@ export function cityPlot(rows, categories, t, { moscow = [] } = {}) {
   };
 }
 
+/**
+ * Which operations a requirement holds up, drawn twice: as a Venn diagram and
+ * as an Euler diagram of the same three sets.
+ *
+ * The relation is a membership and not a quantity: a requirement blocks an
+ * operation or it does not. That rules out the two forms this figure is most
+ * often drawn in. A Sankey would put its widest channel — the ribbon — on a
+ * value that is always the same, and a stacked bar would answer „how many"
+ * where the question is „which ones together".
+ *
+ * The two diagrams differ in one thing, and it is the thing worth showing:
+ *
+ * **The Venn keeps a place for every combination**, all seven of them, whether
+ * the material produced one or not. Its three circles never move, so the reader
+ * can point at a region and say „this combination does not occur" — and read a
+ * nought there. That is a statement the picture can only make if the region is
+ * on the page to begin with.
+ *
+ * **The Euler shows only the combinations that occur.** Where no requirement
+ * blocks two operations at once, those two circles are drawn apart, and the
+ * region simply is not there. What the reader gets instead of a nought is the
+ * shape of the study: three separate circles say something a row of noughts
+ * says only if you read it.
+ *
+ * Circles rather than the rectangles this began as. A rectangle holds a
+ * requirement title and a circle's lens does not — but a lens has never had to,
+ * because both figures carry counts and the titles are listed under the Euler
+ * where there is room to set them whole. What the circles buy is that the
+ * overlaps look like overlaps: three rectangles laid over a grid read as a
+ * table with coloured borders no matter how they are spaced, and a reader who
+ * has seen one Venn diagram in their life already knows how to read these.
+ *
+ * Where the circles cannot be honest, they say so by staying quiet. If all
+ * three operations are blocked together by something, the three circles must
+ * meet — and then every pair of them overlaps as well, whether that pair occurs
+ * or not. Circles cannot avoid it. So a region that carries nothing carries no
+ * label either in the Euler, and the Venn beside it is where the nought is
+ * read.
+ */
+
+/* Which of the three columns and rows each zone is a cell of. The first
+   operation holds the upper left two columns, the third the upper right two,
+   and the second the whole lower band — so every one of the seven zones is a
+   rectangle, which is the whole reason for rectangles. A circle spends its
+   corners on nothing and its lenses are the one place on a page a sentence
+   cannot go; a rectangle a reader can be given as much room as the titles in it
+   need, because the figure is drawn to one width and grows downward, and
+   downward is what a figure on a page has spare. */
+const SET_GRID = [
+  ["0", "02", "2"],
+  ["01", "012", "12"],
+];
+const SET_FLOOR = "1";
+const SET_ZONES = [...SET_GRID.flat(), SET_FLOOR];
+
+/* How far each set's frame stands out from the cells it holds. Three different
+   distances on purpose: given the same one, the first and second sets would
+   begin at the same pixel on the left and the second and third would end at the
+   same one on the right, which is how three sets come out as one bordered
+   table. The widest set takes the smallest, so that the one spanning the whole
+   band is drawn inside the other two rather than around them. */
+const SET_BLEED = [14, 4, 9];
+
+export function blockedVenn(rows, operations, departments, t) {
+  /* The study's own three, in the study's own words and its own order — not the
+     tool's. They were three names out of the interface dictionary here, which a
+     catalog is free to rename and to add a fourth to: a study that had renamed
+     „Ablage" saw the old word in this one figure and nowhere else, and a fourth
+     operation was counted, silently and in print, among the requirements that
+     hold up nothing. A wrong sentence about the material is worse than a
+     missing figure, so a vocabulary this shape cannot hold is declined rather
+     than approximated. Three rectangles are three sets; there is no fourth. */
+  if (!rows.length || operations?.length !== 3) return null;
+  const OPS = operations;
+
+  const setOf = (row) => new Set(row.blockedOperations ?? []);
+  // A zone is named by which of the three it holds, by position rather than by
+  // word, so a renamed operation is still the same zone.
+  const key = (set) => OPS.map((one, at) => (set.has(one.id) ? at : "")).join("");
+  const bucket = new Map();
+  for (const row of rows) {
+    const k = key(setOf(row));
+    if (!bucket.has(k)) bucket.set(k, []);
+    /* How many departments name it travels with the title. It is not entered
+       but counted from the coding units, which is what keeps it tied to the
+       material — and it is the one thing about a requirement this figure could
+       not say, because where a requirement stands says what it holds up and
+       nothing about how widely it was asked for. */
+    bucket.get(k).push({ title: row.title, named: row.departments ?? [] });
+  }
+  // Nothing is held up anywhere: the figure would be three empty frames, and
+  // the sentence „no requirement holds up an operation" says it better.
+  if ([...bucket.keys()].every((k) => !k)) return null;
+  /* Numeric, so that a catalog which numbers its requirements does not read
+     „Anforderung 13, 14, 2, 3" down a column. */
+  for (const list of bucket.values()) {
+    list.sort((a, b) => a.title.localeCompare(b.title, "de", { numeric: true }));
+  }
+  const held = (mask) => bucket.get(mask) ?? [];
+
+  const EDGE = 10;
+  const PAD = 18; // between a cell's writing and the cell's own bounds
+  const SIZE = 9.5;
+  const LINE = Math.round(SIZE * 1.32 * 10) / 10;
+  const CARD = 5; // between a card's edge and the title written on it
+  const GAP = 5; // between two cards
+  const NAME = 11;
+  const PLATE = 16; // the sheet a set's name is written on
+  /* How far the pie beside a requirement reaches. Eleven, because this figure
+     is printed across a hundred and sixty-two millimetres of text and eight came
+     out as three and a half of them for five pieces — under what a printer can
+     be relied on to hold. */
+  const SLICE = 11;
+
+  /* ── The cards ─────────────────────────────────────────────────────────────
+     One frame per requirement rather than a stack of lines. Set as running
+     text, four titles in a zone were four sentences with nothing between them
+     but a gap, and where one of them wrapped there was no telling the wrap from
+     the next title. A card also gives the writing the sheet to stand on, which
+     is the one ground in this figure that is the same everywhere — the washes
+     under it are one, two or three deep. */
+  const MIN = 190;
+  /* And what a card may grow to. One title in the band across the foot took the
+     whole width of the sheet, which put its pie a hand's breadth from the words
+     it belongs to. A card is a line of reading, not a measure of the room. */
+  const MOST = 340;
+  /* ── Who asked for it ─────────────────────────────────────────────────────
+     A pie beside each requirement, cut into as many pieces as the study has
+     departments and each piece in that department's own colour, filled where
+     that department names the requirement. It says two things a number could
+     only say one of: how many asked for it, and *which*. And the colours are
+     not this figure's — they come from the same place every other figure takes
+     them, so a piece here and a band in the citation figure below are the same
+     department without anybody having to check.
+
+     How many departments name a requirement is counted from the coding units
+     and never entered, which is what keeps it tied to the material. It is also
+     the one thing about a requirement this figure could not otherwise say:
+     where a card stands says what the requirement holds up, and nothing at all
+     about how widely it was asked for. */
+  const series = seriesFrom(departments ?? [], t);
+  const pie = (named, cx, cy) => {
+    const wanted = new Set(named);
+    const paints = (one) => one.sources.some((name) => wanted.has(name));
+    if (!series.length) return "";
+    if (series.length === 1) {
+      return (
+        `<circle class="op-slice ${paints(series[0]) ? series[0].className : "none"}"` +
+        ` cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${SLICE}"></circle>`
+      );
+    }
+    const step = (Math.PI * 2) / series.length;
+    return series
+      .map((one, index) => {
+        // From twelve o'clock, the way a reader's eye already goes round.
+        const from = -Math.PI / 2 + index * step;
+        const to = from + step;
+        const edge = (angle) =>
+          `${(cx + SLICE * Math.cos(angle)).toFixed(1)} ${(cy + SLICE * Math.sin(angle)).toFixed(1)}`;
+        return (
+          `<path class="op-slice ${paints(one) ? one.className : "none"}"` +
+          ` d="M${cx.toFixed(1)} ${cy.toFixed(1)}L${edge(from)}` +
+          `A${SLICE} ${SLICE} 0 ${step > Math.PI ? 1 : 0} 1 ${edge(to)}Z"></path>`
+        );
+      })
+      .join("");
+  };
+  const PIE = departments?.length ? 2 * SLICE + 5 : 0;
+  // How deep a card of so many lines is: never less than the pie standing in it.
+  const deep = (lines) => Math.max(lines * LINE, PIE ? 2 * SLICE : 0) + 2 * CARD;
+
+  const laid = (titles, room) => {
+    /* As many columns of cards as the room takes, and then as few as the cards
+       fill: four columns for five titles leaves the fourth empty and a hand's
+       width of white beside a list that looked like it needed the space. */
+    const wanted = Math.max(1, Math.min(titles.length || 1, Math.floor(room / MIN)));
+    const columns = titles.length
+      ? Math.max(1, Math.ceil(titles.length / Math.ceil(titles.length / wanted)))
+      : 1;
+    const width = Math.min(MOST, (room - (columns - 1) * PAD) / columns);
+    const pill = PIE;
+    /* Twelve lines is not a limit, it is a backstop: the column is sized to the
+       writing rather than the writing cut to the column, so a title is set
+       whole and the row it stands in grows. A requirement standing half-written
+       in an appendix is the one outcome this figure may not have. */
+    const wrapped = titles.map((one) =>
+      wrapLabel(one.title, { room: width - 2 * CARD - pill - 6, size: SIZE, maxLines: 12 }),
+    );
+    const perColumn = Math.ceil(titles.length / columns) || 1;
+    let tallest = 0;
+    for (let c = 0; c < columns; c += 1) {
+      const mine = wrapped.slice(c * perColumn, (c + 1) * perColumn);
+      tallest = Math.max(
+        tallest,
+        mine.reduce((sum, one) => sum + deep(one.lines.length) + GAP, 0) - GAP,
+      );
+    }
+    return { columns, width, pill, wrapped, perColumn, titles, height: Math.max(0, tallest) };
+  };
+
+  const draw = (plan, x, y) => {
+    let out = "";
+    for (let c = 0; c < plan.columns; c += 1) {
+      let top = y;
+      for (const [k, label] of plan.wrapped
+        .slice(c * plan.perColumn, (c + 1) * plan.perColumn)
+        .entries()) {
+        const tall = deep(label.lines.length);
+        const at = x + c * (plan.width + PAD);
+        const named = plan.titles[c * plan.perColumn + k].named;
+        out +=
+          `<rect class="op-card" x="${at.toFixed(1)}" y="${top.toFixed(1)}"` +
+          ` width="${plan.width.toFixed(1)}" height="${tall.toFixed(1)}" rx="4"></rect>` +
+          pie(named, at + plan.width - CARD - SLICE - 1, top + CARD + SLICE) +
+          label.lines
+            .map(
+              (line, k) =>
+                `<text class="op-item" x="${(at + CARD + 2).toFixed(1)}"` +
+                ` y="${(top + CARD + SIZE * 0.86 + k * LINE).toFixed(1)}">${escape(line)}</text>`,
+            )
+            .join("");
+        top += tall + GAP;
+      }
+    }
+    return out;
+  };
+
+  /* ── The grid ──────────────────────────────────────────────────────────────
+     Columns take room in proportion to the writing they hold. Equal thirds is
+     what a grid does and it is wrong here: nine requirements in one zone and
+     one apiece in the others would give the crowded column room for a single
+     stack of cards and pad every other zone out to match.
+
+     A column no drawn zone stands in is not merely empty — it is taken away,
+     and the first and third sets stop overlapping. That is how this figure
+     draws an Euler diagram: not by moving shapes around until the picture
+     looks right, but by giving a combination that does not occur no room to
+     occur in. The same for the middle row and the second set. */
+  const grew = (titles) =>
+    titles.reduce((sum, one) => sum + estimateWidth(one.title, { size: SIZE }) + MIN, 0);
+  const x0 = EDGE + SET_BLEED[0];
+  const x3 = WIDTH - EDGE - SET_BLEED[2];
+  /* What the middle column costs when it is taken away: enough for the first
+     set's frame to end and the third set's to begin with air between them. */
+  const room = x3 - x0;
+  const asked = [0, 1, 2].map((c) =>
+    Math.max(1, grew(SET_GRID.flatMap((row) => held(row[c])))),
+  );
+  const total = asked.reduce((a, b) => a + b, 0) || 1;
+  const NARROW = 0.29;
+  const WIDE = 0.5;
+  const share = asked.map((one) => (one ? Math.min(WIDE, Math.max(NARROW, one / total)) : 0));
+  const spare = share.reduce((a, b) => a + b, 0) || 1;
+  const colW = share.map((one) => (one / spare) * room);
+  const colX = (i) => x0 + colW.slice(0, i).reduce((a, b) => a + b, 0);
+
+  /* Where a zone's writing stands, across: its own cell, inset. The frames only
+     ever reach *past* their cells, never short of them, so a card measured
+     against the column it stands in cannot leave the frame it belongs to. */
+  const acrossOf = (col, span) => ({
+    x: colX(col) + PAD,
+    room: (span ? colX(3) - colX(0) : colW[col]) - 2 * PAD,
+  });
+
+  const across = new Map();
+  const plans = new Map();
+  for (const [r, row] of SET_GRID.entries()) {
+    for (const [c, mask] of row.entries()) {
+      across.set(mask, acrossOf(c, false));
+      plans.set(mask, laid(held(mask), across.get(mask).room));
+    }
+  }
+  across.set(SET_FLOOR, acrossOf(0, true));
+  plans.set(SET_FLOOR, laid(held(SET_FLOOR), across.get(SET_FLOOR).room));
+
+  const rowH = [0, 1, 2].map((r) => {
+    const masks = r === 2 ? [SET_FLOOR] : SET_GRID[r];
+    const tall = Math.max(...masks.map((mask) => plans.get(mask).height));
+    return Math.round(Math.max(tall, LINE + 2 * CARD) + 2 * PAD);
+  });
+  const y0 = EDGE + NAME + 10 + PLATE / 2 + 2 + SET_BLEED[0];
+  const rowY = (r) => y0 + rowH.slice(0, r).reduce((a, b) => a + b, 0);
+
+  const frames = [
+    { at: 0, cols: [0, 2], rows: [0, 2] },
+    { at: 1, cols: [0, 3], rows: [1, 3] },
+    { at: 2, cols: [1, 3], rows: [0, 2] },
+  ].map((one) => ({
+    ...one,
+    left: colX(one.cols[0]) - SET_BLEED[one.at],
+    right: colX(one.cols[1]) + SET_BLEED[one.at],
+    top: rowY(one.rows[0]) - SET_BLEED[one.at],
+    bottom: rowY(one.rows[1]) + SET_BLEED[one.at],
+  }));
+
+  const boxOf = (one) =>
+    `x="${one.left.toFixed(1)}" y="${one.top.toFixed(1)}"` +
+    ` width="${(one.right - one.left).toFixed(1)}"` +
+    ` height="${(one.bottom - one.top).toFixed(1)}" rx="16"`;
+
+  /* ── The ground ────────────────────────────────────────────────────────────
+     One wash per set, over its whole frame. Two and three of them lying over
+     one another make the tone two and three make, so nothing has to be declared
+     for the blends and the deepest area — the requirement that stops all three
+     — comes out the darkest thing on the page on its own.
+
+     This was painted zone by zone while there was an Euler diagram beside this
+     one, because leaving a zone out is that figure's whole business and a wash
+     belonging to a frame cannot be told to stop being a colour in one place.
+     Zone by zone it had to be swept into axis-aligned patches, and a rounded
+     corner is not axis-aligned: where a frame's corner curved away, a sliver
+     was inside one set and outside the patch of every zone, and the page showed
+     through as a black notch. A frame washing its own rounded rectangle has the
+     corner exactly right because it is the same rectangle. */
+  const ground = frames
+    .map((one) => `<rect class="op-wash op-set-${one.at + 1}" ${boxOf(one)}></rect>`)
+    .join("");
+
+  const edges = frames
+    .map((one) => `<rect class="op-edge op-set-${one.at + 1}" ${boxOf(one)}></rect>`)
+    .join("");
+
+  /* A set's name on its own frame, on a sheet the frame is interrupted by, at
+     the end of the edge that belongs to that set alone. Written beside a frame
+     it would be a caption that could belong to either of the two lines nearest
+     it; written *on* one, with the stroke running into the word from both
+     sides, it can belong to nothing else. */
+  const named = frames
+    .map((one) => {
+      const right = one.at === 2;
+      const foot = one.at === 1;
+      const edge = foot ? one.bottom : one.top;
+      const x = right ? one.right - 20 : one.left + 20;
+      const wide = estimateWidth(OPS[one.at].name, { size: NAME }) + 16;
+      return (
+        `<rect class="op-plate op-set-${one.at + 1}" x="${(right ? x - wide + 8 : x - 8).toFixed(1)}"` +
+        ` y="${(edge - PLATE / 2).toFixed(1)}" width="${wide.toFixed(1)}" height="${PLATE}" rx="3"></rect>` +
+        `<text class="op-name" x="${x.toFixed(1)}" y="${(edge + NAME / 2 - 1).toFixed(1)}"` +
+        ` text-anchor="${right ? "end" : "start"}">${escape(OPS[one.at].name)}</text>`
+      );
+    })
+    .join("");
+
+  // What a zone says: its count, and then the requirements themselves.
+  const writing = SET_ZONES.map((mask) => {
+      const floor = mask === SET_FLOOR;
+      const r = floor ? 2 : SET_GRID.findIndex((row) => row.includes(mask));
+      /* An area with nothing in it has to say so. Left blank it is the finding
+         this figure exists for — that this combination does not occur in the
+         material — and it reads as a slip of the pen instead. One word settles
+         it. Set in the reading ink rather than a quiet one: an area may lie
+         under three washes at once, where a grey does not reach the threshold,
+         and the italic is what keeps it from looking like a requirement. */
+      const room = across.get(mask);
+      if (!held(mask).length) {
+        return (
+          `<text class="op-empty" x="${room.x.toFixed(1)}"` +
+          ` y="${(rowY(r) + PAD + SIZE * 0.86).toFixed(1)}">${escape(t("blockedNone"))}</text>`
+        );
+      }
+      return draw(plans.get(mask), room.x, rowY(r) + PAD);
+    })
+    .join("");
+
+  /* ── The eighth zone ───────────────────────────────────────────────────────
+     What lies in none of the three, which a diagram of three sets forgets. The
+     frame the sets have always implicitly stood in is drawn, and the band
+     inside it below them belongs to that zone as much as any overlap belongs to
+     its two sets. It is also the one zone a reader can act on: a requirement
+     whose absence stops nothing is either mis-judged or a candidate for the
+     lowest level. */
+  const free = held("");
+  const seat = rowY(3) + SET_BLEED[1];
+  const outsideTop = seat + PAD + 6;
+  const plan = laid(free, WIDTH - 2 * (EDGE + PAD));
+  const outside =
+    `<text class="op-outside" x="${(EDGE + PAD).toFixed(1)}"` +
+    ` y="${(outsideTop + NAME * 0.82).toFixed(1)}">${escape(t("blockedOutside"))}</text>` +
+    (free.length ? draw(plan, EDGE + PAD, outsideTop + NAME + 9) : "");
+  const floor = Math.round(outsideTop + NAME + 9 + plan.height + PAD);
+  /* The frame the three sets have always implicitly stood in, and now the word
+     for what it is. Drawn and unnamed it was a visible difference carrying no
+     information — and it encloses the band of requirements that hold nothing up
+     as well, so a reader is owed the sentence that it means the whole catalog
+     rather than a fourth set. */
+  const universe =
+    `<rect class="op-universe" x="${EDGE}" y="${EDGE}"` +
+    ` width="${(WIDTH - 2 * EDGE).toFixed(1)}" height="${(floor - EDGE).toFixed(1)}" rx="6"></rect>` +
+    `<text class="op-whole" x="${(EDGE + PAD).toFixed(1)}"` +
+    ` y="${(EDGE + NAME + 2).toFixed(1)}">${escape(t("blockedUniverse"))}</text>`;
+
+  const counted = (one) => rows.filter((row) => setOf(row).has(one.id)).length;
+  const naming = (mask) =>
+    mask === "" ? t("blockedOutside") : [...mask].map((one) => OPS[Number(one)].name).join(" + ");
+  return {
+    id: "blocked",
+    file: "blocked-operations.svg",
+    title: t("chartVennTitle"),
+    caption: t("chartVennCaption"),
+    /* The departments in their own colours, because the pie beside each
+       requirement is drawn in them — and the same colours the citation figure
+       below uses, so the key is the same key twice rather than two keys. */
+    legend: {
+      inset: EDGE,
+      grid: true,
+      entries: [
+        { label: t("blockedNamedBy") },
+        ...series.map((one) => ({ paint: one.className, label: one.name })),
+        /* Grey is the sixth thing in the pie and the only one a reader had to
+           guess at: five colours were named and the piece that means „did not
+           name it" was not. It runs onto a second line at this length, which is
+           where it was going the moment a study had six departments. */
+        { paint: "unnamed", label: t("blockedNotNaming") },
+      ],
+    },
+    width: WIDTH,
+    height: floor + EDGE,
+    // The frame first, so the sets lie inside it rather than over it.
+    body: universe + ground + edges + named + writing + outside,
+    summary: t("summaryVenn", {
+      total: rows.length,
+      free: free.length,
+      shown: SET_ZONES.filter((mask) => held(mask).length).length,
+      operations: OPS.map((one) => `${one.name}: ${counted(one)}`).join(", "),
+    }),
+    figures: {
+      caption: t("blockedFiguresCaption"),
+      columns: [t("columnCombination"), t("columnRequirements")],
+      rows: [...SET_ZONES, ""].map((mask) => [naming(mask), held(mask).length]),
+    },
+  };
+}
+
+
 export function coverageChart(rows, departments, t) {
   const withCitations = rows.filter((row) => row.citations.length);
   if (!withCitations.length || !departments.length) return null;
@@ -2445,6 +2900,18 @@ export const FIGURES = {
     draw: ({ analysis, catalog, t }) =>
       reachChart(catalog.requirements, analysis.rows, t, { moscow: catalog.moscow }),
   },
+  "blocked-operations": {
+    view: "catalog",
+    titleKey: "chartVennTitle",
+    /* Its own condition rather than the shared one: „no requirements yet" is
+       what a reader is told when there are thirteen of them and none blocks
+       anything, or when the study weighs its requirements against four
+       operations instead of three. Which condition is missing is the whole
+       difference between a broken tool and a tool waiting for work. */
+    emptyKey: "figureNeedsBlockade",
+    draw: ({ catalog, t }) =>
+      blockedVenn(catalog.requirements, catalog.operations, catalog.departments, t),
+  },
   "catalog-city": {
     view: "catalog",
     /* The same matrix as the reach figure and drawn from the same two bodies of
@@ -2532,6 +2999,66 @@ export function stylesheet(theme = "light") {
     `.reach{stroke:${c.sheet};stroke-width:1}` +
     `.reach-sole{fill:none;stroke:${c.inkSoft};stroke-width:1}` +
     `.floor{stroke:${c.line}}` +
+    /* The two set diagrams of the blocked operations. One circle per operation,
+       each washed in its own hue at a weight that lets two and three of them lie
+       over one another and still be written on: the overlaps darken by
+       themselves, which is what makes a Venn diagram legible without a key, and
+       the deepest of them — the requirement that stops all three — comes out
+       the darkest thing on the page, which is the reading this catalog most
+       needs. Blue, green and amber, the three of the series that stay apart
+       from one another when they are laid over each other. */
+    `.op-wash{fill-opacity:${theme === "dark" ? ".3" : ".22"};stroke:none}` +
+    `.op-edge{fill:none;stroke-width:1.4}` +
+    /* Named on both classes rather than on the set alone. A set's colour is a
+       fill on its wash and a stroke on its rim, and written as one rule for the
+       set it also filled the rim: the same weight as `.op-edge{fill:none}` and
+       later in the sheet, so three hairline circles came out as three solid
+       discs, each hiding the one drawn before it. */
+    [0, 2, 3]
+      .flatMap((series, at) => [
+        `.op-wash.op-set-${at + 1}{fill:${c.series[series]}}`,
+        `.op-edge.op-set-${at + 1}{stroke:${c.series[series]}}`,
+      ])
+      .join("") +
+    `.op-name{fill:${c.ink};font-size:11px;font-weight:600;font-family:${FONTS.sans};` +
+      `letter-spacing:.02em}` +
+    /* The count of a region, in figures, because it is a number and the reader
+       is about to write it down. Full ink: it stands on three washes laid over
+       one another as well, where a quiet grey does not reach the threshold. */
+    /* The badge on a card: how many departments name that requirement. Counted
+       from the coding units and not entered, which is what keeps it tied to the
+       material — and the one thing about a requirement this figure could not
+       otherwise say, because where a card stands says what it holds up and
+       nothing about how widely it was asked for. A nought is a requirement no
+       citation carries yet, so it is drawn as the absence it is rather than as
+       a value: the pill steps back to a hairline and the figure to the quiet
+       ink this tool keeps for „nothing is here". */
+    `.op-slice{stroke:${c.sheet};stroke-width:.6}` +
+    /* A piece nobody filled still has to be counted, because the pieces
+       together are how many departments the study has. A hairline alone came to
+       a tenth of a millimetre where this figure is printed, which no press
+       holds, so it is a fill with an outline over it: the grey carries the
+       piece at any size and the line only sharpens its edge. The ink kept for „nothing is here“ rather than in a rule colour,
+       which came to 1.7 against the card and could not be made out. */
+    `.op-slice.none{fill:${c.line};stroke:${c.inkFaint};stroke-width:.6}` +
+    `.op-empty{fill:${c.ink};font-size:9.5px;font-style:italic;font-family:${FONTS.sans}}` +
+    `.op-whole{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
+    c.series.map((colour, index) => `.op-slice.series-s${index + 1}{fill:${colour}}`).join("") +
+    /* One card per requirement. Set as running text, four titles in a zone were
+       four sentences with nothing between them but a gap, and a title that
+       wrapped could not be told from the next one. The card also gives the
+       writing the one ground in this figure that is the same everywhere — the
+       washes under it are one, two or three deep. */
+    `.op-card{fill:${c.sheet};stroke:${c.line};stroke-width:1}` +
+    /* The sheet a set's name is written on, so its frame breaks for the word
+       rather than running under it. */
+    `.op-plate{fill:${c.sheet};stroke-width:1.4}` +
+    /* The frame every Venn diagram implicitly stands in, drawn because what
+       lies in none of the three has to lie somewhere. Dashed and quiet: it is
+       the edge of what was looked at, not a set of its own. */
+    `.op-universe{fill:none;stroke:${c.line};stroke-width:1;stroke-dasharray:3 4}` +
+    `.op-item{fill:${c.ink};font-size:9.5px;font-family:${FONTS.sans}}` +
+    `.op-outside{fill:${c.inkSoft};font-size:10.5px;font-weight:600;font-family:${FONTS.sans}}` +
     `.face{stroke:${c.sheet};stroke-width:.6}` +
     `.face.left{opacity:.88}.face.right{opacity:.74}` +
     /* The roof of the one building that answers its category alone. Out of the
@@ -2540,6 +3067,7 @@ export function stylesheet(theme = "light") {
        the walls under the roof are still saying. */
     `.face.sole-roof{fill:${c.series[1]}}` +
     `.key-sole-roof{fill:${c.series[1]}}` +
+    `.key-unnamed{fill:${c.line}}` +
     `.axis-title{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
     `.row-label{fill:${c.ink};font-size:11.5px;font-family:${FONTS.sans}}` +
     `.row-label.child{fill:${c.inkSoft}}` +
@@ -2624,16 +3152,71 @@ function drawKey(legend, width, measure) {
     else runs.push([entry]);
   }
 
+  /* Where the key's own left edge is. Nought for a figure whose picture also
+     begins at nought — the band of MoSCoW levels does — and the picture's own
+     margin for one that has one. Flush at nought under a picture inset by ten,
+     the key hung out past the text block of the page it was printed on and read
+     as a bleed rather than as a key. */
+  const inset = legend.inset ?? 0;
   let markup = "";
-  let x = 0;
+  let x = inset;
   let y = 12;
-  for (const run of runs) {
-    const total = run.reduce((sum, entry) => sum + boxOf(entry) + GAP, 0) - GAP;
-    if (x && x + total > width) {
-      x = 0;
-      y += LINE;
+
+  /* Two ways of setting the entries out.
+     Flowed, which is what a key of two or three things wants: each stands where
+     the one before it ended, and the line breaks when the next will not fit.
+     Ruled, which is what a key of six wants: six ran to two lines and the
+     swatches in the second line stood wherever the words in the first happened
+     to end, so the eye had no column to come down. Ruled, every entry gets the
+     width of the widest and the swatches stand under one another — and a study
+     that gains a department gains a cell rather than a new arrangement.
+
+     A word on its own keeps its own line either way. It is a sentence about the
+     key rather than one of its entries, and set into a cell it would either be
+     cut to the width of a swatch and a name or make every cell as wide as
+     itself. */
+  if (legend.grid) {
+    /* Reckoned rather than measured, even where a measurer was handed in: the
+       page works the same arithmetic out for itself and the two have to land on
+       the same number of columns, or a study sees one arrangement on the screen
+       and another one in print. */
+    const reckon = (text) => (text ? Math.ceil(estimateWidth(text, { size: 10, tight: true })) : 0);
+    const spans = (run) => run.reduce((sum, entry) => sum + markOf(entry) + reckon(entry.label), 0);
+    const marked = runs.filter((run) => run.some((entry) => markOf(entry)));
+    const notes = runs.filter((run) => !run.some((entry) => markOf(entry)));
+    const cell = Math.max(1, ...marked.map(spans));
+    // The word about the key stands to the left of the columns, not above them.
+    const head = notes.length ? Math.max(...notes.map(spans)) + 2 * GAP : 0;
+    const left = inset + head;
+    /* Four at the most, however many would fit. A key is read across, and past
+       four the names stand shoulder to shoulder with no air between them; four
+       is also what leaves room for the longest a department is called. Fewer
+       when fewer fit, so a narrow figure still breaks sensibly. */
+    const across = Math.max(
+      1,
+      Math.min(4, Math.floor((width - inset - left + GAP) / (cell + GAP))),
+    );
+    for (const run of notes) {
+      x = inset;
+      for (const entry of run) draw(entry);
     }
-    for (const entry of run) draw(entry);
+    let at = 0;
+    for (const run of marked) {
+      x = left + (at % across) * (cell + GAP);
+      y = 12 + Math.floor(at / across) * LINE;
+      for (const entry of run) draw(entry);
+      at += 1;
+    }
+    y = 12 + Math.max(0, Math.ceil(at / across) - 1) * LINE;
+  } else {
+    for (const run of runs) {
+      const total = run.reduce((sum, entry) => sum + boxOf(entry) + GAP, 0) - GAP;
+      if (x > inset && x + total > width - inset) {
+        x = inset;
+        y += LINE;
+      }
+      for (const entry of run) draw(entry);
+    }
   }
 
   function draw(entry) {
@@ -2661,6 +3244,7 @@ function drawKey(legend, width, measure) {
         `<circle class="key-ring" cx="${x + SIZE / 2}" cy="${y - SIZE / 2 + 1}"` +
         ` r="${SIZE / 2}"></circle>`;
       x += SIZE + 5;
+
     } else if (entry.paint) {
       markup +=
         `<rect class="key-${entry.paint}" x="${x}" y="${y - SIZE + 1}" width="${SIZE}"` +
