@@ -6,6 +6,30 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## 0.11.1 — 2026-09-19
+
+### Fixed
+
+- **Eine Abbildung zeigt überall dieselbe Schrift.** Die Stacks in `charts.js` und `app.css`
+  begannen mit `ui-sans-serif` und `ui-monospace`, also mit Schlüsselwörtern, die auf die Schrift
+  des jeweiligen Systems zeigen. Für die Oberfläche ist das richtig, für eine Abbildung nicht:
+  sie verlässt das Werkzeug, wird als SVG gespeichert und in einem Dokument gesetzt, das anderswo
+  gelesen wird. Auf einem Mac kam so SF Pro heraus, unter Windows Segoe UI, unter Linux irgendwas
+  — dieselbe Abbildung, dreimal anders. Der Kommentar über den Stacks sagte schon immer, eine
+  Abbildung in der Standardschrift des Betrachters sei eine andere Abbildung; die Stacks selbst
+  sagten das Gegenteil.
+
+  Schlimmer wird es beim Drucken. Ein Browser kann eine Systemschrift nicht auf dem üblichen Weg
+  ins PDF einbetten und zeichnet stattdessen jeden Buchstaben einzeln als Type-3-Glyphe nach. Zwei
+  Abbildungen dieses Werkzeugs brachten in einer Arbeit auf diese Weise 25 solcher Ersatzschriften
+  mit, und auf dem Rechner des nächsten Lesers hätten sie trotzdem anders ausgesehen.
+
+  Die Abbildungen bekommen deshalb eigene Stacks, `--chart-sans` und `--chart-mono`, die mit
+  benannten Schriften beginnen und die Systemschlüsselwörter als letzten Ausweg dahinter behalten.
+  Die Oberfläche drumherum hat das Problem nicht und bleibt unverändert. Was `tests/svg-export`
+  prüft, gilt weiter und hat den Fehler beim Umbau auch prompt gefunden: was auf dem Schirm steht
+  und was in der Datei landet, ist dieselbe Abbildung.
+
 ## 0.11.0 — 2026-08-23
 
 ### Changed

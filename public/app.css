@@ -28,6 +28,21 @@
   --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
 
+  /* Die Abbildungen bekommen ihre eigenen Stacks, und zwar benannte statt der
+     `ui-*`-Schlüsselwörter, die auf die Schrift des jeweiligen Systems zeigen.
+     Eine Abbildung verlässt das Werkzeug: sie wird als SVG gespeichert und
+     landet in einem Dokument, das anderswo gesetzt wird. Zeigt ihre Schrift auf
+     das System, ist sie bei jedem Leser eine andere, und ein Browser, der sie
+     ins PDF druckt, kann eine Systemschrift nicht regulär einbetten und zeichnet
+     stattdessen jeden Buchstaben einzeln nach. Die Oberfläche drumherum hat das
+     Problem nicht und bleibt bei --sans und --mono.
+
+     Diese beiden müssen mit FONTS in charts.js übereinstimmen, sonst sieht die
+     gespeicherte Datei anders aus als die Abbildung auf dem Schirm — das prüft
+     tests/svg-export.spec.js. */
+  --chart-sans: Helvetica, "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --chart-mono: "Courier New", Courier, ui-monospace, Menlo, monospace;
+
   --column-left: 15rem;
   --column-right: 21rem;
   --apparatus: 8.5rem;
@@ -2143,7 +2158,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .chart-head h3 { margin-bottom: 0; }
 .chart { margin: .6rem 0 1.6rem; position: relative; }
-.chart svg { display: block; width: 100%; height: auto; }
+.chart svg { display: block; width: 100%; height: auto; font-family: var(--chart-sans); }
 .chart .segment { fill: var(--series); }
 /* The swatch that stands in for a part too narrow to hold its own number. The
    colour is on the square and not on the digits: the palette is built to stand
@@ -2158,11 +2173,11 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
    section — so they are text and not decoration, and `--ink-faint` left them at
    2.9:1. `--ink-soft` is the quietest tone that still clears 4.5:1 on both
    surfaces. */
-.chart .axis { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); }
-.chart .axis-title { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); letter-spacing: .04em; }
-.chart .row-label { fill: var(--ink); font-size: 11.5px; font-family: var(--sans); }
+.chart .axis { fill: var(--ink-soft); font-size: 10px; font-family: var(--chart-sans); }
+.chart .axis-title { fill: var(--ink-soft); font-size: 10px; font-family: var(--chart-sans); letter-spacing: .04em; }
+.chart .row-label { fill: var(--ink); font-size: 11.5px; font-family: var(--chart-sans); }
 .chart .row-label.child { fill: var(--ink-soft); }
-.chart .value { fill: var(--ink-soft); font-size: 10.5px; font-family: var(--mono); }
+.chart .value { fill: var(--ink-soft); font-size: 10.5px; font-family: var(--chart-mono); }
 .chart .value.empty { fill: var(--ink-faint); }
 /* The part's own number, as a badge lying on the bar.
    Set straight onto the colour it was hard to read — black on the blue of the
@@ -2183,7 +2198,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .bar-value {
   fill: var(--ink);
   font-size: 10px;
-  font-family: var(--mono);
+  font-family: var(--chart-mono);
   pointer-events: none;
 }
 .chart figcaption { margin-top: .35rem; }
@@ -2290,7 +2305,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .cell-value {
   fill: var(--ink);
   font-size: 10px;
-  font-family: var(--mono);
+  font-family: var(--chart-mono);
   pointer-events: none;
 }
 .chart .cell-value.inverse { fill: var(--sheet); }
@@ -2334,7 +2349,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 
 .chart .moscow-band { fill: var(--moscow); }
 .chart .moscow-band:hover { opacity: .85; }
-.chart .band-value { fill: var(--sheet); font-size: 10px; font-family: var(--mono); pointer-events: none; }
+.chart .band-value { fill: var(--sheet); font-size: 10px; font-family: var(--chart-mono); pointer-events: none; }
 .chart .band-value.dim { fill: var(--ink); }
 /* A requirement in the field, in the shape of its level: four edges for „Must
    have", three for „Should have", two for „Could have", one for „Won't have" —
@@ -2476,7 +2491,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
   stroke-linejoin: round;
 }
 .chart .saturation-point { fill: var(--accent); }
-.chart .point-label { fill: var(--ink-soft); font-size: 10px; font-family: var(--sans); pointer-events: none; }
+.chart .point-label { fill: var(--ink-soft); font-size: 10px; font-family: var(--chart-sans); pointer-events: none; }
 
 /* The band's key, and now the only key of colours there is. Square, like the
    segments it stands for and like the swatch the saved file draws: it was round

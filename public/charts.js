@@ -92,11 +92,18 @@ export const THEMES = {
 
 export const THEME_NAMES = Object.keys(THEMES);
 
-/* The same stacks the page uses. They travel into the file, because a figure
-   set in whatever the viewer's default happens to be is a different figure. */
+/* The stacks travel into the file, because a figure set in whatever the
+   viewer's default happens to be is a different figure. Which is why they no
+   longer open with `ui-sans-serif` and `ui-monospace`: those resolve to the
+   system's own face, so the drift they were meant to prevent happened anyway,
+   once per operating system. It bites hardest where a figure leaves the tool —
+   a browser printing an exported SVG cannot embed a system face the ordinary
+   way and draws every glyph by hand instead, which swells the PDF and still
+   shows the next reader a different face. Named faces first, the system stack
+   behind them as the last resort it was always meant to be. */
 export const FONTS = {
-  sans: 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif',
-  mono: 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
+  sans: 'Helvetica, "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif',
+  mono: '"Courier New", Courier, ui-monospace, Menlo, monospace',
 };
 
 const MOSCOW_ORDER = ["must", "should", "could", "wont"];
