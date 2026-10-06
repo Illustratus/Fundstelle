@@ -29,6 +29,7 @@ import { effectiveWord, matchesSlice, occurrences, trimStem } from "./search.js"
 import { sectionReview } from "./import-sections.js";
 import { sentenceAt, sentences } from "./sentences.js";
 import { language, plural, quoted, setLanguage, t } from "./texts.js";
+import { criteriaHTML, guideExportLinks, initGuide, placeGuide } from "./guide.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -1524,7 +1525,8 @@ function drawPropositions() {
           : `<button type="button" class="button-quiet remove" data-proposition-remove` +
             ` title="${escapeHTML(t("propositionRemoveTitle"))}"` +
             ` aria-label="${escapeHTML(t("propositionRemoveAria", { name: proposition.name ?? id }))}">×</button>`) +
-        `</div>`
+        `</div>` +
+        (id === NO_PROPOSITION ? "" : criteriaHTML(id))
       );
     })
     .join("");
@@ -3312,7 +3314,7 @@ async function drawAnalysis() {
           `${t("exportCodingTable")} · ${escapeHTML(entry.title)}`,
         ),
       )
-      .join("") + link("notes.md", t("exportNotes"));
+      .join("") + link("notes.md", t("exportNotes")) + guideExportLinks(exportHref);
 
   /* Everything above leaves as a document for a reader. This leaves as a
      project for a program: the study whole, in the format MAXQDA, ATLAS.ti,
@@ -3811,10 +3813,12 @@ async function drawCatalog() {
     `<input type="text" id="new-requirement-title" placeholder="${escapeHTML(t("requirementSentencePlaceholder"))}"` +
     ` aria-label="${escapeHTML(t("requirementTitleAria"))}" autocomplete="off">` +
     `<button type="submit" class="button">${t("add")}</button></form>` +
-    operationsHTML();
+    operationsHTML() +
+    `<div id="guide-slot"></div>`;
 
   if (!state.requirements.length) {
     root.innerHTML = head + `<p class="empty-state">${t("catalogEmpty")}</p>`;
+    placeGuide($("#guide-slot"));
     return;
   }
 
@@ -3960,6 +3964,7 @@ async function drawCatalog() {
     `<div class="catalog-list">${cards || `<p class="empty-state">${t("noRequirementInSlice")}</p>`}</div>` +
     `<div class="exports"><a class="button-quiet" href="${exportHref("/api/export/requirements-catalog.md")}" download>` +
     `${t("catalogTitle")}</a></div>`;
+  placeGuide($("#guide-slot"));
 
   markScrollableTables(root);
 }
@@ -5676,6 +5681,16 @@ async function start() {
     await loadTranscript();
     drawAll();
     connectEvents();
+    initGuide({
+      api,
+      notify,
+      complain,
+      escapeHTML,
+      exportHref,
+      state,
+      reloadCategories: loadCategories,
+      redrawPropositions: drawPropositions,
+    });
     watchSections();
     watchViews();
     watchNotes();

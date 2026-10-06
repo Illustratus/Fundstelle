@@ -50,6 +50,12 @@ where it lies.
   start (Teams starts recording after the log does; `offset` on both import routes), each heading
   moves by a turn — or with ⇧ to the next question — and what was shown is what is written
   (`sections` as a list). The offset stays out of the log unless saved as a correction of `t0`.
+- **The guide is written in the tool, and the appendix is printed from it.** The catalog view
+  folds out the rounds (add, rename, remove, assign interviews) and the guide of each — blocks,
+  checklist, mandatory questions with condition and tag, read-out lists per department — saved
+  field by field, reorderable with the arrows or Alt+↑/↓, and refusing with the reason what an
+  interview already refers to. Criteria sit under their proposition. `GET /api/export/guide.md`
+  prints the guide as the appendix sets it, with read-out lists only for departments in the round.
 
 ### Changed
 

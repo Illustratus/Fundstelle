@@ -14,6 +14,7 @@ const SHELL = [
   "docs.css",
   "docs.js",
   "import-sections.js",
+  "guide.js",
   "scatter.js",
   "search.js",
   "sentences.js",
