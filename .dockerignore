@@ -1,5 +1,6 @@
 node_modules
 .sandbox
+.sandbox-*
 data
 test-results
 tests

@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { SANDBOX } from "./sandbox.mjs";
 
-const SANDBOX = join(fileURLToPath(new URL("..", import.meta.url)), ".sandbox");
 const transcriptFile = (id) => join(SANDBOX, "transcripts", id, "final.md");
 
 const FIRST = "interview-01";

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
 import { agreement, band, compare, kappa } from "../lib/agreement.js";
+import { SANDBOX } from "./sandbox.mjs";
 
 /**
  * Intercoder reliability.
@@ -21,7 +22,6 @@ import { agreement, band, compare, kappa } from "../lib/agreement.js";
  * marked the two sentences around it is agreement, not a difference.
  */
 
-const SANDBOX = join(fileURLToPath(new URL("..", import.meta.url)), ".sandbox");
 const transcripts = join(SANDBOX, "transcripts");
 
 const CATEGORIES = [

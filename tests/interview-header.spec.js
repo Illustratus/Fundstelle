@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sidePort } from "./sandbox.mjs";
 
 /**
  * What an interview says about itself, written rather than only read.
@@ -26,7 +27,7 @@ import { fileURLToPath } from "node:url";
  * other spec in the suite is standing on.
  */
 
-const PORT = 4194;
+const PORT = sidePort(4194);
 const BASE = `http://127.0.0.1:${PORT}`;
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 

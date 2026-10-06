@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -23,7 +23,16 @@ import { TEXTS } from "../lib/texts.js";
  */
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const SERVER = readFileSync(join(ROOT, "server.js"), "utf8");
+/* The routes live in `server.js`, and a feature with many of its own may keep
+   them in `lib/<feature>-routes.js` — written the same way, read the same way. */
+const SERVER = [
+  join(ROOT, "server.js"),
+  ...readdirSync(join(ROOT, "lib"))
+    .filter((name) => name.endsWith("-routes.js"))
+    .map((name) => join(ROOT, "lib", name)),
+]
+  .map((file) => readFileSync(file, "utf8"))
+  .join("\n");
 
 /**
  * The routes matched by a pattern rather than by a literal, named.
@@ -46,6 +55,12 @@ const PATTERNS = {
   requirement: "/api/requirements/{id}",
   oneFigure: "/api/figures/{name}.svg",
   codingTable: "/api/export/coding-table/{id}.md",
+  roundOne: "/api/rounds/{id}",
+  roundAssign: "/api/rounds/{id}/assign",
+  roundGuide: "/api/rounds/{id}/guide",
+  guideBlocks: "/api/rounds/{id}/guide/blocks",
+  guideBlock: "/api/rounds/{id}/guide/blocks/{block}",
+  sessionOne: "/api/sessions/{id}",
 };
 
 /** Every `{path, method}` the server answers, read out of the source. */

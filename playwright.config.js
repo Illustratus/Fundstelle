@@ -3,8 +3,9 @@ import { cpSync, mkdirSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
+import { PORT, SANDBOX } from "./tests/sandbox.mjs";
+
 const HERE = fileURLToPath(new URL(".", import.meta.url));
-const SANDBOX = join(HERE, ".sandbox");
 
 // The test runs work on a copy of the synthetic test transcripts from
 // tests/fixtures/ — never on real interviews. Two interviews from two
@@ -14,8 +15,8 @@ rmSync(SANDBOX, { recursive: true, force: true });
 mkdirSync(SANDBOX, { recursive: true });
 cpSync(join(HERE, "tests", "fixtures"), join(SANDBOX, "transcripts"), { recursive: true });
 
-const PORT = 4199;
-
+// `TEST_PORT` moves the whole run — server, sandbox and the specs' own
+// servers — so that two worktrees can run the suite at once (tests/sandbox.mjs).
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: false,

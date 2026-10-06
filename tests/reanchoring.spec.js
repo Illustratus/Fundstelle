@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { SANDBOX_TRANSCRIPTS } from "./sandbox.mjs";
 
 /**
  * Re-anchoring, on a real file.
@@ -23,7 +24,7 @@ import { join } from "node:path";
  * transcribed.
  */
 
-const SANDBOX = join(fileURLToPath(new URL("..", import.meta.url)), ".sandbox", "transcripts");
+const SANDBOX = SANDBOX_TRANSCRIPTS;
 const FILE = join(SANDBOX, "interview-01", "final.md");
 const CODING = join(SANDBOX, "interview-01", "coding.json");
 

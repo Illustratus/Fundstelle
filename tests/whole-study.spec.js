@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sidePort } from "./sandbox.mjs";
 
 /**
  * One whole study, from an empty folder to the documents a thesis is built from.
@@ -27,7 +28,7 @@ import { fileURLToPath } from "node:url";
  */
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const PORT = 4165;
+const PORT = sidePort(4165);
 const BASE = `http://127.0.0.1:${PORT}`;
 
 let folder;

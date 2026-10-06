@@ -1,6 +1,7 @@
 # Runtime and test artefacts
 node_modules/
 .sandbox/
+.sandbox-*/
 test-results/
 
 # Docker volume with the actual research data (transcripts, codings) — never version this

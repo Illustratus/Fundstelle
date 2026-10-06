@@ -4,6 +4,7 @@ import { mkdtempSync, chmodSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sidePort } from "./sandbox.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 
@@ -76,7 +77,7 @@ test("a folder that cannot be written to is said so at startup", async () => {
   chmodSync(locked, 0o500);
   try {
     const { output } = await start({
-      PORT: "4171",
+      PORT: String(sidePort(4171)),
       TRANSCRIPTS: join(locked, "transcripts"),
       CATEGORIES: join(locked, "categories.json"),
     });
@@ -91,7 +92,7 @@ test("a folder that cannot be written to is said so at startup", async () => {
 test("a folder it can write to starts without complaint", async () => {
   const root = mkdtempSync(join(tmpdir(), "fundstelle-startup-"));
   const { output } = await start({
-    PORT: "4172",
+    PORT: String(sidePort(4172)),
     TRANSCRIPTS: join(root, "transcripts"),
     CATEGORIES: join(root, "categories.json"),
   });

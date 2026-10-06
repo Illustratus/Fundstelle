@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { parseTranscript, withProblemText } from "../lib/transcript.js";
 import { translator } from "../lib/texts.js";
+import { sidePort } from "./sandbox.mjs";
 
 /**
  * What the reader gets handed a transcript that does not keep the format.
@@ -218,18 +219,18 @@ test("the example study is written whole, and never over anything", async () => 
   writeFileSync(join(transcripts, study[1].folder, "final.md"), "# Nicht anfassen\n");
 
   const server = spawn(process.execPath, [join(root, "server.js")], {
-    env: { ...process.env, PORT: "4183", TRANSCRIPTS: transcripts, CATEGORIES: join(work, "categories.json"), START_LANGUAGE: "de" },
+    env: { ...process.env, PORT: String(sidePort(4183)), TRANSCRIPTS: transcripts, CATEGORIES: join(work, "categories.json"), START_LANGUAGE: "de" },
     stdio: "ignore",
   });
   try {
     for (let tries = 0; tries < 60; tries += 1) {
-      const up = await fetch("http://127.0.0.1:4183/api/interviews").then((a) => a.ok, () => false);
+      const up = await fetch(`http://127.0.0.1:${sidePort(4183)}/api/interviews`).then((a) => a.ok, () => false);
       if (up) break;
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
     /* The folder is not empty — it holds that one file — so the tool declines,
        which is the rule it has always kept. */
-    const refused = await fetch("http://127.0.0.1:4183/api/example", { method: "POST" });
+    const refused = await fetch(`http://127.0.0.1:${sidePort(4183)}/api/example`, { method: "POST" });
     expect(refused.status).toBe(409);
     expect(readFileSync(join(transcripts, study[1].folder, "final.md"), "utf8")).toBe("# Nicht anfassen\n");
   } finally {

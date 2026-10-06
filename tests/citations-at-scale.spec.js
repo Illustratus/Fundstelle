@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sidePort } from "./sandbox.mjs";
 
 /**
  * The analysis screen at the size of a real study.
@@ -36,7 +37,7 @@ const CATEGORIES = ["routine", "routine.disruption", "agreement"];
    this problem is invisible at. So the height of the thing gets a study of its
    own — six interviews and sixteen categories, on its own server over its own
    folder, the shape the first-run checks already use. */
-const BIG_PORT = 4186;
+const BIG_PORT = sidePort(4186);
 const BIG = `http://127.0.0.1:${BIG_PORT}`;
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 let bigServer;

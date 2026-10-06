@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { SANDBOX_TRANSCRIPTS } from "./sandbox.mjs";
 
 /**
  * The exports, read by the program they are written for.
@@ -26,7 +27,7 @@ import { join } from "node:path";
  */
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const SANDBOX = join(ROOT, ".sandbox", "transcripts");
+const SANDBOX = SANDBOX_TRANSCRIPTS;
 
 let pandoc = true;
 try {

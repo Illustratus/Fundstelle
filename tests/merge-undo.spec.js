@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { Store } from "../lib/store.js";
+import { sidePort } from "./sandbox.mjs";
 
 /**
  * Taking back the largest thing one click does.
@@ -122,7 +123,7 @@ test("a category cannot be restored on top of one that is there", async () => {
 
 /* And the same round trip through the interface, where the offer lives. */
 
-const PORT = 4188;
+const PORT = sidePort(4188);
 const BASE = `http://127.0.0.1:${PORT}`;
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 let server;

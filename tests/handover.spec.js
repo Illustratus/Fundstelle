@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SANDBOX_TRANSCRIPTS } from "./sandbox.mjs";
 
 /**
  * Getting a second coding from one machine to another.
@@ -24,7 +25,7 @@ import { fileURLToPath } from "node:url";
  * and is still what the README describes.
  */
 
-const SANDBOX = join(fileURLToPath(new URL("..", import.meta.url)), ".sandbox", "transcripts");
+const SANDBOX = SANDBOX_TRANSCRIPTS;
 const CATEGORIES = ["routine", "routine.disruption", "agreement"];
 
 /** Code the study, so there is something to hand over. */

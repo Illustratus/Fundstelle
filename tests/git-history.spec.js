@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { sidePort } from "./sandbox.mjs";
 
 /**
  * A change you can read in a diff.
@@ -26,7 +27,7 @@ import { join } from "node:path";
  */
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const PORT = 4187;
+const PORT = sidePort(4187);
 const BASE = `http://127.0.0.1:${PORT}`;
 
 let work;

@@ -26,6 +26,9 @@ import { SVG, drawFigure, figureIndex, needsOf } from "./lib/figures.js";
 import { openapiDocument } from "./lib/openapi.js";
 import { pillarEvidence, roleProfiles, roleProfilesMarkdown, voices } from "./lib/roles.js";
 import { THEME_NAMES } from "./public/charts.js";
+import { Study } from "./lib/rounds.js";
+import { placeSections, readSession, withSectionReasons } from "./lib/session.js";
+import { checkCriteriaFor, checkQuestionFor, evaluationRoutes } from "./lib/evaluation-routes.js";
 import {
   MOSCOW,
   analysis,
@@ -105,6 +108,9 @@ const store = new Store({
     : resolve(HERE, "example-start-system.json"),
   seedLanguage: START_LANGUAGE ?? FALLBACK,
 });
+
+// Rounds and guides, beside the category system; absent until a round is made.
+const study = new Study(store);
 
 const CONTENT_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -224,10 +230,24 @@ async function nothingCoded() {
   return true;
 }
 
-async function allInterviews() {
+/**
+ * Every interview, or the interviews of one round.
+ *
+ * A study asked twice is two sets of material about the same people, and a
+ * cross table over both would count each department twice without saying so.
+ * Where a surface takes `?round=`, this is where it is applied; without it the
+ * answer is the whole study, as it always was.
+ */
+async function allInterviews(round = null) {
   const found = await findInterviews(TRANSCRIPTS);
+  let wanted = found;
+  if (round) {
+    const data = await study.read();
+    Study.round(data, round);
+    wanted = found.filter(({ id }) => Study.roundOf(data, id) === round);
+  }
   const loaded = [];
-  for (const { id } of found) loaded.push(await loadChecked(id));
+  for (const { id } of wanted) loaded.push(await loadChecked(id));
   return loaded;
 }
 
@@ -283,6 +303,32 @@ async function allAgreement() {
     withOthers.push({ ...one, others: checked });
   }
   return { compared: agreement(withOthers, categories), problems };
+}
+
+/**
+ * An interview log waiting in a folder, with the guide of its round — or null.
+ *
+ * A log beside a transcript that is already there is found too; the import
+ * still refuses that folder, because it never writes over a transcript.
+ */
+async function loggedInterview(folder) {
+  const session = await readSession(store, folder).catch(() => null);
+  if (!session) return null;
+  const data = await study.read();
+  const round = data.rounds.find((one) => one.id === Study.roundOf(data, folder));
+  return { session, blocks: round?.guide?.blocks ?? [] };
+}
+
+/** Where the sections would be placed, for the step that only reads. */
+async function sectionPreview(turns, { folder, interviewer }, t) {
+  const named = String(folder ?? "").trim();
+  if (!named) return undefined;
+  const logged = await loggedInterview(folderName(named));
+  if (!logged) return undefined;
+  const placement = placeSections(turns, logged.session, logged.blocks, {
+    interviewer: String(interviewer ?? "").trim() || null,
+  });
+  return withSectionReasons(placement, t);
 }
 
 async function staticFile(response, path) {
@@ -345,6 +391,8 @@ const server = createServer(async (request, response) => {
   // operated in, and a bare `curl` still gets something readable.
   const language = negotiate(url.searchParams.get("lang"), request.headers["accept-language"]);
   const t = translator(language);
+  // `?round=` narrows the surfaces that count and quote to one round.
+  const round = url.searchParams.get("round") || null;
   // Only the very first read seeds anything; afterwards the stored system wins
   // and this value is never looked at again.
   const seedLanguage = START_LANGUAGE ?? language;
@@ -419,7 +467,8 @@ const server = createServer(async (request, response) => {
        be coded, so guessing would either take half the material out or offer
        the questions up as findings. */
     if (path === "/api/import/read" && request.method === "POST") {
-      const { text } = await body(request);
+      const wanted = await body(request);
+      const { text } = wanted;
       // Only the field's absence is a bad request. A file of nothing but blank
       // lines did have content — it simply could not be read as a transcript,
       // and saying "field text missing" about a file the reader just dropped is
@@ -438,6 +487,10 @@ const server = createServer(async (request, response) => {
         format: read.format,
         speakers: read.speakers,
         turns: read.turns.length,
+        /* Where the guide's sections would go, when the folder the transcript is
+           meant for holds an interview log — shown before anything is written,
+           like everything else this step shows. */
+        sections: await sectionPreview(read.turns, wanted, t),
         // A few turns to look at, so the reader can see it was read correctly
         // before a folder is made.
         preview: read.turns.slice(0, 4).map((turn) => ({
@@ -548,16 +601,31 @@ const server = createServer(async (request, response) => {
       if (typeof wanted.text !== "string") {
         return send(response, 400, { error: t("errorFieldMissing", { field: "text" }) });
       }
-      const department = (wanted.department ?? "").trim() || null;
+      /* A folder with an interview log is a conversation that was logged while
+         it ran: the log knows the department, and when each block of the guide
+         began — so the sections are put in by the import rather than typed in
+         afterwards. `sections: false` imports without them. */
+      const named = (wanted.folder ?? "").trim();
+      const logged = named ? await loggedInterview(folderName(named)) : null;
+      const department = (wanted.department ?? "").trim() || logged?.session.department || null;
       const title =
         (wanted.title ?? "").trim() ||
         (department ? `Interview: ${department}` : t("importDefaultTitle"));
+      const interviewer = (wanted.interviewer ?? "").trim() || null;
+      let placement = null;
       const result = convert(wanted.text, {
         title,
         department,
-        interviewer: (wanted.interviewer ?? "").trim() || null,
+        interviewer,
         respondent: t("importRespondent"),
         meta: (wanted.date ?? "").trim() ? { [t("metaSurvey")]: wanted.date.trim() } : {},
+        sectionsFor:
+          logged && wanted.sections !== false
+            ? (turns) => {
+                placement = placeSections(turns, logged.session, logged.blocks, { interviewer });
+                return placement.placed;
+              }
+            : null,
       });
       // A transcript with no turns in it is a folder nobody can code in.
       if (!result.turns.length) {
@@ -585,12 +653,18 @@ const server = createServer(async (request, response) => {
         }
         throw error;
       }
-      return send(response, 201, { interview: folder, turns: result.turns.length, title });
+      return send(response, 201, {
+        interview: folder,
+        turns: result.turns.length,
+        title,
+        ...(placement ? { sections: withSectionReasons(placement, t) } : {}),
+      });
     }
 
     // Interviews ------------------------------------------------------------
     if (path === "/api/interviews" && request.method === "GET") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
+      const rounds = await study.read();
       return send(
         response,
         200,
@@ -598,6 +672,8 @@ const server = createServer(async (request, response) => {
           id: transcript.id,
           title: transcript.title,
           department: transcript.department,
+          // Null while the study has no rounds.
+          round: Study.roundOf(rounds, transcript.id),
           meta: transcript.meta,
           turns: transcript.turns.length,
           sections: transcript.sections.length,
@@ -682,12 +758,16 @@ const server = createServer(async (request, response) => {
       const from = decodeURIComponent(interviewRename[1]);
       const wanted = folderName(String((await body(request)).to ?? "").trim());
       if (!wanted) return send(response, 400, { error: t("errorFieldMissing", { field: "to" }) });
-      return send(response, 200, await store.renameInterview(from, wanted));
+      const renamed = await store.renameInterview(from, wanted);
+      // The round it belongs to travels with the folder.
+      await study.renameFolder(from, renamed.id);
+      return send(response, 200, renamed);
     }
 
     if (single && request.method === "DELETE") {
       const id = decodeURIComponent(single[1]);
       await store.removeInterview(id);
+      await study.forget(id);
       return send(response, 204, "");
     }
 
@@ -750,10 +830,16 @@ const server = createServer(async (request, response) => {
     }
     const proposition = path.match(/^\/api\/propositions\/([^/]+)$/);
     if (proposition && request.method === "PATCH") {
+      const fields = await body(request);
+      /* Criteria name rounds and categories, which this file does not hold;
+         they are checked against the study before the store writes them. */
+      if ("criteria" in fields && fields.criteria !== null) {
+        fields.criteria = await checkCriteriaFor(fields.criteria, { study, store, seedLanguage });
+      }
       return send(
         response,
         200,
-        await store.updateProposition(decodeURIComponent(proposition[1]), await body(request)),
+        await store.updateProposition(decodeURIComponent(proposition[1]), fields),
       );
     }
     if (proposition && request.method === "DELETE") {
@@ -794,6 +880,7 @@ const server = createServer(async (request, response) => {
         return send(response, 400, { error: t("errorEmptySelection") });
       }
       await checkCodableTurn(id, data.turn);
+      await checkQuestionFor(id, data.question, { study });
       return send(response, 201, await store.addCoding(id, data));
     }
 
@@ -803,6 +890,8 @@ const server = createServer(async (request, response) => {
       const fields = await body(request);
       // Re-anchoring moves a unit to another turn and obeys the same rule.
       if (fields.turn !== undefined) await checkCodableTurn(id, fields.turn);
+      // A guide question must be one of the round the interview belongs to.
+      if (fields.question) await checkQuestionFor(id, fields.question, { study });
       return send(
         response,
         200,
@@ -816,7 +905,7 @@ const server = createServer(async (request, response) => {
 
     // Requirements ----------------------------------------------------------
     if (path === "/api/requirements" && request.method === "GET") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
       const { requirements, operations } = await store.requirements(seedLanguage);
       const { categories, propositions } = await store.categories(seedLanguage);
       return send(response, 200, {
@@ -910,7 +999,7 @@ const server = createServer(async (request, response) => {
     }
 
     if (path === "/api/analysis" && request.method === "GET") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
       const { categories, propositions } = await store.categories(seedLanguage);
       return send(response, 200, {
         ...analysis(all, categories),
@@ -937,7 +1026,7 @@ const server = createServer(async (request, response) => {
       // Only what this figure is drawn from: fetching the catalog to answer a
       // question about the saturation curve is work nobody asked for.
       const needs = needsOf(name);
-      const all = needs.length ? await allInterviews() : [];
+      const all = needs.length ? await allInterviews(round) : [];
       const { categories } = needs.length
         ? await store.categories(seedLanguage)
         : { categories: [] };
@@ -974,12 +1063,12 @@ const server = createServer(async (request, response) => {
 
     // Exports ---------------------------------------------------------------
     if (path === "/api/export/coding-guide.md") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
       const { categories } = await store.categories(seedLanguage);
       return send(response, 200, codingGuideMarkdown(all, categories, language), MARKDOWN);
     }
     if (path === "/api/export/citations.md") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
       const { categories } = await store.categories(seedLanguage);
       const slice = {
         department: url.searchParams.get("department") ?? "",
@@ -997,7 +1086,7 @@ const server = createServer(async (request, response) => {
       return send(response, 200, agreementMarkdown(compared, language, t), MARKDOWN);
     }
     if (path === "/api/export/analysis.md") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
       const { categories } = await store.categories(seedLanguage);
       return send(
         response,
@@ -1029,15 +1118,15 @@ const server = createServer(async (request, response) => {
     }
 
     if (path === "/api/export/sample.md") {
-      return send(response, 200, sampleMarkdown(await allInterviews(), language), MARKDOWN);
+      return send(response, 200, sampleMarkdown(await allInterviews(round), language), MARKDOWN);
     }
     if (path === "/api/export/notes.md") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
       const { categories } = await store.categories(seedLanguage);
       return send(response, 200, notesMarkdown(all, categories, language), MARKDOWN);
     }
     if (path === "/api/export/matrix.md") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
       const { categories } = await store.categories(seedLanguage);
       return send(
         response,
@@ -1047,7 +1136,7 @@ const server = createServer(async (request, response) => {
       );
     }
     if (path === "/api/export/requirements-catalog.md") {
-      const all = await allInterviews();
+      const all = await allInterviews(round);
       const { requirements, operations } = await store.requirements(seedLanguage);
       const { categories } = await store.categories(seedLanguage);
       return send(
@@ -1068,6 +1157,21 @@ const server = createServer(async (request, response) => {
       const { categories } = await store.categories(seedLanguage);
       return send(response, 200, codingTableMarkdown(transcript, codings, categories, language), MARKDOWN);
     }
+
+    /* Rounds, guides, interview logs and the comparisons across rounds. */
+    const handled = await evaluationRoutes({
+      request,
+      response,
+      path,
+      url,
+      store,
+      study,
+      body,
+      send,
+      allInterviews,
+      seedLanguage,
+    });
+    if (handled) return;
 
     send(response, 404, { error: t("errorUnknownEndpoint") });
   } catch (error) {

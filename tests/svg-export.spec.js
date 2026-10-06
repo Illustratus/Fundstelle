@@ -3,6 +3,7 @@ import { readFileSync, rmSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { SANDBOX_TRANSCRIPTS } from "./sandbox.mjs";
 
 /**
  * A saved chart, opened somewhere else.
@@ -104,7 +105,7 @@ test.beforeAll(async ({ playwright, baseURL }) => {
 
 test.afterAll(() => {
   rmSync(work, { recursive: true, force: true });
-  rmSync(join(process.cwd(), ".sandbox", "transcripts", "interview-3-produktion"), {
+  rmSync(join(SANDBOX_TRANSCRIPTS, "interview-3-produktion"), {
     recursive: true,
     force: true,
   });

@@ -10,8 +10,8 @@
 
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { SANDBOX } from "./sandbox.mjs";
 
-const SANDBOX = join(process.cwd(), ".sandbox");
 const FILE = join(SANDBOX, "roles.json");
 
 const PILLARS = [

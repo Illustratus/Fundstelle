@@ -87,8 +87,16 @@ services:
 
 Every immediate subfolder that contains a `final.md` counts as an interview,
 whatever else lives next to it. The tool only ever adds files, namely
-`coding.json` beside each `final.md` and the two JSON files at the configured
+`coding.json` beside each `final.md` and the JSON files at the configured
 location. Nothing that was already there is touched.
+
+A study that asks the same people twice adds two more, and only once it asks
+for them: `study.json` beside `categories.json` says which rounds there are,
+which interview belongs to which, and what each round's interview guide was;
+`session.json` in an interview folder is the log kept while that interview ran —
+when each block of the guide began, what was ticked off, the notes. A folder
+holding only a `session.json` is an interview that has not been transcribed yet,
+and stays out of every count until it has. Without either file nothing changes.
 
 The analysis screen does that copying for you: the second coder exports their
 coding as one file and this side reads it in. The files still end up exactly
@@ -500,7 +508,8 @@ that selects on the old one keeps working; write new templates against
 
 ```sh
 npx playwright install chromium   # once
-npx playwright test               # runs against a copy in .sandbox/
+npx playwright test               # runs against a copy in .sandbox-4199/
+TEST_PORT=4211 npx playwright test # a second run beside it, in .sandbox-4211/
 ```
 
 The suite covers the coding workflow, anchoring, review, catalog, charts,

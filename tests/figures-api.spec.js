@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { THEMES } from "../public/charts.js";
 import { writeProfiles } from "./role-profiles.mjs";
+import { SANDBOX, SANDBOX_TRANSCRIPTS } from "./sandbox.mjs";
 
 /**
  * The figures, fetched rather than drawn.
@@ -147,11 +148,11 @@ test.beforeAll(async ({ playwright, baseURL }) => {
 });
 
 test.afterAll(() => {
-  rmSync(join(process.cwd(), ".sandbox", "transcripts", THIRD), {
+  rmSync(join(SANDBOX_TRANSCRIPTS, THIRD), {
     recursive: true,
     force: true,
   });
-  rmSync(join(process.cwd(), ".sandbox", "roles.json"), { force: true });
+  rmSync(join(SANDBOX, "roles.json"), { force: true });
 });
 
 test("the endpoint says which figures there are, in the language asked for", async ({ request }) => {

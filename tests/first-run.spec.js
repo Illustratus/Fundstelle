@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { SANDBOX_TRANSCRIPTS, sidePort } from "./sandbox.mjs";
 
 /**
  * The first five minutes, walked end to end.
@@ -24,13 +25,13 @@ import { join } from "node:path";
  */
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const SANDBOX = join(ROOT, ".sandbox", "transcripts");
+const SANDBOX = SANDBOX_TRANSCRIPTS;
 
 /* The screen an empty folder opens on cannot be reached through the suite's own
    server, which has fixtures in it — so these two drive one of their own, on a
    folder with nothing in it. The same shape the git-history checks use, and the
    reason is the same: the state under test is the absence of everything. */
-const BARE_PORT = 4184;
+const BARE_PORT = sidePort(4184);
 const BARE = `http://127.0.0.1:${BARE_PORT}`;
 let bareServer;
 let bareFolder;

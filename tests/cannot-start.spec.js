@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sidePort } from "./sandbox.mjs";
 
 /**
  * The screen for a tool that could not start.
@@ -25,7 +26,7 @@ import { fileURLToPath } from "node:url";
  */
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const PORT = 4189;
+const PORT = sidePort(4189);
 const BASE = `http://127.0.0.1:${PORT}`;
 
 let folder;

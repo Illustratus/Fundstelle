@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
 import { saturation } from "../lib/analysis.js";
+import { SANDBOX_TRANSCRIPTS } from "./sandbox.mjs";
 
 /**
  * When the material stopped producing anything new.
@@ -20,7 +21,7 @@ import { saturation } from "../lib/analysis.js";
  * points, which would suggest a shape that two points cannot have.
  */
 
-const SANDBOX = join(fileURLToPath(new URL("..", import.meta.url)), ".sandbox", "transcripts");
+const SANDBOX = SANDBOX_TRANSCRIPTS;
 
 const interview = (id, categories) => ({
   transcript: { id, title: `Interview ${id}`, department: id.toUpperCase(), turns: [] },

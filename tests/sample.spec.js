@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
 import { sampleMarkdown } from "../lib/analysis.js";
+import { SANDBOX_TRANSCRIPTS } from "./sandbox.mjs";
 
 /**
  * The sample, described from the files that describe it.
@@ -20,7 +21,7 @@ import { sampleMarkdown } from "../lib/analysis.js";
  * cannot say.
  */
 
-const SANDBOX = join(fileURLToPath(new URL("..", import.meta.url)), ".sandbox", "transcripts");
+const SANDBOX = SANDBOX_TRANSCRIPTS;
 const FIRST = join(SANDBOX, "interview-01", "final.md");
 const SECOND = join(SANDBOX, "interview-02", "final.md");
 

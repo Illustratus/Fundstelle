@@ -6,6 +6,49 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Added
+
+- **A study can be asked twice.** Rounds, the interview guide of each, a log kept while an
+  interview runs, and the comparisons a second round with the same people needs — as data and
+  HTTP routes; the screens follow.
+
+  *Rounds.* `study.json` beside `categories.json` names the rounds and which interview folder
+  belongs to which; an interview nobody assigned belongs to the first. A renamed interview
+  carries its round along. `?round=` narrows the analysis, the interview list, the requirements,
+  the figures and the counting exports to one round — a cross table over both would count each
+  department twice without saying so. Without `study.json` nothing changes and nothing is
+  written.
+
+  *The guide.* Per round, in Helfferich's form: blocks with a narrative prompt, a checklist of
+  keywords, mandatory questions (with an optional condition), and where a block reads something
+  out, a list per department. Questions and keywords can carry a tag — the construct they
+  operationalise. Ids never change once given, and what the material refers to — an item ticked
+  in an interview, a block an interview started — can be reworded but not dropped.
+
+  *The interview log.* `session.json` in the folder the transcript will later be written into,
+  before there is one: when the recording started, when each block began, what was ticked, the
+  read-out list marked, notes with their time. Times are seconds into the recording, so that
+  bringing the recording in puts the guide's `## Section:` lines where the blocks began. What
+  cannot be placed — a block started after the last turn, a file without timestamps — is named
+  with the reason and not moved nearby.
+
+  *Stance and criteria.* A coding unit can say whether it supports or contradicts the
+  proposition its category hangs on; absent means neutral, and a unit without one is written
+  exactly as before. Propositions carry pre-registered criteria with thresholds that count
+  **persons, not statements**, evaluated per round with the deviant cases and their evidence.
+
+  *Comparisons.* The panel puts each department's statements of two rounds side by side per
+  category and counts the read-out list; a department present in only one round is not listed
+  anywhere, so nothing says who is missing. Coding units can name the guide question they answer,
+  and a report groups them by that question's tag.
+
+### Changed
+
+- **The suite can run twice at once.** `TEST_PORT` moves the server, the sandbox
+  (`.sandbox-<port>`) and every spec's own server, so two worktrees no longer collide.
+
 ## 0.11.1 — 2026-09-19
 
 ### Fixed

@@ -341,8 +341,9 @@ test("the command line refuses a file that names nobody", () => {
    for the first interview somebody tries. */
 
 import { rmSync } from "node:fs";
+import { SANDBOX_TRANSCRIPTS } from "./sandbox.mjs";
 
-const SANDBOX = join(ROOT, ".sandbox", "transcripts");
+const SANDBOX = SANDBOX_TRANSCRIPTS;
 
 const drop = async (page, name, text) => {
   await page.locator("#import").click();
