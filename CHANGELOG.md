@@ -56,6 +56,10 @@ where it lies.
   field by field, reorderable with the arrows or Alt+↑/↓, and refusing with the reason what an
   interview already refers to. Criteria sit under their proposition. `GET /api/export/guide.md`
   prints the guide as the appendix sets it, with read-out lists only for departments in the round.
+- **Interview mode.** „Gespräch" in the coding view plans an interview and opens the guide beside
+  the call, keyboard first: space starts the recording clock, `b` marks a block's start, digits
+  tick questions and keywords, `r` the read-out list, `n` a note, `e` the summary of what was not
+  asked. Every press is saved at once and survives a reload; a planned interview counts nowhere.
 
 ### Changed
 

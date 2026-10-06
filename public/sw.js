@@ -18,6 +18,7 @@ const SHELL = [
   "scatter.js",
   "search.js",
   "sentences.js",
+  "session.js",
   "texts.js",
   "icon.svg",
   "manifest.webmanifest",
