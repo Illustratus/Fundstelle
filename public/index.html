@@ -187,6 +187,11 @@
     <p class="import-summary" id="import-summary"></p>
     <div class="import-preview" id="import-preview"></div>
     <form id="import-form">
+      <!-- import sections: the folder an interview log is waiting in -->
+      <label class="field" id="import-target-field" hidden>
+        <span class="field-label" data-t="importTarget">Ordner</span>
+        <select id="import-target"></select>
+      </label>
       <label class="field">
         <span class="field-label" data-t="importWho">Wer fragt</span>
         <select id="import-interviewer"></select>
@@ -204,7 +209,9 @@
         <span class="field-label" data-t="importDate">Erhebung</span>
         <input type="text" id="import-date" autocomplete="off">
       </label>
-      <p class="column-note" data-t="importNoSections">Erzählanstöße trägt die Aufnahme nicht — sie stehen im Leitfaden. „## Erzählanstoß: Name“ als eigene Zeile ergänzt sie später; ohne sie funktioniert alles außer der Blockleiste.</p>
+      <!-- import sections: review of the headings from the log -->
+      <section class="import-sections" id="import-sections" hidden></section>
+      <p class="column-note" id="import-no-sections" data-t="importNoSections">Erzählanstöße trägt die Aufnahme nicht — sie stehen im Leitfaden. „## Erzählanstoß: Name“ als eigene Zeile ergänzt sie später; ohne sie funktioniert alles außer der Blockleiste.</p>
       <button type="submit" class="button" data-t="importWrite">Transkript anlegen</button>
     </form>
   </div>

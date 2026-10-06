@@ -28,6 +28,13 @@ import { pillarEvidence, roleProfiles, roleProfilesMarkdown, voices } from "./li
 import { THEME_NAMES } from "./public/charts.js";
 import { Study } from "./lib/rounds.js";
 import { placeSections, readSession, withSectionReasons } from "./lib/session.js";
+import {
+  chosenPlacement,
+  chosenSections,
+  readOffset,
+  shiftedSession,
+  timelineOf,
+} from "./lib/import-sections.js";
 import { checkCriteriaFor, checkQuestionFor, evaluationRoutes } from "./lib/evaluation-routes.js";
 import {
   MOSCOW,
@@ -320,12 +327,13 @@ async function loggedInterview(folder) {
 }
 
 /** Where the sections would be placed, for the step that only reads. */
-async function sectionPreview(turns, { folder, interviewer }, t) {
+async function sectionPreview(turns, { folder, interviewer, offset }, t) {
   const named = String(folder ?? "").trim();
   if (!named) return undefined;
   const logged = await loggedInterview(folderName(named));
   if (!logged) return undefined;
-  const placement = placeSections(turns, logged.session, logged.blocks, {
+  // `offset` moves every logged start for this preview only (import-sections.js).
+  const placement = placeSections(turns, shiftedSession(logged.session, readOffset(offset)), logged.blocks, {
     interviewer: String(interviewer ?? "").trim() || null,
   });
   return withSectionReasons(placement, t);
@@ -483,14 +491,17 @@ const server = createServer(async (request, response) => {
           code: "importNothingRead",
         });
       }
+      /* Where the guide's sections would go, when the folder the transcript is
+         meant for holds an interview log — shown before anything is written,
+         like everything else this step shows. */
+      const sections = await sectionPreview(read.turns, wanted, t);
       return send(response, 200, {
         format: read.format,
         speakers: read.speakers,
         turns: read.turns.length,
-        /* Where the guide's sections would go, when the folder the transcript is
-           meant for holds an interview log — shown before anything is written,
-           like everything else this step shows. */
-        sections: await sectionPreview(read.turns, wanted, t),
+        sections,
+        // Every turn, short, so each heading can be reviewed where it falls.
+        ...(sections ? { timeline: timelineOf(read.turns) } : {}),
         // A few turns to look at, so the reader can see it was read correctly
         // before a folder is made.
         preview: read.turns.slice(0, 4).map((turn) => ({
@@ -612,6 +623,11 @@ const server = createServer(async (request, response) => {
         (wanted.title ?? "").trim() ||
         (department ? `Interview: ${department}` : t("importDefaultTitle"));
       const interviewer = (wanted.interviewer ?? "").trim() || null;
+      const offset = readOffset(wanted.offset);
+      // A list of `{ block, before }` is the placement the researcher reviewed,
+      // written as given; it needs the log whose guide names the blocks.
+      const chosen = Array.isArray(wanted.sections) ? wanted.sections : null;
+      if (chosen && !logged) throw Object.assign(fail("errorUnknownSession"), { status: 404 });
       let placement = null;
       const result = convert(wanted.text, {
         title,
@@ -622,7 +638,12 @@ const server = createServer(async (request, response) => {
         sectionsFor:
           logged && wanted.sections !== false
             ? (turns) => {
-                placement = placeSections(turns, logged.session, logged.blocks, { interviewer });
+                placement = placeSections(turns, shiftedSession(logged.session, offset), logged.blocks, {
+                  interviewer,
+                });
+                if (chosen) {
+                  placement = chosenPlacement(placement, chosenSections(chosen, turns, logged.blocks));
+                }
                 return placement.placed;
               }
             : null,

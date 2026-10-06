@@ -261,6 +261,40 @@ export const TEXTS = {
       "SRT, eine Whisper-Ausgabe oder ein Text, dessen Zeilen mit einem Namen und " +
       "einem Doppelpunkt beginnen.",
     importFromFile: "Transkript einlesen",
+    // --- import sections ---
+    importTarget: "Ordner",
+    importTargetNew: "neuer Ordner, benannt nach der Überschrift",
+    importTargetLogged: "{folder} — Gesprächsprotokoll {department}",
+    importSectionsTitle: "Abschnitte aus dem Gesprächsprotokoll",
+    importLogFound: "Gesprächsprotokoll gefunden: {department}, {starts} Blockbeginne.",
+    importLogStart: "Protokoll gestartet {time}.",
+    importSectionsUse: "Abschnitte aus dem Protokoll einfügen",
+    importOffset: "Alle Abschnitte verschieben",
+    importOffsetEarlier: "5 s früher",
+    importOffsetLater: "5 s später",
+    importOffsetUnit: "Sekunden",
+    importOffsetNote:
+      "Teams beginnt die Aufnahme oft einige Sekunden nach dem Start des Protokolls; " +
+      "dann stehen alle Überschriften gleich weit zu spät. Ein negativer Wert rückt sie " +
+      "nach vorn. Pfeiltasten im Feld ändern um 1, mit ⇧ um 10. Gespeichert wird nichts, " +
+      "solange die Korrektur nicht ausdrücklich gespeichert wird.",
+    importOffsetSave: "Als Korrektur des Protokollstarts speichern",
+    importOffsetSaved: "Protokollstart um {seconds} s korrigiert; alle Zeiten im Protokoll sind mitgewandert.",
+    importSectionsCount: "{placed} Abschnitte gesetzt · {unplaced} nicht gesetzt · {empty} leer",
+    importNoStarts: "Das Protokoll hält keinen Blockbeginn fest — es kommen keine Abschnitte hinzu.",
+    importHeadingKeys:
+      "Überschrift anwählen, dann ↑ ↓ einen Beitrag weiter · ⇧↑ ⇧↓ bis zur nächsten Frage.",
+    importHeadingAria: "Abschnitt {name}, vor Beitrag {turn}. Pfeiltasten verschieben ihn.",
+    importMoveUp: "einen Beitrag früher",
+    importMoveDown: "einen Beitrag später",
+    importMoveReset: "wie berechnet",
+    importManual: "von Hand gesetzt",
+    importBlockAt: "Block begonnen bei {time}",
+    importEmptySection: "Leerer Abschnitt: der nächste beginnt vor demselben Beitrag.",
+    importOpensWithAnswer: "Beginnt mit einer Antwort, nicht mit einer Frage.",
+    importUnplacedTitle: "Nicht gesetzt",
+    importUnknownBlock: "Block {block}",
+    importPlaceByHand: "von Hand setzen",
     keysTitle: "Tastatur",
     keysClose: "Schließen",
     keysOpen: "Tastenkürzel anzeigen",
@@ -1066,6 +1100,40 @@ export const TEXTS = {
       "This file could not be read as a transcript. What is expected is WebVTT, " +
       "SRT, a Whisper output, or a text whose lines begin with a name and a colon.",
     importFromFile: "Read in a transcript",
+    // --- import sections ---
+    importTarget: "Folder",
+    importTargetNew: "a new folder, named after the heading",
+    importTargetLogged: "{folder} — interview log {department}",
+    importSectionsTitle: "Sections from the interview log",
+    importLogFound: "Interview log found: {department}, {starts} block starts.",
+    importLogStart: "Log started {time}.",
+    importSectionsUse: "Insert the sections from the log",
+    importOffset: "Shift every section",
+    importOffsetEarlier: "5 s earlier",
+    importOffsetLater: "5 s later",
+    importOffsetUnit: "seconds",
+    importOffsetNote:
+      "Teams often starts recording a few seconds after the log was started; then every " +
+      "heading sits equally late. A negative value moves them earlier. The arrow keys in " +
+      "the field change it by 1, with ⇧ by 10. Nothing is stored unless the correction is " +
+      "saved explicitly.",
+    importOffsetSave: "Save as a correction of the log's start",
+    importOffsetSaved: "Log start corrected by {seconds} s; every time in the log moved with it.",
+    importSectionsCount: "{placed} sections placed · {unplaced} not placed · {empty} empty",
+    importNoStarts: "The log holds no block start — no sections will be added.",
+    importHeadingKeys:
+      "Select a heading, then ↑ ↓ moves it one turn · ⇧↑ ⇧↓ to the next question.",
+    importHeadingAria: "Section {name}, before turn {turn}. The arrow keys move it.",
+    importMoveUp: "one turn earlier",
+    importMoveDown: "one turn later",
+    importMoveReset: "as computed",
+    importManual: "placed by hand",
+    importBlockAt: "block started at {time}",
+    importEmptySection: "Empty section: the next one opens at the same turn.",
+    importOpensWithAnswer: "Opens with an answer, not a question.",
+    importUnplacedTitle: "Not placed",
+    importUnknownBlock: "block {block}",
+    importPlaceByHand: "place by hand",
     keysTitle: "Keyboard",
     keysClose: "Close",
     keysOpen: "Show keyboard shortcuts",

@@ -44,6 +44,13 @@ where it lies.
   anywhere, so nothing says who is missing. Coding units can name the guide question they answer,
   and a report groups them by that question's tag.
 
+- **The sections from the log are reviewed before the transcript is written.** Into a folder
+  holding an interview log, the import sheet shows every turn with the guide's headings between
+  them, what could not be placed and which section came out empty. One offset shifts every block
+  start (Teams starts recording after the log does; `offset` on both import routes), each heading
+  moves by a turn — or with ⇧ to the next question — and what was shown is what is written
+  (`sections` as a list). The offset stays out of the log unless saved as a correction of `t0`.
+
 ### Changed
 
 - **The suite can run twice at once.** `TEST_PORT` moves the server, the sandbox
