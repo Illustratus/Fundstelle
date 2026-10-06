@@ -13,6 +13,7 @@ const SHELL = [
   "docs.html",
   "docs.css",
   "docs.js",
+  "evaluation.js",
   "scatter.js",
   "search.js",
   "sentences.js",
