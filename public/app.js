@@ -31,6 +31,17 @@ import { sentenceAt, sentences } from "./sentences.js";
 import { installLiveMode, liveChrome } from "./session.js";
 import { language, plural, quoted, setLanguage, t } from "./texts.js";
 import { criteriaHTML, guideExportLinks, initGuide, placeGuide } from "./guide.js";
+import {
+  EVALUATION_KEYS,
+  analysisRoundQuery,
+  connectEvaluation,
+  drawEvaluation,
+  evaluationDetailHTML,
+  evaluationKey,
+  evaluationMarkHTML,
+  loadRounds,
+  roundSwitchHTML,
+} from "./evaluation.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -468,7 +479,8 @@ function apparatusHTML(turn) {
         ` aria-pressed="${state.selected === coding.id}"` +
         ` style="--mark-color:${colorOf(coding.category)}">` +
         `<span class="what">${escapeHTML(category?.name ?? coding.category)}` +
-        `${coding.anchor ? `<span class="anchor"> ▪ ${escapeHTML(t("anchorShort"))}</span>` : ""}</span>` +
+        `${coding.anchor ? `<span class="anchor"> ▪ ${escapeHTML(t("anchorShort"))}</span>` : ""}` +
+        `${evaluationMarkHTML(coding)}</span>` +
         `<span class="sign">${SIGNS[index] ?? "+"}</span></button></li>`
       );
     })
@@ -1630,6 +1642,7 @@ function drawDetail() {
     `</select></label>` +
     `<label class="field"><span class="field-label">${t("memo")}</span>` +
     `<textarea id="detail-memo" rows="2" placeholder="${escapeHTML(t("memoPlaceholder"))}">${escapeHTML(coding.memo ?? "")}</textarea></label>` +
+    evaluationDetailHTML(coding) +
     `<div class="row">` +
     `<label><input type="checkbox" id="detail-anchor"${coding.anchor ? " checked" : ""}> ${t("anchorExample")}</label>` +
     `<label><input type="checkbox" id="detail-reviewed"${coding.reviewed === true ? " checked" : ""}> ${t("reviewed")}</label>` +
@@ -1956,6 +1969,7 @@ const KEYS = [
       [["Enter"], "keyEnterOne"],
     ],
   },
+  { title: "evKeysTitle", rows: EVALUATION_KEYS },
   {
     title: "keysGeneral",
     rows: [
@@ -2430,7 +2444,7 @@ function notesHTML(data) {
       )
       .join("") +
     `</select></label>` +
-    `<a class="button-quiet" href="${exportHref("/api/export/notes.md")}" download>${t("exportNotesButton")}</a></div>`;
+    `<a class="button-quiet" href="${exportHref("/api/export/notes.md", analysisRoundQuery())}" download>${t("exportNotesButton")}</a></div>`;
 
   return (
     `<h3>${t("notesTitle")}</h3>` +
@@ -2644,7 +2658,7 @@ function citationsHTML(data, color) {
     (active
       ? `<button type="button" class="button-quiet" id="filter-clear">${t("clearSlice", { shown, all: all.length })}</button>`
       : `<span class="filter-status">${all.length} ${plural(all.length, "citationOne", "citationMany")}</span>`) +
-    `<a class="button-quiet" id="slice-export" download href="${exportHref("/api/export/citations.md", sliceQuery(filter))}">` +
+    `<a class="button-quiet" id="slice-export" download href="${exportHref("/api/export/citations.md", analysisRoundQuery(sliceQuery(filter)))}">` +
     `${t("exportSlice")}</a>` +
     `</div></div>`;
 
@@ -3140,7 +3154,9 @@ function keepCaret(field) {
 async function drawAnalysis() {
   const root = $("#analysis");
   root.innerHTML = `<p class="empty-state">${t("calculating")}</p>`;
-  const data = await api("/api/analysis");
+  await loadRounds();
+  const roundQuery = analysisRoundQuery();
+  const data = await api(`/api/analysis${roundQuery ? `?${roundQuery}` : ""}`);
   state.analysis = data;
 
   const color = colorFrom(data);
@@ -3150,6 +3166,7 @@ async function drawAnalysis() {
      does. So it is said, with the number, above everything it affects. */
   const heading =
     `<h2>${t("analysis")}</h2><p class="lead">${t("analysisLead")}</p>` +
+    roundSwitchHTML() +
     (data.displaced
       ? `<p class="drift-line" role="status">${escapeHTML(t("analysisDisplaced", { n: data.displaced }))}</p>`
       : "");
@@ -3180,7 +3197,7 @@ async function drawAnalysis() {
   // list of exports two screens down is a detour.
   const matrix =
     `<div class="section-heading"><h3>${t("categoriesByDepartment")}</h3>` +
-    `<a class="button-quiet" id="matrix-export" href="${exportHref("/api/export/matrix.md")}" download` +
+    `<a class="button-quiet" id="matrix-export" href="${exportHref("/api/export/matrix.md", analysisRoundQuery())}" download` +
     ` title="${escapeHTML(t("exportMatrixTitle"))}">${t("exportMatrix")}</a></div>` +
     /* The row and column headers are marked as such, so that a screen reader
        can say which category and which department a number belongs to instead
@@ -3295,7 +3312,7 @@ async function drawAnalysis() {
      one to find out — and the two that describe how the study was done are
      exactly the ones a first-time author does not know to look for. */
   const link = (file, label) =>
-    `<a class="button-quiet" href="${exportHref(`/api/export/${file}`)}" download>${label}</a>`;
+    `<a class="button-quiet" href="${exportHref(`/api/export/${file}`, analysisRoundQuery())}" download>${label}</a>`;
 
   const forMethod =
     link("sample.md", t("exportSample")) +
@@ -3347,6 +3364,7 @@ async function drawAnalysis() {
     chartHTML(saturationChart(data, t)) +
     cooccurrenceHTML(data) +
     `<section id="agreement-part"></section>` +
+    `<section id="evaluation-part"></section>` +
     exports +
     `<section id="citations-part">${citationsHTML(data, color)}</section>` +
     `<section id="notes-part">${notesHTML(data)}</section>`;
@@ -3354,6 +3372,7 @@ async function drawAnalysis() {
   fitAngledHeadings(root.querySelector("#heatmap svg"));
   markScrollableTables(root);
   drawAgreement();
+  drawEvaluation().catch(complain);
 }
 
 /**
@@ -4807,6 +4826,7 @@ function connectEvents() {
         event.preventDefault();
         return state.selected ? confirmAndContinue() : jumpToUnreviewed();
       }
+      if (state.view === "code") evaluationKey(event);
       return;
     }
 
@@ -5681,6 +5701,16 @@ async function start() {
       state.current = route.interview;
     }
     await loadTranscript();
+    connectEvaluation({
+      state,
+      api,
+      drawAll,
+      notify,
+      complain,
+      exportHref,
+      colorOf,
+      redrawAnalysis: () => drawAnalysis().catch(complain),
+    });
     drawAll();
     connectEvents();
     initGuide({
@@ -5693,6 +5723,9 @@ async function start() {
       reloadCategories: loadCategories,
       redrawPropositions: drawPropositions,
     });
+    /* Only a later round's unit detail and margin depend on the rounds, so
+       nothing waits for them; a study without a second round is not redrawn. */
+    loadRounds().then((later) => later && state.view === "code" && drawAll());
     watchSections();
     watchViews();
     watchNotes();

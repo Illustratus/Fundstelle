@@ -3251,3 +3251,59 @@ body:has(#view-code.live:not([hidden])) #coding-bar { display: none; }
   .live-overview li { flex: 1 1 10rem; }
   .live-saved { min-width: 0; }
 }
+
+/* --- evaluation analysis ------------------------------------------------
+   The round switcher above the analysis, the stance and guide question in the
+   unit detail, and the evaluation section of the Auswertung. */
+
+.round-switch { display: flex; gap: .8rem; align-items: flex-end; flex-wrap: wrap; margin: .6rem 0 1rem; }
+.round-switch .field { min-width: 14rem; }
+.round-switch .column-note { margin: 0 0 .35rem; }
+
+.detail .stance { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.detail .stance .field-label { flex-basis: 100%; }
+.stance-choice kbd { font-size: .62rem; opacity: .7; margin-left: .2rem; }
+.stance-choice[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); font-weight: 600; }
+.stance-choice[data-stance-value="supports"][aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.stance-choice[data-stance-value="contradicts"][aria-pressed="true"] { border-color: var(--warning); color: var(--warning); }
+
+.stance-mark { margin-left: .3rem; font-weight: 700; }
+[data-stance-mark="supports"] { color: var(--accent); }
+[data-stance-mark="contradicts"] { color: var(--warning); }
+.stance-tag { font-weight: 600; }
+
+#evaluation-part:not(:empty) { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+#evaluation-part > section { margin-top: 1.6rem; }
+#evaluation-part h4 { margin: 0; }
+#evaluation-part h5 { margin: 0 0 .4rem; font-size: .95rem; }
+#evaluation-part h6 { margin: .6rem 0 .3rem; font-size: .72rem; color: var(--ink-soft); }
+#evaluation-part .section-heading { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+#evaluation-part .section-heading h4 { margin-right: auto; }
+.panel-table { width: 100%; table-layout: fixed; }
+.panel-table th[scope="row"] { width: 9rem; vertical-align: top; text-align: left; }
+.panel-table td { vertical-align: top; }
+.panel-count { font-family: var(--mono); font-size: .68rem; color: var(--ink-faint); margin-bottom: .35rem; }
+.panel-sum { font-family: var(--mono); font-size: .75rem; color: var(--ink-soft); }
+.readout-items { margin: .3rem 0 0; padding-left: 1rem; font-size: .8rem; }
+
+.proposition-board {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--mark-color, var(--line-strong));
+  border-radius: 2px;
+  padding: .7rem .85rem;
+  margin-top: .8rem;
+  background: var(--sheet);
+}
+.round-status { margin: .2rem 0; }
+.round-status[data-status="both"] strong { color: var(--warning); }
+.criterion { border-top: 1px solid var(--line); margin-top: .7rem; padding-top: .6rem; }
+.criterion-head { margin: 0; }
+.criterion-head .verdict { font-family: var(--mono); font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); }
+.criterion-count { margin: .3rem 0; font-size: .85rem; }
+.criterion[data-met="true"] .count { color: var(--accent); }
+.still-open-line { color: var(--warning); font-size: .8rem; margin: .3rem 0; }
+.criterion-persons { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: .8rem; }
+.criterion-persons details.person > summary { cursor: pointer; font-size: .82rem; }
+.criterion-persons details.person[open] > .citations { margin: .4rem 0 .6rem; }
+.tag-questions { margin: .3rem 0 .5rem; padding-left: 1.1rem; font-size: .82rem; color: var(--ink-soft); }
+.tag-question { margin: -.2rem 0 .3rem; }

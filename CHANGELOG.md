@@ -60,11 +60,28 @@ where it lies.
   the call, keyboard first: space starts the recording clock, `b` marks a block's start, digits
   tick questions and keywords, `r` the read-out list, `n` a note, `e` the summary of what was not
   asked. Every press is saved at once and survives a reload; a planned interview counts nowhere.
+- **The second round on screen and on paper.** Once a study has two rounds, the Auswertung tab
+  carries an evaluation section: before and after per category (each department beside itself,
+  text beside text, with counts), the propositions' criteria counted in persons with status,
+  deviant cases and their evidence (a conflict is shown as *both*, never settled), the units by
+  guide-question tag, and the read-out list counted before and after. Each part has its Markdown
+  export — `evaluation-panel.md`, `evaluation-propositions.md`, `evaluation-tags.md`,
+  `evaluation-readout.md` — written from the same answer the screen shows, as grid tables, in DE
+  and EN; none of them names a department that took part in only one round. In the Kodieren tab a
+  unit of a later round takes a stance (`p` supports, `c` contradicts, the same key again takes it
+  back) and the guide question it answers (`q`).
 
 ### Changed
 
 - **The suite can run twice at once.** `TEST_PORT` moves the server, the sandbox
   (`.sandbox-<port>`) and every spec's own server, so two worktrees no longer collide.
+
+- **The first round's numbers stay put when the second arrives.** Once a study has two rounds,
+  the analysis, the requirements, the figures and the counting exports count the **first** round
+  unless `?round=` says otherwise; `round=all` asks for the whole study. Importing the second
+  round no longer changes a number already written into the thesis. The Auswertung tab has a
+  round switcher (first round preselected) and its exports carry the round shown. The interview
+  list still lists every interview; a study without rounds counts as before.
 
 ## 0.11.1 — 2026-09-19
 

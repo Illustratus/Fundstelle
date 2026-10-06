@@ -37,6 +37,7 @@ import {
 } from "./lib/import-sections.js";
 import { checkCriteriaFor, checkQuestionFor, evaluationRoutes } from "./lib/evaluation-routes.js";
 import { guideRoutes } from "./lib/guide-routes.js";
+import { evaluationExportRoutes } from "./lib/evaluation-export-routes.js";
 import {
   MOSCOW,
   analysis,
@@ -260,6 +261,22 @@ async function allInterviews(round = null) {
 }
 
 /**
+ * The round a counting surface counts when the request does not say.
+ *
+ * Once a second round exists, an analysis without `?round=` would quietly add
+ * its interviews to every figure of the first — and the first round's numbers
+ * are already written into the thesis. So the default is the first round;
+ * `round=all` asks for the whole study on purpose. A study without rounds
+ * counts everything, exactly as before.
+ */
+async function countedRound(asked) {
+  if (asked === "all") return null;
+  if (asked) return asked;
+  const data = await study.read();
+  return data.rounds.length > 1 ? data.rounds[0].id : null;
+}
+
+/**
  * The role profiles, joined to the transcripts.
  *
  * Shared by the route the view reads, the two figures and the export that
@@ -400,8 +417,9 @@ const server = createServer(async (request, response) => {
   // operated in, and a bare `curl` still gets something readable.
   const language = negotiate(url.searchParams.get("lang"), request.headers["accept-language"]);
   const t = translator(language);
-  // `?round=` narrows the surfaces that count and quote to one round.
-  const round = url.searchParams.get("round") || null;
+  // `?round=` narrows the surfaces that count and quote to one round; what an
+  // absent one means is settled in `countedRound` below, once it is needed.
+  const roundAsked = url.searchParams.get("round") || null;
   // Only the very first read seeds anything; afterwards the stored system wins
   // and this value is never looked at again.
   const seedLanguage = START_LANGUAGE ?? language;
@@ -415,6 +433,15 @@ const server = createServer(async (request, response) => {
 
   try {
     if (!path.startsWith("/api/")) return await staticFile(response, path);
+    // The round a counting surface counts: see `countedRound`. Asked only where
+    // something is counted, so no other request reads the study file for it.
+    const counting =
+      request.method === "GET" &&
+      (path === "/api/analysis" ||
+        path === "/api/requirements" ||
+        path.startsWith("/api/figures/") ||
+        path.startsWith("/api/export/"));
+    const round = counting ? await countedRound(roundAsked) : null;
 
     /* The interface, described --------------------------------------------
        Everything the browser does goes through these routes and there is no
@@ -685,7 +712,8 @@ const server = createServer(async (request, response) => {
 
     // Interviews ------------------------------------------------------------
     if (path === "/api/interviews" && request.method === "GET") {
-      const all = await allInterviews(round);
+      // A list to pick from, not a count: every interview unless one round is asked for.
+      const all = await allInterviews(roundAsked === "all" ? null : roundAsked);
       const rounds = await study.read();
       return send(
         response,
@@ -1196,6 +1224,23 @@ const server = createServer(async (request, response) => {
     if (handled) return;
     /* The guide of a round, as the appendix prints it. */
     if (await guideRoutes({ request, response, path, url, store, study, send, allInterviews, language })) return;
+    /* The second round's exports: panel, criteria, guide questions, read-out. */
+    if (
+      await evaluationExportRoutes({
+        request,
+        response,
+        path,
+        url,
+        store,
+        study,
+        send,
+        allInterviews,
+        seedLanguage,
+        language,
+      })
+    ) {
+      return;
+    }
 
     send(response, 404, { error: t("errorUnknownEndpoint") });
   } catch (error) {
