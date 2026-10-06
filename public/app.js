@@ -26,6 +26,7 @@ import {
   voicesChart,
 } from "./charts.js";
 import { effectiveWord, matchesSlice, occurrences, trimStem } from "./search.js";
+import { sectionReview } from "./import-sections.js";
 import { sentenceAt, sentences } from "./sentences.js";
 import { language, plural, quoted, setLanguage, t } from "./texts.js";
 
@@ -1975,9 +1976,13 @@ const KEYS = [
  * misreading is visible before a folder exists. Only then is the one question
  * asked that cannot be guessed: which of those speakers was asking.
  */
+// The guide's sections from an interview log, reviewed before writing.
+const importSections = sectionReview({ api, escapeHTML, notify, complain });
+
 function openImport() {
   const sheet = $("#import-sheet");
   state.importing = null;
+  importSections.reset();
   $("#import-found").hidden = true;
   $("#import-file").value = "";
   $("#import-drop").classList.remove("over");
@@ -1991,6 +1996,7 @@ async function readImport(file) {
     const found = await api("/api/import/read", { method: "POST", body: { text } });
     state.importing = { text, ...found, name: file.name };
     showImport(found, file.name);
+    importSections.fileRead(text);
   } catch (error) {
     notify(error.data?.code === "importNothingRead" ? t("importUnreadable") : error.message, "error");
   }
@@ -2053,6 +2059,7 @@ async function writeImport(event) {
         department: $("#import-department").value,
         title: $("#import-title").value,
         date: $("#import-date").value,
+        ...importSections.body(),
       },
     });
     $("#import-sheet").close();
