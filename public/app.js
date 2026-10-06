@@ -27,6 +27,7 @@ import {
 } from "./charts.js";
 import { effectiveWord, matchesSlice, occurrences, trimStem } from "./search.js";
 import { sentenceAt, sentences } from "./sentences.js";
+import { installLiveMode, liveChrome } from "./session.js";
 import { language, plural, quoted, setLanguage, t } from "./texts.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -4495,6 +4496,7 @@ function drawChrome() {
   $("#interview-choice").closest(".field").hidden = !perInterview || !state.interviews.length;
   $("#import").hidden = !perInterview;
   $("#header-subtitle").textContent = headerSubtitle();
+  liveChrome(perInterview);
 }
 
 function setView(name, { route = true, push = false } = {}) {
@@ -5675,6 +5677,7 @@ async function start() {
     watchSheets();
     setView(route.view ?? "code");
     if (state.view === "code") restoreReadingPosition();
+    installLiveMode({ api, notify, complain }).catch(complain);
   } catch (error) {
     cannotStart(error);
   }

@@ -44,6 +44,11 @@ where it lies.
   anywhere, so nothing says who is missing. Coding units can name the guide question they answer,
   and a report groups them by that question's tag.
 
+- **Interview mode.** „Gespräch" in the coding view plans an interview and opens the guide beside
+  the call, keyboard first: space starts the recording clock, `b` marks a block's start, digits
+  tick questions and keywords, `r` the read-out list, `n` a note, `e` the summary of what was not
+  asked. Every press is saved at once and survives a reload; a planned interview counts nowhere.
+
 ### Changed
 
 - **The suite can run twice at once.** `TEST_PORT` moves the server, the sandbox
