@@ -6,82 +6,91 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
-## Unreleased
+## 0.12.0 — 2026-10-06
 
 ### Added
 
-- **A study can be asked twice.** Rounds, the interview guide of each, a log kept while an
-  interview runs, and the comparisons a second round with the same people needs — as data and
-  HTTP routes; the screens follow.
+- **Eine Studie kann zweimal fragen.** Runden, der Leitfaden jeder Runde, ein Protokoll, das
+  während eines Interviews mitläuft, und die Vergleiche, die eine zweite Runde mit denselben
+  Personen braucht.
 
-  *Rounds.* `study.json` beside `categories.json` names the rounds and which interview folder
-  belongs to which; an interview nobody assigned belongs to the first. A renamed interview
-  carries its round along. `?round=` narrows the analysis, the interview list, the requirements,
-  the figures and the counting exports to one round — a cross table over both would count each
-  department twice without saying so. Without `study.json` nothing changes and nothing is
-  written.
+  *Runden.* `study.json` neben `categories.json` nennt die Runden und ordnet jeden
+  Interviewordner einer zu. Ein Interview ohne Zuordnung gehört zur ersten Runde, ein
+  umbenanntes Interview nimmt seine Runde mit. `?round=` beschränkt Auswertung, Interviewliste,
+  Anforderungen, Abbildungen und die zählenden Exporte auf eine Runde. Ohne `study.json` ändert
+  sich nichts, und es wird nichts geschrieben.
 
-  *The guide.* Per round, in Helfferich's form: blocks with a narrative prompt, a checklist of
-  keywords, mandatory questions (with an optional condition), and where a block reads something
-  out, a list per department. Questions and keywords can carry a tag — the construct they
-  operationalise. Ids never change once given, and what the material refers to — an item ticked
-  in an interview, a block an interview started — can be reworded but not dropped.
+  *Der Leitfaden.* Je Runde in der Form nach Helfferich: Blöcke mit Erzählaufforderung,
+  Check-Liste, Pflichtfragen mit optionaler Bedingung und, wo ein Block etwas vorliest, eine
+  Liste je Bereich. Fragen und Stichworte können ein Merkmal tragen, etwa das Konstrukt, das sie
+  operationalisieren. Einmal vergebene Ids ändern sich nie, und worauf sich das Material bezieht,
+  also ein in einem Interview abgehaktes Stichwort oder ein begonnener Block, lässt sich umformulieren,
+  aber nicht löschen.
 
-  *The interview log.* `session.json` in the folder the transcript will later be written into,
-  before there is one: when the recording started, when each block began, what was ticked, the
-  read-out list marked, notes with their time. Times are seconds into the recording, so that
-  bringing the recording in puts the guide's `## Section:` lines where the blocks began. What
-  cannot be placed — a block started after the last turn, a file without timestamps — is named
-  with the reason and not moved nearby.
+  *Das Gesprächsprotokoll.* `session.json` liegt in dem Ordner, in den später das Transkript
+  kommt, und existiert schon vorher: wann die Aufnahme begann, wann jeder Block anfing, was
+  abgehakt wurde, die markierte Vorleseliste und Stichpunkte mit Zeitmarke. Die Zeiten zählen in
+  Sekunden ab Aufnahmebeginn, damit der Import die `## Section:`-Zeilen dorthin setzen kann, wo
+  die Blöcke begannen. Was sich nicht platzieren lässt, wird mit Grund genannt und nicht in die
+  Nähe verschoben.
 
-  *Stance and criteria.* A coding unit can say whether it supports or contradicts the
-  proposition its category hangs on; absent means neutral, and a unit without one is written
-  exactly as before. Propositions carry pre-registered criteria with thresholds that count
-  **persons, not statements**, evaluated per round with the deviant cases and their evidence.
+  *Richtung und Kriterien.* Eine Kodiereinheit kann sagen, ob sie die Proposition ihrer Kategorie
+  stützt oder ihr widerspricht. Ohne Angabe ist sie neutral, und eine Einheit ohne Richtung wird
+  genau wie bisher geschrieben. Propositionen tragen vorab festgelegte Kriterien mit Schwellen,
+  die **Personen zählen, nicht Aussagen**, ausgewertet je Runde mit den abweichenden Fällen und
+  ihren Belegen.
 
-  *Comparisons.* The panel puts each department's statements of two rounds side by side per
-  category and counts the read-out list; a department present in only one round is not listed
-  anywhere, so nothing says who is missing. Coding units can name the guide question they answer,
-  and a report groups them by that question's tag.
+  *Vergleiche.* Das Panel stellt je Kategorie die Aussagen eines Bereichs aus zwei Runden
+  nebeneinander und zählt die Vorleseliste. Ein Bereich, der nur in einer Runde vorkommt,
+  erscheint nirgends, damit nichts verrät, wer fehlt. Kodiereinheiten können die Leitfadenfrage
+  nennen, die sie beantworten, und ein Bericht gruppiert sie nach deren Merkmal.
 
-- **The sections from the log are reviewed before the transcript is written.** Into a folder
-  holding an interview log, the import sheet shows every turn with the guide's headings between
-  them, what could not be placed and which section came out empty. One offset shifts every block
-  start (Teams starts recording after the log does; `offset` on both import routes), each heading
-  moves by a turn — or with ⇧ to the next question — and what was shown is what is written
-  (`sections` as a list). The offset stays out of the log unless saved as a correction of `t0`.
-- **The guide is written in the tool, and the appendix is printed from it.** The catalog view
-  folds out the rounds (add, rename, remove, assign interviews) and the guide of each — blocks,
-  checklist, mandatory questions with condition and tag, read-out lists per department — saved
-  field by field, reorderable with the arrows or Alt+↑/↓, and refusing with the reason what an
-  interview already refers to. Criteria sit under their proposition. `GET /api/export/guide.md`
-  prints the guide as the appendix sets it, with read-out lists only for departments in the round.
-- **Interview mode.** „Gespräch" in the coding view plans an interview and opens the guide beside
-  the call, keyboard first: space starts the recording clock, `b` marks a block's start, digits
-  tick questions and keywords, `r` the read-out list, `n` a note, `e` the summary of what was not
-  asked. Every press is saved at once and survives a reload; a planned interview counts nowhere.
-- **The second round on screen and on paper.** Once a study has two rounds, the Auswertung tab
-  carries an evaluation section: before and after per category (each department beside itself,
-  text beside text, with counts), the propositions' criteria counted in persons with status,
-  deviant cases and their evidence (a conflict is shown as *both*, never settled), the units by
-  guide-question tag, and the read-out list counted before and after. Each part has its Markdown
-  export — `evaluation-panel.md`, `evaluation-propositions.md`, `evaluation-tags.md`,
-  `evaluation-readout.md` — written from the same answer the screen shows, as grid tables, in DE
-  and EN; none of them names a department that took part in only one round. In the Kodieren tab a
-  unit of a later round takes a stance (`p` supports, `c` contradicts, the same key again takes it
-  back) and the guide question it answers (`q`).
+- **Die Abschnitte aus dem Protokoll werden geprüft, bevor das Transkript geschrieben wird.** In
+  einen Ordner mit Gesprächsprotokoll zeigt der Import jeden Redebeitrag mit den Überschriften des
+  Leitfadens dazwischen, was sich nicht platzieren ließ und welcher Abschnitt leer blieb. Ein
+  Versatz verschiebt alle Blockstarts (Teams beginnt die Aufnahme nach dem Protokoll, `offset` auf
+  beiden Import-Routen), jede Überschrift wandert um einen Beitrag oder mit ⇧ zur nächsten Frage,
+  und geschrieben wird genau, was gezeigt wurde (`sections` als Liste). Der Versatz bleibt aus dem
+  Protokoll heraus, außer er wird als Korrektur von `t0` gespeichert.
+
+- **Der Leitfaden wird im Werkzeug geschrieben, und der Anhang wird daraus gedruckt.** Der
+  Katalog klappt die Runden aus (anlegen, umbenennen, entfernen, Interviews zuordnen) und den
+  Leitfaden jeder Runde, Feld für Feld gespeichert, mit den Pfeilen oder Alt+↑/↓ umzuordnen. Was
+  ein Interview schon verwendet, wird mit Grund verweigert. Die Kriterien stehen unter ihrer
+  Proposition. `GET /api/export/guide.md` druckt den Leitfaden so, wie der Anhang ihn setzt, mit
+  Vorleselisten nur für Bereiche der Runde.
+
+- **Gesprächsmodus.** „Gespräch" im Kodieren-Reiter plant ein Interview und öffnet den Leitfaden
+  neben dem Anruf, mit der Tastatur zuerst: Leertaste startet die Aufnahmeuhr, `b` markiert den
+  Beginn eines Blocks, Ziffern haken Fragen und Stichworte ab, `r` öffnet die Vorleseliste, `n`
+  einen Stichpunkt, `e` die Zusammenfassung dessen, was nicht gefragt wurde. Jeder Tastendruck
+  wird sofort gespeichert und übersteht ein Neuladen. Ein geplantes Interview zählt nirgends mit.
+
+- **Die zweite Runde auf dem Schirm und auf Papier.** Hat eine Studie zwei Runden, bekommt der
+  Auswertungs-Reiter einen Evaluationsteil: vorher und nachher je Kategorie (jeder Bereich neben
+  sich selbst, Text neben Text, mit Zählung), die Kriterien der Propositionen in Personen gezählt
+  mit Status, abweichenden Fällen und Belegen (ein Konflikt erscheint als *beide*, entschieden
+  wird nichts), die Einheiten nach Merkmal der Leitfadenfrage und die Vorleseliste vorher und
+  nachher gezählt. Jeder Teil hat seinen Markdown-Export, `evaluation-panel.md`,
+  `evaluation-propositions.md`, `evaluation-tags.md` und `evaluation-readout.md`, geschrieben aus
+  derselben Antwort, die der Schirm zeigt, als Grid-Tabellen auf Deutsch und Englisch. Keiner
+  davon nennt einen Bereich, der nur an einer Runde teilnahm. Im Kodieren-Reiter bekommt eine
+  Einheit einer späteren Runde ihre Richtung (`p` stützt, `c` widerspricht, dieselbe Taste nimmt
+  sie zurück) und die Leitfadenfrage, die sie beantwortet (`q`).
 
 ### Changed
 
-- **The suite can run twice at once.** `TEST_PORT` moves the server, the sandbox
-  (`.sandbox-<port>`) and every spec's own server, so two worktrees no longer collide.
+- **Die Testsuite kann zweimal gleichzeitig laufen.** `TEST_PORT` verschiebt den Server, die
+  Sandbox (`.sandbox-<port>`) und den eigenen Server jeder Spec, sodass sich zwei Worktrees nicht
+  mehr in die Quere kommen.
 
-- **The first round's numbers stay put when the second arrives.** Once a study has two rounds,
-  the analysis, the requirements, the figures and the counting exports count the **first** round
-  unless `?round=` says otherwise; `round=all` asks for the whole study. Importing the second
-  round no longer changes a number already written into the thesis. The Auswertung tab has a
-  round switcher (first round preselected) and its exports carry the round shown. The interview
-  list still lists every interview; a study without rounds counts as before.
+- **Die Zahlen der ersten Runde bleiben, wenn die zweite kommt.** Hat eine Studie zwei Runden,
+  zählen Auswertung, Anforderungen, Abbildungen und die zählenden Exporte die **erste** Runde,
+  solange `?round=` nichts anderes sagt. `round=all` fragt nach der ganzen Studie. Der Import der
+  zweiten Runde ändert damit keine Zahl mehr, die schon in einer Arbeit steht. Der
+  Auswertungs-Reiter hat eine Rundenwahl (erste Runde vorgewählt), und seine Exporte tragen die
+  gezeigte Runde. Die Interviewliste zeigt weiter alle Interviews, und eine Studie ohne Runden
+  zählt wie bisher.
 
 ## 0.11.1 — 2026-09-19
 
