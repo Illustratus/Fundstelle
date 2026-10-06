@@ -44,6 +44,13 @@ where it lies.
   anywhere, so nothing says who is missing. Coding units can name the guide question they answer,
   and a report groups them by that question's tag.
 
+- **The guide is written in the tool, and the appendix is printed from it.** The catalog view
+  folds out the rounds (add, rename, remove, assign interviews) and the guide of each — blocks,
+  checklist, mandatory questions with condition and tag, read-out lists per department — saved
+  field by field, reorderable with the arrows or Alt+↑/↓, and refusing with the reason what an
+  interview already refers to. Criteria sit under their proposition. `GET /api/export/guide.md`
+  prints the guide as the appendix sets it, with read-out lists only for departments in the round.
+
 ### Changed
 
 - **The suite can run twice at once.** `TEST_PORT` moves the server, the sandbox

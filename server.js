@@ -29,6 +29,7 @@ import { THEME_NAMES } from "./public/charts.js";
 import { Study } from "./lib/rounds.js";
 import { placeSections, readSession, withSectionReasons } from "./lib/session.js";
 import { checkCriteriaFor, checkQuestionFor, evaluationRoutes } from "./lib/evaluation-routes.js";
+import { guideRoutes } from "./lib/guide-routes.js";
 import {
   MOSCOW,
   analysis,
@@ -1172,6 +1173,8 @@ const server = createServer(async (request, response) => {
       seedLanguage,
     });
     if (handled) return;
+    /* The guide of a round, as the appendix prints it. */
+    if (await guideRoutes({ request, response, path, url, store, study, send, allInterviews, language })) return;
 
     send(response, 404, { error: t("errorUnknownEndpoint") });
   } catch (error) {
