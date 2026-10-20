@@ -57,6 +57,7 @@ const PATTERNS = {
   codingTable: "/api/export/coding-table/{id}.md",
   roundOne: "/api/rounds/{id}",
   roundAssign: "/api/rounds/{id}/assign",
+  roundUntestable: "/api/rounds/{id}/untestable",
   roundGuide: "/api/rounds/{id}/guide",
   guideBlocks: "/api/rounds/{id}/guide/blocks",
   guideBlock: "/api/rounds/{id}/guide/blocks/{block}",

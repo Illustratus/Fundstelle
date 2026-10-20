@@ -33,6 +33,9 @@ const local = {
   // Criteria shown open, per proposition, and a criterion being put together.
   criteriaOpen: new Set(),
   drafts: new Map(),
+  // Criteria switched from "by hand" to "counted" that wait for a threshold
+  // before they can be saved, by field key.
+  awaitingThreshold: new Set(),
   node: null,
   // The field last focused in the editor, to hand the focus back after the
   // catalog was rebuilt around it.
@@ -688,31 +691,42 @@ function onToggle(event) {
 
 const VERDICTS = ["supported", "falsified"];
 const STANCES = ["", "supports", "contradicts"];
+const KINDS = ["count", "manual"];
+const BASES = ["", "testable"];
 const CHOICE_TEXT = {
   supported: "criteriaEditorSupported",
   falsified: "criteriaEditorFalsified",
   any: "criteriaEditorAny",
   supports: "criteriaEditorSupports",
   contradicts: "criteriaEditorContradicts",
+  count: "criteriaEditorCount",
+  manual: "criteriaEditorManual",
+  base: "criteriaEditorBaseAll",
+  testable: "criteriaEditorBaseTestable",
 };
 
 function thresholdText(threshold) {
   if (!threshold) return "";
+  if (threshold.none) return "0";
   if (threshold.atLeast !== undefined) return String(threshold.atLeast);
   return String(threshold.fraction ?? "");
 }
 
 /**
- * „3" is three persons, „2/3" two thirds of the round's persons. Whatever
- * else is typed goes to the server as it is, which says what is wrong with it.
+ * „3" is three persons, „2/3" two thirds of the base, „0" (or „niemand") nobody.
+ * Whatever else is typed goes to the server as it is, which says what is wrong
+ * with it.
  */
 function parseThreshold(text) {
   const value = String(text).trim();
+  if (/^(0|niemand|keine?r?|none|nobody)$/i.test(value)) return { none: true };
   if (/^\d+$/.test(value)) return { atLeast: Number(value) };
   if (/^\d+\s*\/\s*\d+$/.test(value)) return { fraction: value.replace(/\s+/g, "") };
   if (/^(0?[.,]\d+|1([.,]0+)?)$/.test(value)) return { fraction: Number(value.replace(",", ".")) };
   return { atLeast: value };
 }
+
+const claimsOf = (pid) => deps.state.propositions[pid]?.claim !== false;
 
 function criterionHTML(pid, criterion, draft) {
   const key = `crit:${pid}:${draft ? "draft" : criterion.id}`;
@@ -720,10 +734,15 @@ function criterionHTML(pid, criterion, draft) {
     values
       .map((value) => `<option value="${attr(value)}"${value === (chosen ?? "") ? " selected" : ""}>${esc(name(value))}</option>`)
       .join("");
-  const select = (name, values, chosen, label) =>
-    `<label class="criterion-field"><span class="field-label">${esc(label)}</span>` +
+  const label = (name, value) => {
+    if (name === "round") return roundName(value);
+    if (name === "base") return t(CHOICE_TEXT[value || "base"]);
+    return t(CHOICE_TEXT[value || "any"]);
+  };
+  const select = (name, values, chosen, text) =>
+    `<label class="criterion-field"><span class="field-label">${esc(text)}</span>` +
     `<select data-c="${name}" data-key="${attr(`${key}:${name}`)}">` +
-    `${options(values, chosen, (value) => (name === "round" ? roundName(value) : t(CHOICE_TEXT[value || "any"])))}` +
+    `${options(values, chosen, (value) => label(name, value))}` +
     `</select></label>`;
   const chosen = new Set(criterion.categories ?? []);
   const categories = (deps.state.categories ?? [])
@@ -734,24 +753,35 @@ function criterionHTML(pid, criterion, draft) {
         `${chosen.has(category.id) ? " checked" : ""}> ${esc(category.name)}</label>`,
     )
     .join("");
-  const threshold = thresholdText(criterion.threshold);
-  const textField = (name, value, label, placeholder) =>
-    `<label class="criterion-field${name === "text" ? " wide" : ""}"><span class="field-label">${esc(label)}</span>` +
+  const awaiting = local.awaitingThreshold.has(key);
+  const manual = criterion.kind === "manual" && !awaiting;
+  const threshold = manual ? "" : thresholdText(criterion.threshold);
+  const textField = (name, value, text, placeholder, { disabled = false, title = "" } = {}) =>
+    `<label class="criterion-field${name === "text" ? " wide" : ""}"><span class="field-label">${esc(text)}</span>` +
     `<input type="text" data-c="${name}" data-key="${attr(`${key}:${name}`)}" data-was="${attr(value)}"` +
     ` value="${attr(value)}" autocomplete="off" placeholder="${attr(placeholder)}"` +
-    ` title="${attr(name === "threshold" ? t("criteriaEditorThresholdTitle") : "")}"></label>`;
+    ` title="${attr(title)}"${disabled ? " disabled" : ""}></label>`;
   return (
     `<div class="criterion"${draft ? " data-draft" : ` data-criterion="${attr(criterion.id)}"`}>` +
     `<div class="criterion-row">` +
     select("verdict", VERDICTS, criterion.verdict, t("criteriaEditorVerdict")) +
     select("round", local.rounds.map((round) => round.id), criterion.round, t("criteriaEditorRound")) +
+    select("kind", KINDS, manual ? "manual" : "count", t("criteriaEditorKind")) +
     (draft
       ? ""
       : button("data-criterion-remove", "×", t("criteriaEditorRemoveAria"), `${key}:remove`)) +
     `</div><div class="criterion-row">` +
-    textField("threshold", threshold, t("criteriaEditorThreshold"), t("criteriaEditorThresholdPlaceholder")) +
     select("stance", STANCES, criterion.stance ?? "", t("criteriaEditorStance")) +
+    select("base", BASES, criterion.base === "testable" ? "testable" : "", t("criteriaEditorBase")) +
+    textField(
+      "threshold",
+      threshold,
+      t("criteriaEditorThreshold"),
+      manual ? "—" : t("criteriaEditorThresholdPlaceholder"),
+      { disabled: manual, title: manual ? t("criteriaEditorThresholdManual") : t("criteriaEditorThresholdTitle") },
+    ) +
     `</div>` +
+    (awaiting ? `<p class="column-note" role="status">${esc(t("criteriaEditorThresholdFirst"))}</p>` : "") +
     `<fieldset class="criterion-categories"><legend class="field-label">${esc(t("criteriaEditorCategories"))}</legend>` +
     `${categories}</fieldset>` +
     textField("text", criterion.text ?? "", t("criteriaEditorText"), t("criteriaEditorTextPlaceholder")) +
@@ -765,12 +795,46 @@ function criterionHTML(pid, criterion, draft) {
   );
 }
 
+/** Whether all criteria of a verdict must be met, or one: one select per verdict. */
+function combineHTML(pid) {
+  const combine = deps.state.propositions[pid]?.combine ?? {};
+  return (
+    `<div class="criterion-row criteria-combine">` +
+    VERDICTS.map((verdict) => {
+      const value = combine[verdict] === "any" ? "any" : "all";
+      return (
+        `<label class="criterion-field"><span class="field-label">${esc(
+          t("criteriaEditorCombine", { verdict: t(CHOICE_TEXT[verdict]) }),
+        )}</span>` +
+        `<select data-combine="${verdict}" data-key="${attr(`crit:${pid}:combine:${verdict}`)}">` +
+        `<option value="all"${value === "all" ? " selected" : ""}>${esc(t("criteriaEditorCombineAll"))}</option>` +
+        `<option value="any"${value === "any" ? " selected" : ""}>${esc(t("criteriaEditorCombineAny"))}</option>` +
+        `</select></label>`
+      );
+    }).join("") +
+    `</div>`
+  );
+}
+
 function criteriaInner(pid) {
   const list = deps.state.propositions[pid]?.criteria ?? [];
   const draft = local.drafts.get(pid);
+  const claim = claimsOf(pid);
+  const claimBox =
+    `<label class="criterion-claim"><input type="checkbox" data-claim data-key="${attr(`crit:${pid}:claim`)}"` +
+    `${claim ? " checked" : ""}> ${esc(t("criteriaEditorClaim"))}</label>`;
+  if (!claim) {
+    return (
+      `<summary>${esc(t("criteriaEditorNoClaimSummary"))}</summary>` +
+      claimBox +
+      `<p class="column-note">${esc(t("criteriaEditorClaimNote"))}</p>`
+    );
+  }
   return (
     `<summary>${esc(t("criteriaEditorSummary", { n: list.length }))}</summary>` +
+    claimBox +
     `<p class="column-note">${esc(t("criteriaEditorNote"))}</p>` +
+    combineHTML(pid) +
     list.map((criterion) => criterionHTML(pid, criterion, false)).join("") +
     (draft
       ? criterionHTML(pid, draft, true)
@@ -811,6 +875,23 @@ function redrawAllCriteria() {
   for (const pid of present) redrawCriteria(pid);
 }
 
+/** Save fields of the proposition itself (its claim, how its criteria combine). */
+function saveProposition(pid, fields, message, options = {}) {
+  return save(
+    async () => {
+      await deps.api(`/api/propositions/${enc(pid)}`, { method: "PATCH", body: fields });
+    },
+    message,
+    {
+      ...options,
+      after: async (state) => {
+        await deps.reloadCategories().catch(deps.complain);
+        redrawCriteria(pid, state);
+      },
+    },
+  );
+}
+
 function saveCriteria(pid, change, message, { fresh = [], focus = null } = {}) {
   return save(
     async () => {
@@ -839,29 +920,69 @@ function criterionValue(target, criterion) {
     else set.delete(target.value);
     // In the order of the category system, not the order of clicking.
     const order = (deps.state.categories ?? []).map((category) => category.id);
-    return { categories: order.filter((id) => set.has(id)) };
+    const categories = order.filter((id) => set.has(id));
+    return { categories: categories.length ? categories : undefined };
   }
-  if (name === "threshold") return { threshold: parseThreshold(target.value) };
+  // A threshold makes a criterion a counted one.
+  if (name === "threshold") return { threshold: parseThreshold(target.value), kind: undefined };
   if (name === "stance") return { stance: target.value || undefined };
+  if (name === "base") return { base: target.value || undefined };
+  if (name === "kind") {
+    return target.value === "manual" ? { kind: "manual", threshold: undefined } : { kind: undefined };
+  }
   return { [name]: target.value };
 }
 
 function criteriaChange(target) {
   const shell = target.closest("[data-criteria-for]");
-  if (!shell || !target.dataset.c) return undefined;
+  if (!shell) return undefined;
   const pid = shell.dataset.criteriaFor;
   const name = (deps.state.propositions[pid]?.name ?? pid);
+  if (target.matches("[data-claim]")) {
+    return saveProposition(
+      pid,
+      { claim: target.checked },
+      t(target.checked ? "criteriaEditorClaimSet" : "criteriaEditorClaimCleared", { name }),
+      { focus: target.dataset.key },
+    );
+  }
+  if (target.matches("[data-combine]")) {
+    return saveProposition(
+      pid,
+      { combine: { [target.dataset.combine]: target.value } },
+      t("criteriaEditorCombineSaved", { name }),
+      { fresh: [target.dataset.key] },
+    );
+  }
+  if (!target.dataset.c) return undefined;
   if (target.closest("[data-draft]")) {
     const draft = local.drafts.get(pid);
-    if (draft) Object.assign(draft, criterionValue(target, draft));
+    if (draft) {
+      Object.assign(draft, criterionValue(target, draft));
+      if (target.dataset.c === "kind") redrawCriteria(pid, { focus: target.dataset.key });
+    }
     return undefined;
   }
   const id = target.closest("[data-criterion]")?.dataset.criterion;
   if (!id) return undefined;
+  const key = `crit:${pid}:${id}`;
   if (target.type === "text") {
     if (target.value === target.dataset.was) return undefined;
     target.dataset.was = target.value;
   }
+  const criterion = (deps.state.propositions[pid]?.criteria ?? []).find((one) => one.id === id);
+  /* From "by hand" to "counted" needs a threshold, which a criterion by hand
+     does not have: the switch waits in the form until one is typed, and the
+     two are saved together. */
+  if (target.dataset.c === "kind") {
+    if (target.value === "count" && !criterion?.threshold) {
+      local.awaitingThreshold.add(key);
+      redrawCriteria(pid, { focus: `${key}:threshold` });
+      return undefined;
+    }
+    local.awaitingThreshold.delete(key);
+  }
+  if (target.dataset.c === "threshold") local.awaitingThreshold.delete(key);
   return saveCriteria(
     pid,
     (list) => list.map((one) => (one.id === id ? { ...one, ...criterionValue(target, one) } : one)),
@@ -908,7 +1029,7 @@ function connectCriteria(root) {
     const pid = shell.dataset.criteriaFor;
     const name = deps.state.propositions[pid]?.name ?? pid;
     if (target.matches("[data-criterion-add]")) {
-      local.drafts.set(pid, { verdict: "supported", round: local.rounds.at(-1)?.id, categories: [], text: "" });
+      local.drafts.set(pid, { verdict: "supported", round: local.rounds.at(-1)?.id, text: "" });
       return redrawCriteria(pid, { focus: `crit:${pid}:draft:verdict` });
     }
     if (target.matches("[data-criterion-discard]")) {
@@ -917,12 +1038,16 @@ function connectCriteria(root) {
     }
     if (target.matches("[data-criterion-keep]")) {
       const draft = local.drafts.get(pid);
+      const kept = {
+        ...draft,
+        threshold: draft.kind === "manual" ? undefined : (draft.threshold ?? {}),
+      };
       return save(
         async () => {
           const list = (deps.state.propositions[pid]?.criteria ?? []).map((one) => ({ ...one }));
           await deps.api(`/api/propositions/${enc(pid)}`, {
             method: "PATCH",
-            body: { criteria: [...list, { ...draft, threshold: draft.threshold ?? {} }] },
+            body: { criteria: [...list, kept] },
           });
           local.drafts.delete(pid);
         },

@@ -92,11 +92,20 @@ location. Nothing that was already there is touched.
 
 A study that asks the same people twice adds two more, and only once it asks
 for them: `study.json` beside `categories.json` says which rounds there are,
-which interview belongs to which, and what each round's interview guide was;
+which interview belongs to which, what each round's interview guide was, and
+which persons a proposition cannot be checked with in a round, with the reason;
 `session.json` in an interview folder is the log kept while that interview ran —
 when each block of the guide began, what was ticked off, the notes. A folder
 holding only a `session.json` is an interview that has not been transcribed yet,
 and stays out of every count until it has. Without either file nothing changes.
+
+In a later round a coding unit can carry a stance per proposition — supports,
+contradicts, or no bearing, which is never written — independently of its
+category (`stances` in `coding.json`). Stances that were kept in memos before
+the field existed ("Stufe je Proposition: Konversationsprinzip stützt.") are
+moved over by `node tools/migrate-stances.mjs --base <url> --round <id>`,
+through the running tool's HTTP interface; `--dry-run` first, and it stops
+before the first write if anything cannot be read without a guess.
 
 The analysis screen does that copying for you: the second coder exports their
 coding as one file and this side reads it in. The files still end up exactly

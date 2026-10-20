@@ -74,6 +74,8 @@ test("rounds are made, renamed and filled with the mouse, and each save says so"
   }
   // The disclosure stayed open through every save.
   await expect(page.locator(".guide-assign")).toHaveAttribute("open", "");
+  // Every save says the same sentence, so the last one is waited for in the file.
+  await expect.poll(async () => (await rounds())[1].interviews.length).toBe(Object.keys(SECOND_ROUND).length);
   const [first, second] = await rounds();
   expect(first.interviews).toHaveLength(4);
   expect(second.interviews.sort()).toEqual(Object.keys(SECOND_ROUND).sort());
@@ -303,7 +305,7 @@ test("criteria are recorded beside their proposition, and every change is saved"
   await saved.locator('input[data-c="threshold"]').fill("viele");
   await saved.locator('input[data-c="threshold"]').press("Enter");
   await expect(message(page)).toHaveText(
-    "Die Schwelle wird als atLeast (ganze Zahl ab 1) oder fraction (etwa 2/3) erwartet.",
+    "Die Schwelle wird als atLeast (ganze Zahl ab 1), fraction (etwa 2/3) oder none (niemand) erwartet.",
   );
   await expect(saved.locator('input[data-c="threshold"]')).toHaveValue("3");
 

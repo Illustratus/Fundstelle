@@ -101,10 +101,10 @@ test("the study of the second round is filled", async () => {
   await code(study, "r1-lager", 4, "agreement");
   // Round two: Marketing twice under the stance, Vertrieb once (plus one
   // against, still a suggestion), Einkauf neutral.
-  await code(study, "r2-marketing", 2, "routine", { stance: "supports", question: "m-aufwand" });
-  await code(study, "r2-marketing", 4, "routine", { stance: "supports" });
-  await code(study, "r2-vertrieb", 2, "routine", { stance: "supports", question: "m-frei" });
-  await code(study, "r2-vertrieb", 4, "routine", { stance: "contradicts", reviewed: false });
+  await code(study, "r2-marketing", 2, "routine", { stances: { practice: "supports" }, question: "m-aufwand" });
+  await code(study, "r2-marketing", 4, "routine", { stances: { practice: "supports" } });
+  await code(study, "r2-vertrieb", 2, "routine", { stances: { practice: "supports" }, question: "m-frei" });
+  await code(study, "r2-vertrieb", 4, "routine", { stances: { practice: "contradicts" }, reviewed: false });
   await code(study, "r2-einkauf", 2, "routine");
   await study.patch("/api/propositions/practice", {
     criteria: [
@@ -144,7 +144,10 @@ test("the panel export prints what the panel answers, cell by cell", async () =>
     for (const unit of cell.from.units) expect(printed[1]).toContain(unit.text.trim());
     for (const unit of cell.to.units) expect(printed[2]).toContain(unit.text.trim());
   }
-  expect(de.text).toContain("[widerspricht]");
+  // A stance is named with its proposition.
+  expect(cells.find((one) => one[0] === "Vertrieb")[2]).toContain(
+    "[Proposition 1: Werkzeuge prägen den Arbeitsalltag widerspricht]",
+  );
   expect(de.text).toContain("**[ungeprüft]**");
   // A grid table, at the width the other exports use.
   const table = de.text.split("\n").filter((line) => /^[+|]/.test(line));
@@ -155,7 +158,7 @@ test("the panel export prints what the panel answers, cell by cell", async () =>
   const en = await study.get("/api/export/evaluation-panel.md?category=routine&lang=en");
   expect(en.text).toContain("# Before and after: Anforderungserhebung and Evaluation");
   expect(en.text).toContain("Coding units: 2");
-  expect(en.text).toContain("[contradicts]");
+  expect(gridCells(en.text).find((one) => one[0] === "Vertrieb")[2]).toContain("Proposition 1: Werkzeuge prägen den Arbeitsalltag contradicts]");
   expect(en.text).not.toContain("Kodiereinheiten");
 
   // Without a category: every category with something in it, and only those.
@@ -181,7 +184,7 @@ test("criteria count persons, not statements, in the export as on the API", asyn
   expect(de).toMatch(/- Einkauf\n {4}- „Ich lege Verträge jetzt dort ab/);
   // Both verdicts hold here: said as it is, not settled.
   expect(api.rounds[0].status).toBe("both");
-  expect(de).toContain("Evaluation: beide Urteile erfüllt, die Kriterien widersprechen sich.");
+  expect(de.replace(/\s+/g, " ")).toContain("Evaluation: beide Urteile erfüllt, die Kriterien widersprechen sich.");
   // The one unconfirmed unit is counted where it is evidence.
   expect(falsified.unreviewed).toBe(1);
   expect(de).toContain("Ungeprüfte Belege für dieses Kriterium: 1.");
@@ -190,9 +193,9 @@ test("criteria count persons, not statements, in the export as on the API", asyn
   expect(gridCells(en).find((one) => one[1] === "support")[2]).toBe("2 of 3, 2 required");
   expect(en).toContain("both verdicts met, the criteria contradict each other");
   expect(en).not.toContain("Personen");
-  expect((await study.get("/api/export/evaluation-propositions.md?round=requirements&lang=de")).text).toContain(
-    "Noch keine Proposition trägt Kriterien.",
-  );
+  expect(
+    (await study.get("/api/export/evaluation-propositions.md?round=requirements&lang=de")).text.replace(/\s+/g, " "),
+  ).toContain("Noch nimmt keine Kodiereinheit zu einer Proposition Stellung, und keine trägt Kriterien.");
   expect((await study.get("/api/export/evaluation-propositions.md?round=nowhere")).status).toBe(404);
 });
 

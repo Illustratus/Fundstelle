@@ -7,7 +7,7 @@ import { code, startStudy, twoRounds } from "./evaluation-study.mjs";
 
 /**
  * The second round in the interface: the round switcher of the Auswertung,
- * the stance and guide question on a unit, and the evaluation section.
+ * the stances and guide question on a unit, and the evaluation section.
  *
  * What is checked is what the researcher relies on without looking twice: the
  * analysis opens on the first round, so the numbers already in the thesis are
@@ -42,9 +42,9 @@ test.beforeAll(async () => {
   });
   await code(study, "r1-vertrieb", 2, "routine");
   await code(study, "r1-lager", 2, "routine");
-  await code(study, "r2-marketing", 2, "routine", { stance: "supports", question: "m-aufwand" });
-  await code(study, "r2-marketing", 4, "routine", { stance: "supports" });
-  await code(study, "r2-vertrieb", 2, "routine", { stance: "supports" });
+  await code(study, "r2-marketing", 2, "routine", { stances: { practice: "supports" }, question: "m-aufwand" });
+  await code(study, "r2-marketing", 4, "routine", { stances: { practice: "supports" } });
+  await code(study, "r2-vertrieb", 2, "routine", { stances: { practice: "supports" } });
   await code(study, "r2-einkauf", 2, "routine");
   await study.patch("/api/propositions/practice", {
     criteria: [
@@ -108,7 +108,11 @@ test("before and after shows the compared departments only, with the export's nu
   const marketing = page.locator('#panel-table tr[data-department="Marketing"]');
   await expect(marketing.locator("td").nth(0)).toContainText("Kodiereinheiten: 0");
   await expect(marketing.locator("td").nth(1)).toContainText("Kodiereinheiten: 2");
-  await expect(marketing.locator("td").nth(1).locator(".stance-tag")).toHaveText(["stützt", "stützt"]);
+  // Each stance is named with its proposition; colour is the proposition's dot.
+  await expect(marketing.locator("td").nth(1).locator(".stance-tag")).toHaveText([
+    "Proposition 1: Werkzeuge prägen den Arbeitsalltag stützt",
+    "Proposition 1: Werkzeuge prägen den Arbeitsalltag stützt",
+  ]);
 
   const sum = await page.locator("#panel-sum").textContent();
   expect(sum).toBe("Arbeitsalltag · 1 → 4");
@@ -167,19 +171,23 @@ test("a stance is one key on the chosen unit, lands in the file, and a second pr
   await page.goto(`${study.base}/?lang=de#/code/r2-einkauf`);
   await expect(page.locator(".turn").first()).toBeVisible();
   await page.locator(".mark").first().click();
-  const supports = page.locator('.stance-choice[data-stance-value="supports"]');
+  // The unit is coded under Arbeitsalltag: `p` and `c` act on its proposition.
+  const row = page.locator('.stance-row[data-proposition="practice"]');
+  await expect(row).toHaveAttribute("data-aimed", "true");
+  const supports = row.locator('.stance-choice[data-stance-value="supports"]');
   await expect(supports).toHaveAttribute("aria-pressed", "false");
 
   await page.keyboard.press("p");
   await expect(supports).toHaveAttribute("aria-pressed", "true");
-  expect(JSON.parse(readFileSync(file, "utf8")).codings[0].stance).toBe("supports");
-  await expect(page.locator(".mark .stance-mark")).toHaveText("+");
+  expect(JSON.parse(readFileSync(file, "utf8")).codings[0].stances).toEqual({ practice: "supports" });
+  await expect(page.locator(".mark .stance-mark")).toHaveCount(1);
+  await expect(page.locator(".mark .stance-mark")).toHaveAttribute("title", "Proposition 1: Werkzeuge prägen den Arbeitsalltag: stützt");
 
   await page.keyboard.press("c");
-  await expect(page.locator('.stance-choice[data-stance-value="contradicts"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(row.locator('.stance-choice[data-stance-value="contradicts"]')).toHaveAttribute("aria-pressed", "true");
   await page.keyboard.press("c");
-  await expect(page.locator('.stance-choice[data-stance-value="none"]')).toHaveAttribute("aria-pressed", "true");
-  expect(JSON.parse(readFileSync(file, "utf8")).codings[0]).not.toHaveProperty("stance");
+  await expect(row.locator('.stance-choice[data-stance-value="none"]')).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => "stances" in JSON.parse(readFileSync(file, "utf8")).codings[0]).toBe(false);
 
   // The guide question: `q` goes there, and the choice is written.
   await page.keyboard.press("q");
@@ -197,9 +205,10 @@ test("a unit of the first round has no stance to give", async ({ page }) => {
   await expect(page.locator(".turn").first()).toBeVisible();
   await page.locator(".mark").first().click();
   await expect(page.locator("#detail")).toBeVisible();
-  await expect(page.locator("#detail .stance")).toHaveCount(0);
+  await expect(page.locator("#detail .stances")).toHaveCount(0);
   await expect(page.locator("#detail-question")).toHaveCount(0);
   await page.keyboard.press("p");
+  await page.keyboard.press("2");
   expect(readFileSync(join(study.transcripts, "r1-vertrieb", "coding.json"), "utf8")).not.toContain("stance");
 });
 
@@ -216,8 +225,9 @@ test("the section and the unit detail speak English", async ({ page }) => {
 
   await page.goto(`${study.base}/?lang=en#/code/r2-marketing`);
   await page.locator(".mark").first().click();
-  await expect(page.locator("#detail .stance")).toContainText("Stance");
-  await expect(page.locator('.stance-choice[data-stance-value="supports"]')).toContainText("supports");
+  await expect(page.locator("#detail .stances legend")).toHaveText("Stance per proposition");
+  await expect(page.locator('.stance-choice[data-stance-value="supports"]').first()).toContainText("supports");
+  await expect(page.locator('.stance-choice[data-stance-value="none"]').first()).toHaveText("no bearing");
   await page.keyboard.press("?");
   await expect(page.locator("#keys-sheet")).toContainText("Evaluation round");
 });

@@ -9,8 +9,10 @@
     category, the pre-registered criteria counted in persons, the report by
     guide question, and the read-out list counted before and after;
   - the coding unit detail in the Kodieren tab gets, for an interview of a
-    later round, a stance toggle (`p` supports, `c` contradicts, again to take
-    it back) and the guide question the unit answers;
+    later round, a stance per proposition — supports, no bearing, contradicts,
+    whatever the unit's category (a digit picks the proposition, `p` supports,
+    `c` contradicts, the same key again takes it back) — and the guide
+    question the unit answers;
   - each part carries its export, the way the cross table does.
 
   Everything shown here is what the server computed (`/api/evaluation/…`); the
@@ -53,8 +55,11 @@ const twoRounds = () => ev.rounds.length > 1;
 export function connectEvaluation(hooks) {
   host = hooks;
   document.querySelector("#detail").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-stance]");
-    if (button) setStance(button.dataset.stance || null);
+    const button = event.target.closest("[data-stance-for]");
+    if (!button) return;
+    const coding = selectedUnit();
+    if (coding) aim = { unit: coding.id, proposition: button.dataset.stanceFor };
+    setStance(button.dataset.stanceFor, button.dataset.stance || null);
   });
   document.querySelector("#detail").addEventListener("change", (event) => {
     if (event.target.id === "detail-question") setQuestion(event.target.value || null);
@@ -69,6 +74,25 @@ export function connectEvaluation(hooks) {
       ev.panelCategory = event.target.value;
       drawPanel();
     }
+  });
+  analysis.addEventListener("submit", (event) => {
+    const form = event.target.closest(".untestable-new");
+    if (!form) return;
+    event.preventDefault();
+    const department = form.querySelector('[name="department"]').value;
+    const reason = form.querySelector('[name="reason"]').value.trim();
+    if (!reason) {
+      host.complain(new Error(t("evUntestableReasonMissing")));
+      form.querySelector('[name="reason"]').focus();
+      return;
+    }
+    markUntestable(form.dataset.round, form.dataset.proposition, department, reason);
+  });
+  analysis.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-untestable-remove]");
+    if (!button) return;
+    const shell = button.closest(".untestable");
+    markUntestable(shell.dataset.round, shell.dataset.proposition, button.dataset.department, "");
   });
 }
 
@@ -130,7 +154,7 @@ export function roundSwitchHTML() {
   );
 }
 
-/* Stance and question on a coding unit ------------------------------------- */
+/* Stances and question on a coding unit ----------------------------------- */
 
 /** The round of the interview on screen, when it is a later one; else null. */
 function laterRound() {
@@ -140,29 +164,118 @@ function laterRound() {
   return round;
 }
 
-/** The two fields in the unit detail, for an interview of a later round. */
+const NO_PROPOSITION = "none";
+
+const STANCE_TEXT = { supports: "evStanceSupports", contradicts: "evStanceContradicts" };
+
+/**
+ * The propositions a unit can stand towards, in the order the study lists
+ * them: every one with a claim of its own — not the fallback, not a heading
+ * marked as claiming nothing.
+ */
+function claims() {
+  return Object.entries(host.state.propositions ?? {}).filter(
+    ([id, proposition]) => id !== NO_PROPOSITION && proposition.claim !== false,
+  );
+}
+
+/** The proposition of a unit's category, when it makes a claim; else null. */
+function ownProposition(coding) {
+  const category = host.state.categories.find((one) => one.id === coding.category);
+  const id = category?.proposition ?? NO_PROPOSITION;
+  const proposition = host.state.propositions?.[id];
+  return proposition && id !== NO_PROPOSITION && proposition.claim !== false ? id : null;
+}
+
+/**
+ * A unit's stances as they count — the same reading as the server's
+ * (`lib/stances.js`): `stances`, and the single `stance` of version 0.12 as
+ * one towards the proposition of the unit's category.
+ */
+export function stancesOf(coding) {
+  const own = { ...(coding.stances ?? {}) };
+  if (coding.stance === "supports" || coding.stance === "contradicts") {
+    const target = ownProposition(coding);
+    if (target && !(target in own)) own[target] = coding.stance;
+  }
+  return own;
+}
+
+const selectedUnit = () => host.state.codings.find((one) => one.id === host.state.selected) ?? null;
+
+/*
+  Which proposition `p` and `c` act on. A digit picks one for the unit in hand;
+  without that, it is the proposition of the unit's category — so the common
+  case is one key, as it was — or the only proposition there is. A unit coded
+  under a category that argues nothing has none until a digit says which: a
+  stance towards the wrong proposition would be counted for the wrong claim.
+*/
+let aim = { unit: null, proposition: null };
+
+function aimedAt(coding) {
+  const list = claims();
+  if (aim.unit === coding.id && list.some(([id]) => id === aim.proposition)) return aim.proposition;
+  const own = ownProposition(coding);
+  if (own) return own;
+  return list.length === 1 ? list[0][0] : null;
+}
+
+function stancesHTML(coding) {
+  const list = claims();
+  if (!list.length) return "";
+  const stances = stancesOf(coding);
+  const aimed = aimedAt(coding);
+  const rows = list
+    .map(([id, proposition], index) => {
+      const current = stances[id] ?? "";
+      const digit = list.length > 1 && index < 9 ? String(index + 1) : "";
+      const isAim = id === aimed;
+      const name = proposition.name ?? id;
+      const button = (value, label, key) =>
+        `<button type="button" class="button-quiet stance-choice" data-stance-for="${escapeHTML(id)}"` +
+        ` data-stance="${value}" data-stance-value="${value || "none"}" aria-pressed="${current === value}"` +
+        (isAim && key ? ` aria-keyshortcuts="${key}" title="${escapeHTML(t("evStanceKey", { key }))}"` : "") +
+        `>${label}${isAim && key ? ` <kbd>${key}</kbd>` : ""}</button>`;
+      return (
+        `<div class="stance-row" data-proposition="${escapeHTML(id)}"${isAim ? ' data-aimed="true"' : ""}` +
+        ` style="--stance-color:${escapeHTML(proposition.color ?? "")}">` +
+        `<span class="stance-name">${digit ? `<kbd aria-hidden="true">${digit}</kbd>` : ""}` +
+        `<span class="stance-dot" aria-hidden="true"></span>${escapeHTML(name)}</span>` +
+        `<span class="stance-choices" role="group" aria-label="${escapeHTML(name)}"` +
+        (digit ? ` aria-keyshortcuts="${digit}"` : "") +
+        `>` +
+        button("supports", t("evStanceSupports"), "p") +
+        button("", t("evStanceNone"), "") +
+        button("contradicts", t("evStanceContradicts"), "c") +
+        `</span></div>`
+      );
+    })
+    .join("");
+  // A stance of version 0.12 under a category that argues nothing: kept, shown,
+  // and counted nowhere until somebody says which proposition it meant.
+  const stranded = (coding.stance === "supports" || coding.stance === "contradicts") && !ownProposition(coding)
+    ? `<p class="column-note stance-stranded">${escapeHTML(t("evStanceStranded", { stance: t(STANCE_TEXT[coding.stance]) }))}</p>`
+    : "";
+  return (
+    `<fieldset class="stances"><legend class="field-label">${t("evStances")}</legend>` +
+    rows +
+    `<p class="column-note stance-hint">${escapeHTML(t(list.length > 1 ? "evStancesHint" : "evStancesHintOne"))}</p>` +
+    stranded +
+    `</fieldset>`
+  );
+}
+
+/** The stances and the guide question in the unit detail, for an interview of a later round. */
 export function evaluationDetailHTML(coding) {
   const round = laterRound();
   if (!round) return "";
-  const stance = coding.stance ?? "";
-  const button = (value, label, key) =>
-    `<button type="button" class="button-quiet stance-choice" data-stance="${value}"` +
-    ` data-stance-value="${value || "none"}" aria-pressed="${stance === value}"` +
-    (key ? ` aria-keyshortcuts="${key}" title="${escapeHTML(t("evStanceKey", { key }))}"` : "") +
-    `>${label}${key ? ` <kbd>${key}</kbd>` : ""}</button>`;
-  const stanceRow =
-    `<div class="stance" role="group" aria-label="${escapeHTML(t("evStance"))}">` +
-    `<span class="field-label">${t("evStance")}</span>` +
-    button("supports", t("evStanceSupports"), "p") +
-    button("contradicts", t("evStanceContradicts"), "c") +
-    button("", t("evStanceNone"), "") +
-    `</div>`;
+  const stanceRows = stancesHTML(coding);
 
   const blocks = ev.guides[round] ?? [];
   const items = blocks.flatMap((block) =>
     [...block.checklist, ...block.mandatory].map((item) => ({ ...item, blockName: block.name })),
   );
-  if (!items.length) return stanceRow;
+  if (!items.length) return stanceRows;
   const known = items.some((item) => item.id === coding.question);
   const option = (item) =>
     `<option value="${escapeHTML(item.id)}"${item.id === coding.question ? " selected" : ""}>` +
@@ -184,30 +297,44 @@ export function evaluationDetailHTML(coding) {
       )
       .join("") +
     `</select></label>`;
-  return stanceRow + question;
+  return stanceRows + question;
 }
 
-/** A small sign beside a unit in the margin, so the stances read at a glance. */
+/**
+ * Small signs beside a unit in the margin, one per proposition it stands
+ * towards: the sign says the stance, the dot beside it the proposition, in the
+ * proposition's colour — colour in this tool says the proposition and nothing
+ * else.
+ */
 export function evaluationMarkHTML(coding) {
-  if (!coding.stance || !laterRound()) return "";
-  const supports = coding.stance === "supports";
-  return (
-    `<span class="stance-mark" data-stance-mark="${coding.stance}"` +
-    ` title="${escapeHTML(t(supports ? "evStanceSupports" : "evStanceContradicts"))}">` +
-    `${supports ? "+" : "−"}</span>`
-  );
+  if (!laterRound()) return "";
+  const stances = stancesOf(coding);
+  return claims()
+    .filter(([id]) => stances[id])
+    .map(([id, proposition]) => {
+      const supports = stances[id] === "supports";
+      const said = `${proposition.name ?? id}: ${t(STANCE_TEXT[stances[id]])}`;
+      return (
+        `<span class="stance-mark" data-stance-mark="${stances[id]}" data-proposition="${escapeHTML(id)}"` +
+        ` style="--stance-color:${escapeHTML(proposition.color ?? "")}" title="${escapeHTML(said)}">` +
+        `<span class="stance-dot" aria-hidden="true"></span><span aria-hidden="true">${supports ? "+" : "−"}</span>` +
+        `<span class="visually-hidden">${escapeHTML(said)}</span></span>`
+      );
+    })
+    .join("");
 }
 
 async function changeUnit(fields, said) {
-  const coding = host.state.codings.find((one) => one.id === host.state.selected);
+  const coding = selectedUnit();
   if (!coding) return;
   try {
     const updated = await host.api(
       `/api/interviews/${encodeURIComponent(host.state.current)}/codings/${coding.id}`,
       { method: "PATCH", body: fields },
     );
-    // A key the server took away is absent in the answer, and must go here too.
-    for (const key of Object.keys(fields)) delete coding[key];
+    // A key the server took away is absent in the answer, and must go here
+    // too — the older single stance among them, which a stance write folds in.
+    for (const key of [...Object.keys(fields), "stance"]) delete coding[key];
     Object.assign(coding, updated);
     host.drawAll();
     host.notify(said);
@@ -216,11 +343,12 @@ async function changeUnit(fields, said) {
   }
 }
 
-function setStance(value) {
+function setStance(proposition, value) {
+  const name = host.state.propositions?.[proposition]?.name ?? proposition;
   const said = value
-    ? t("evStanceSet", { stance: t(value === "supports" ? "evStanceSupports" : "evStanceContradicts") })
-    : t("evStanceCleared");
-  return changeUnit({ stance: value }, said);
+    ? t("evStanceSet", { name, stance: t(STANCE_TEXT[value]) })
+    : t("evStanceCleared", { name });
+  return changeUnit({ stances: { [proposition]: value } }, said);
 }
 
 function setQuestion(value) {
@@ -229,17 +357,33 @@ function setQuestion(value) {
 
 /**
  * The keys of the unit detail, with a unit chosen and no passage being coded:
- * `p` and `c` set the stance, and take it back when it is already that one;
- * `q` goes to the question. True when the key was used.
+ * a digit picks the proposition, `p` and `c` set its stance and take it back
+ * when it is already that one; `q` goes to the question. True when the key
+ * was used.
  */
 export function evaluationKey(event) {
   if (!host.state.selected || !laterRound()) return false;
-  const coding = host.state.codings.find((one) => one.id === host.state.selected);
+  const coding = selectedUnit();
   if (!coding) return false;
+  const list = claims();
+  if (/^[1-9]$/.test(event.key) && list.length > 1) {
+    const chosen = list[Number(event.key) - 1];
+    if (!chosen) return false;
+    event.preventDefault();
+    aim = { unit: coding.id, proposition: chosen[0] };
+    host.drawAll();
+    host.notify(t("evStanceAimed", { name: chosen[1].name ?? chosen[0] }));
+    return true;
+  }
   if (event.key === "p" || event.key === "c") {
     event.preventDefault();
+    const target = aimedAt(coding);
+    if (!target) {
+      host.notify(t("evStanceChooseFirst"));
+      return true;
+    }
     const wanted = event.key === "p" ? "supports" : "contradicts";
-    setStance(coding.stance === wanted ? null : wanted);
+    setStance(target, stancesOf(coding)[target] === wanted ? null : wanted);
     return true;
   }
   if (event.key === "q") {
@@ -257,20 +401,34 @@ export function evaluationKey(event) {
 const exportLink = (path, query, label, id) =>
   `<a class="button-quiet"${id ? ` id="${id}"` : ""} href="${host.exportHref(path, query)}" download>${label}</a>`;
 
-function stanceLabel(stance) {
-  if (stance === "supports") return `<span class="stance-tag" data-stance-mark="supports">${t("evStanceSupports")}</span>`;
-  if (stance === "contradicts") return `<span class="stance-tag" data-stance-mark="contradicts">${t("evStanceContradicts")}</span>`;
-  return "";
+/**
+ * The stances a unit carries, each named with its proposition and drawn with
+ * its colour — or, on a board that is about one proposition, that one alone.
+ */
+function stanceTags(unit, only = null) {
+  const propositions = host.state.propositions ?? {};
+  return Object.keys(propositions)
+    .filter((id) => unit.stances?.[id] && (!only || id === only))
+    .map((id) => {
+      const stance = t(STANCE_TEXT[unit.stances[id]]);
+      return (
+        `<span class="stance-tag" data-stance-mark="${unit.stances[id]}" data-proposition="${escapeHTML(id)}"` +
+        ` style="--stance-color:${escapeHTML(propositions[id].color ?? "")}">` +
+        `<span class="stance-dot" aria-hidden="true"></span>` +
+        `${only ? escapeHTML(stance) : escapeHTML(`${propositions[id].name ?? id} ${stance}`)}</span>`
+      );
+    })
+    .join("");
 }
 
 /** One unit as the analysis cites it, with its way back into the transcript. */
-function unitHTML(unit, { department = null } = {}) {
+function unitHTML(unit, { department = null, proposition = null } = {}) {
   return (
     `<div class="citation" style="--mark-color:${host.colorOf(unit.category)}">` +
     `<div class="head-row">` +
     (department ? `<span>${escapeHTML(department)}</span>` : "") +
     `<span>${t("turn")} ${unit.turn}${unit.time ? ` · ${escapeHTML(unit.time)}` : ""}</span>` +
-    stanceLabel(unit.stance) +
+    stanceTags(unit, proposition) +
     (unit.reviewed ? "" : `<span class="open-mark">${t("unreviewed")}</span>`) +
     `<button type="button" class="button-quiet goto" data-passage="${escapeHTML(unit.id)}"` +
     ` data-interview="${escapeHTML(unit.interview)}">${t("viewInTranscript")}</button></div>` +
@@ -406,23 +564,175 @@ const STATUS = {
   open: "evStatusOpen",
 };
 
+const VERDICT = { supported: "evVerdictSupported", falsified: "evVerdictFalsified" };
+
 function thresholdText(threshold) {
+  if (threshold?.none) return t("evThresholdNone");
   if (threshold?.atLeast !== undefined) return t("evThresholdAtLeast", { n: threshold.atLeast });
   return t("evThresholdFraction", { fraction: String(threshold?.fraction ?? "") });
 }
 
-function personsHTML(list, empty) {
+function personsHTML(list, empty, proposition) {
   if (!list.length) return `<p class="column-note">${empty}</p>`;
   return list
-    .map(
-      (person) =>
-        `<details class="person"><summary>${escapeHTML(person.department)} · ${person.units.length}</summary>` +
-        (person.units.length
-          ? `<div class="citations">${person.units.map((unit) => unitHTML(unit)).join("")}</div>`
+    .map((person) => {
+      // What a person also said against stands once, with the split cases above.
+      const units = person.units;
+      return (
+        `<details class="person" data-department="${escapeHTML(person.department)}">` +
+        `<summary>${escapeHTML(person.department)} · ${person.units.length}` +
+        (person.opposite?.length ? ` <span class="split-mark">${escapeHTML(t("evAlsoOpposite"))}</span>` : "") +
+        `</summary>` +
+        (units.length
+          ? `<div class="citations">${units.map((unit) => unitHTML(unit, { proposition })).join("")}</div>`
           : `<p class="column-note">${t("evDeviantNothing")}</p>`) +
-        `</details>`,
-    )
+        `</details>`
+      );
+    })
     .join("");
+}
+
+/** What a criterion asks, in one line. */
+function ruleText(criterion) {
+  const categoryName = (id) => host.state.categories.find((one) => one.id === id)?.name ?? id;
+  // Decided by hand from outside the interviews: stance, category and base say nothing.
+  if (criterion.kind === "manual" && !criterion.stance && !criterion.categories?.length) {
+    return t("evCriterionRuleOutside", { round: roundName(criterion.round), decision: t("evByHandRule") });
+  }
+  return t("evCriterionRule", {
+    round: roundName(criterion.round),
+    stance: criterion.stance ? t("evRuleStance", { stance: t(STANCE_TEXT[criterion.stance]) }) : t("evAnyStance"),
+    categories: criterion.categories?.length
+      ? t("evOnlyCategories", { categories: criterion.categories.map(categoryName).join(", ") })
+      : t("evAnyCategory"),
+    base: t(criterion.base === "testable" ? "evBaseTestable" : "evBaseAll"),
+    decision: criterion.kind === "manual" ? t("evByHandRule") : t("evThresholdRule", { threshold: thresholdText(criterion.threshold) }),
+  });
+}
+
+function criterionHTML(proposition, criterion) {
+  const manual = criterion.kind === "manual";
+  const none = !manual && Boolean(criterion.threshold?.none);
+  let count;
+  if (manual) {
+    count =
+      `<strong class="count">${escapeHTML(
+        criterion.count == null
+          ? t("evNoInterviewEvidence")
+          : t("evCountWithEvidence", { count: criterion.count, persons: criterion.persons }),
+      )}</strong> · ${t("evByHand")}`;
+  } else if (none) {
+    count =
+      `<strong class="count">${escapeHTML(t("evCountNaming", { count: criterion.count, persons: criterion.persons }))}</strong>` +
+      ` · ${escapeHTML(t("evAllowedNobody"))} · ${t(criterion.met ? "evMet" : "evNotMet")}`;
+  } else {
+    count =
+      `<strong class="count">${escapeHTML(t("evCountOf", { count: criterion.count, persons: criterion.persons }))}</strong>` +
+      ` · ${escapeHTML(t("evRequired", { n: criterion.required }))} · ${t(criterion.met ? "evMet" : "evNotMet")}`;
+  }
+  const headings = manual
+    ? ["evWithEvidence", "evWithoutEvidence"]
+    : none
+      ? ["evNaming", "evNotNaming"]
+      : ["evMeeting", "evDeviant"];
+  return (
+    `<div class="criterion" data-criterion="${escapeHTML(criterion.id)}" data-met="${criterion.met}"` +
+    ` data-kind="${manual ? "manual" : none ? "none" : "count"}">` +
+    `<p class="criterion-head"><span class="verdict">${t(VERDICT[criterion.verdict])}</span> ` +
+    `${escapeHTML(criterion.text ?? "")}</p>` +
+    `<p class="column-note">${escapeHTML(ruleText(criterion))}</p>` +
+    `<p class="criterion-count">${count}</p>` +
+    (criterion.unreviewed
+      ? `<p class="still-open-line" role="status">${escapeHTML(t("evUnreviewed", { n: criterion.unreviewed }))}</p>`
+      : "") +
+    (criterion.untestable?.length
+      ? `<p class="column-note">${escapeHTML(t("evLeftOut", { departments: criterion.untestable.map((one) => one.department).join(", ") }))}</p>`
+      : "") +
+    (criterion.count == null
+      ? ""
+      : `<div class="criterion-persons"><div><h6>${t(headings[0])}</h6>${personsHTML(criterion.meeting, t("evNobody"), proposition.id)}</div>` +
+        `<div><h6>${t(headings[1])}</h6>${personsHTML(criterion.deviant, t("evNobody"), proposition.id)}</div></div>`) +
+    `</div>`
+  );
+}
+
+/** Who the proposition cannot be checked with in a round, and the way to say so. */
+function untestableHTML(proposition, round) {
+  const marked = new Set(round.untestable.map((one) => one.department));
+  const persons = [...round.tally.supports, ...round.tally.contradicts, ...round.tally.neither];
+  const open = [...new Set(persons)].filter((one) => !marked.has(one)).sort((a, b) => a.localeCompare(b));
+  const list = round.untestable.length
+    ? `<ul class="untestable-list">` +
+      round.untestable
+        .map(
+          (one) =>
+            `<li data-department="${escapeHTML(one.department)}"><span class="who">${escapeHTML(one.department)}</span> ` +
+            `<span class="why">${escapeHTML(one.reason)}</span>` +
+            (one.present ? "" : ` <span class="column-note">${escapeHTML(t("evUntestableAbsent"))}</span>`) +
+            ` <button type="button" class="button-quiet" data-untestable-remove data-department="${escapeHTML(one.department)}"` +
+            ` aria-label="${escapeHTML(t("evUntestableRemove", { department: one.department }))}">×</button></li>`,
+        )
+        .join("") +
+      `</ul>`
+    : `<p class="column-note">${t("evUntestableNone")}</p>`;
+  const form = open.length
+    ? `<form class="untestable-new" data-round="${escapeHTML(round.round)}" data-proposition="${escapeHTML(proposition.id)}">` +
+      `<select name="department" aria-label="${escapeHTML(t("department"))}">` +
+      open.map((one) => `<option value="${escapeHTML(one)}">${escapeHTML(one)}</option>`).join("") +
+      `</select>` +
+      `<input type="text" name="reason" autocomplete="off" aria-label="${escapeHTML(t("evUntestableReason"))}"` +
+      ` placeholder="${escapeHTML(t("evUntestableReasonPlaceholder"))}">` +
+      `<button type="submit" class="button-quiet">${t("evUntestableMark")}</button></form>`
+    : "";
+  return (
+    `<div class="untestable" data-round="${escapeHTML(round.round)}" data-proposition="${escapeHTML(proposition.id)}">` +
+    `<h6>${t("evUntestableTitle")}</h6>${list}${form}</div>`
+  );
+}
+
+function roundHTML(proposition, round) {
+  const tally = (key, label) =>
+    `<div data-stance-tally="${key}"><dt>${t(label)}</dt><dd><span class="tally-count">${round.tally[key].length}</span>` +
+    (round.tally[key].length ? ` · ${escapeHTML(round.tally[key].join(", "))}` : "") +
+    `</dd></div>`;
+  return (
+    `<section class="proposition-round" data-round="${escapeHTML(round.round)}">` +
+    `<p class="round-status" data-round="${escapeHTML(round.round)}" data-status="${round.status}">` +
+    `${escapeHTML(roundName(round.round))}: <strong>${t(STATUS[round.status])}</strong> · ` +
+    `${escapeHTML(t("evPersonsInRound", { n: round.persons }))}` +
+    (round.testable !== round.persons ? ` · ${escapeHTML(t("evTestableInRound", { n: round.testable }))}` : "") +
+    `</p>` +
+    round.pending
+      .map((verdict) => `<p class="column-note pending" data-pending="${verdict}">${escapeHTML(t("evPending", { verdict: t(STATUS[verdict]) }))}</p>`)
+      .join("") +
+    `<dl class="stance-tally">` +
+    tally("supports", "evStanceSupports") +
+    tally("contradicts", "evStanceContradicts") +
+    tally("neither", "evStanceNone") +
+    `</dl>` +
+    (round.uncoded.length
+      ? `<p class="column-note">${escapeHTML(t("evUncoded", { departments: round.uncoded.join(", ") }))}</p>`
+      : "") +
+    (round.split.length
+      ? `<div class="split" role="note"><h6>${t("evSplitTitle")}</h6>` +
+        `<p class="column-note">${t("evSplitLead")}</p>` +
+        round.split
+          .map(
+            (person) =>
+              `<details class="person" data-department="${escapeHTML(person.department)}">` +
+              `<summary>${escapeHTML(person.department)} · ${escapeHTML(
+                t("evSplitCount", { contradicts: person.contradicts.length, supports: person.supports.length }),
+              )}</summary>` +
+              `<div class="citations">${[...person.contradicts, ...person.supports]
+                .map((unit) => unitHTML(unit, { proposition: proposition.id }))
+                .join("")}</div></details>`,
+          )
+          .join("") +
+        `</div>`
+      : "") +
+    untestableHTML(proposition, round) +
+    `</section>`
+  );
 }
 
 async function drawPropositions() {
@@ -435,7 +745,6 @@ async function drawPropositions() {
     root.innerHTML = `<p class="empty-state">${escapeHTML(error.message)}</p>`;
     return;
   }
-  const categoryName = (id) => host.state.categories.find((one) => one.id === id)?.name ?? id;
   const heading =
     `<div class="section-heading"><h4>${t("evPropositionsTitle")}</h4>` +
     exportLink("/api/export/evaluation-propositions.md", "", t("evExportPropositions"), "propositions-export") +
@@ -452,48 +761,37 @@ async function drawPropositions() {
           `<article class="proposition-board" data-proposition="${escapeHTML(proposition.id)}"` +
           ` style="--mark-color:${escapeHTML(proposition.color ?? "")}">` +
           `<h5>${escapeHTML(proposition.name)}</h5>` +
-          proposition.rounds
-            .map(
-              (round) =>
-                `<p class="round-status" data-round="${escapeHTML(round.round)}" data-status="${round.status}">` +
-                `${escapeHTML(roundName(round.round))}: <strong>${t(STATUS[round.status])}</strong> · ` +
-                `${escapeHTML(t("evPersonsInRound", { n: round.persons }))}</p>` +
-                (round.uncoded.length
-                  ? `<p class="column-note">${escapeHTML(t("evUncoded", { departments: round.uncoded.join(", ") }))}</p>`
-                  : ""),
-            )
-            .join("") +
-          proposition.criteria
-            .map(
-              (criterion) =>
-                `<div class="criterion" data-criterion="${escapeHTML(criterion.id)}" data-met="${criterion.met}">` +
-                `<p class="criterion-head"><span class="verdict">${t(criterion.verdict === "supported" ? "evVerdictSupported" : "evVerdictFalsified")}</span> ` +
-                `${escapeHTML(criterion.text ?? "")}</p>` +
-                `<p class="column-note">${escapeHTML(
-                  t("evCriterionRule", {
-                    round: roundName(criterion.round),
-                    categories: criterion.categories.map(categoryName).join(", "),
-                    stance: criterion.stance
-                      ? t(criterion.stance === "supports" ? "evStanceSupports" : "evStanceContradicts")
-                      : t("evAnyStance"),
-                    threshold: thresholdText(criterion.threshold),
-                  }),
-                )}</p>` +
-                `<p class="criterion-count"><strong class="count">${escapeHTML(
-                  t("evCountOf", { count: criterion.count, persons: criterion.persons }),
-                )}</strong> · ${escapeHTML(t("evRequired", { n: criterion.required }))} · ` +
-                `${t(criterion.met ? "evMet" : "evNotMet")}</p>` +
-                (criterion.unreviewed
-                  ? `<p class="still-open-line" role="status">${escapeHTML(t("evUnreviewed", { n: criterion.unreviewed }))}</p>`
-                  : "") +
-                `<div class="criterion-persons"><div><h6>${t("evMeeting")}</h6>${personsHTML(criterion.meeting, t("evNobody"))}</div>` +
-                `<div><h6>${t("evDeviant")}</h6>${personsHTML(criterion.deviant, t("evNobody"))}</div></div>` +
-                `</div>`,
-            )
-            .join("") +
+          proposition.rounds.map((round) => roundHTML(proposition, round)).join("") +
+          (proposition.criteria.length
+            ? proposition.criteria.map((criterion) => criterionHTML(proposition, criterion)).join("") +
+              ["supported", "falsified"]
+                .filter((verdict) => proposition.criteria.filter((one) => one.verdict === verdict).length > 1)
+                .map(
+                  (verdict) =>
+                    `<p class="column-note combine-note">${escapeHTML(
+                      t(proposition.combine?.[verdict] === "any" ? "evCombineAny" : "evCombineAll", {
+                        verdict: t(VERDICT[verdict]),
+                      }),
+                    )}</p>`,
+                )
+                .join("")
+            : `<p class="column-note">${t("evNoCriteria")}</p>`) +
           `</article>`,
       )
       .join("");
+}
+
+async function markUntestable(round, proposition, department, reason) {
+  try {
+    await host.api(`/api/rounds/${encodeURIComponent(round)}/untestable`, {
+      method: "PATCH",
+      body: { proposition, department, reason },
+    });
+    await drawPropositions();
+    host.notify(t(reason ? "evUntestableMarked" : "evUntestableCleared", { department }));
+  } catch (error) {
+    host.complain(error);
+  }
 }
 
 async function drawTags() {
@@ -565,6 +863,7 @@ async function drawTags() {
 
 /* For the key sheet: the stance keys, listed only where they work. */
 export const EVALUATION_KEYS = [
+  [["1", "…", "9"], "evKeyAim"],
   [["p"], "evKeySupports"],
   [["c"], "evKeyContradicts"],
   [["q"], "evKeyQuestion"],

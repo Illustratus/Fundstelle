@@ -2844,7 +2844,10 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .guide-editor textarea,
 .guide-editor select,
 .criterion input[type="text"],
-.criterion select {
+.criterion select,
+.criteria-combine select,
+.untestable-new input[type="text"],
+.untestable-new select {
   background: var(--paper);
   border: 1px solid var(--line-strong);
   border-radius: 2px;
@@ -2913,6 +2916,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .criterion-row .button-quiet { margin-left: auto; padding: 0 .3rem; line-height: 1.6; }
 .criterion-field { display: grid; gap: .1rem; min-width: 0; }
 .criterion-field input[data-c="threshold"] { width: 5rem; }
+.criterion-field input[data-c="threshold"]:disabled { opacity: .55; }
 .criterion-field.wide input { width: 100%; }
 .criterion-categories {
   border: none;
@@ -2927,7 +2931,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .criterion-category.child { padding-left: 1rem; }
 
 @media print {
-  .guide-editor, .criteria { display: none !important; }
+  .guide-editor, .criteria, .untestable-new, [data-untestable-remove] { display: none !important; }
 }
 
 /* --- interview mode ------------------------------------------------------
@@ -3260,17 +3264,61 @@ body:has(#view-code.live:not([hidden])) #coding-bar { display: none; }
 .round-switch .field { min-width: 14rem; }
 .round-switch .column-note { margin: 0 0 .35rem; }
 
-.detail .stance { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
-.detail .stance .field-label { flex-basis: 100%; }
+/* A stance per proposition. Colour says the proposition and nothing else — the
+   dot beside a name, the dot beside a sign; the stance itself is said in words
+   and signs, in ink, so supports and contradicts never become green and red. */
+.stance-dot {
+  display: inline-block;
+  width: .55rem;
+  height: .55rem;
+  border-radius: 50%;
+  background: var(--stance-color, var(--line-strong));
+  margin-right: .3rem;
+  vertical-align: baseline;
+  flex: none;
+}
+.detail .stances { border: 0; padding: 0; margin: .4rem 0 .6rem; min-width: 0; }
+.detail .stances legend { padding: 0; margin-bottom: .25rem; }
+.stance-row {
+  display: flex;
+  gap: .35rem .6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: .2rem .35rem;
+  margin: 0 -.35rem;
+  border-left: 2px solid transparent;
+}
+.stance-row[data-aimed="true"] { border-left-color: var(--stance-color, var(--ink)); background: var(--paper); }
+.stance-name { flex: 1 1 10rem; font-size: .82rem; display: flex; align-items: center; min-width: 0; }
+.stance-name kbd { font-size: .62rem; opacity: .7; margin-right: .35rem; }
+.stance-choices { display: flex; gap: .25rem; flex-wrap: wrap; }
+.stance-choice { font-size: .78rem; padding: 0 .4rem; }
 .stance-choice kbd { font-size: .62rem; opacity: .7; margin-left: .2rem; }
 .stance-choice[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); font-weight: 600; }
-.stance-choice[data-stance-value="supports"][aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-.stance-choice[data-stance-value="contradicts"][aria-pressed="true"] { border-color: var(--warning); color: var(--warning); }
+.stance-hint, .stance-stranded { margin: .3rem 0 0; }
+.stance-stranded { color: var(--warning); }
 
-.stance-mark { margin-left: .3rem; font-weight: 700; }
-[data-stance-mark="supports"] { color: var(--accent); }
-[data-stance-mark="contradicts"] { color: var(--warning); }
-.stance-tag { font-weight: 600; }
+.stance-mark { margin-left: .3rem; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.stance-mark .stance-dot { width: .45rem; height: .45rem; margin-right: .1rem; }
+.stance-tag { font-weight: 600; color: var(--ink); display: inline-flex; align-items: center; }
+
+.proposition-round { margin-top: .3rem; }
+.stance-tally { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; margin: .4rem 0; font-size: .82rem; }
+.stance-tally > div { display: contents; }
+.stance-tally dt { color: var(--ink-soft); }
+.stance-tally dd { margin: 0; }
+.tally-count { font-family: var(--mono); }
+.split { border-left: 2px solid var(--warning); padding-left: .6rem; margin: .5rem 0; }
+.split-mark { font-size: .7rem; color: var(--warning); }
+.untestable { margin: .4rem 0 .6rem; }
+.untestable-list { margin: .2rem 0 .4rem; padding-left: 1rem; font-size: .82rem; }
+.untestable-list .who { font-weight: 600; }
+.untestable-list .button-quiet { padding: 0 .3rem; line-height: 1.5; }
+.untestable-new { display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; }
+.untestable-new input[type="text"] { flex: 1 1 14rem; min-width: 0; }
+.pending, .combine-note { margin: .2rem 0; }
+.criterion-claim { display: block; margin: .4rem 0 .2rem; font-size: .82rem; }
+.criteria-combine { margin: .2rem 0 .4rem; }
 
 #evaluation-part:not(:empty) { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
 #evaluation-part > section { margin-top: 1.6rem; }

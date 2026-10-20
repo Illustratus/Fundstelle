@@ -6,6 +6,74 @@ surface, so a change that would make an existing study unreadable is a major
 one. Nothing here has needed that yet — every earlier file shape is still read
 where it lies.
 
+## Unreleased
+
+### Changed
+
+- **Eine Kodiereinheit nimmt zu jeder Proposition einzeln Stellung, unabhängig von ihrer
+  Kategorie.** Bisher trug eine Einheit eine einzige Haltung, gemeint als Haltung zur Proposition
+  ihrer eigenen Kategorie, und ein Kriterium zählte Kategorie und Haltung zusammen. Das bildet eine
+  Kopplung ab, die eine Auswertung nach Mayring gerade nicht macht: dort wird auf dieselben
+  Einheiten neben dem nominalen Kategoriensystem ein ordinales angewendet, je Proposition mit den
+  Stufen *stützt*, *kein Bezug* und *widerspricht*. Eine Aussage der Kategorie Transfer, die an
+  keiner Proposition hängt, kann eine Proposition stützen, und eine Einheit kann zwei betreffen.
+
+  *In der Datei.* `stances` an der Kodiereinheit, je Proposition (`{"konversation":
+  "supports"}`). Was nicht genannt ist, hat keinen Bezug, und das wird nie geschrieben: eine
+  Einheit ohne Stufe steht Zeile für Zeile da wie zuvor. Das Feld `stance` aus 0.12 wird weiter
+  gelesen, als Stufe zur Proposition der eigenen Kategorie, und gezählt. Geschrieben wird es nicht
+  mehr; wird die Stufe oder die Kategorie einer solchen Einheit geändert, wandert es nach
+  `stances`, mit der Bedeutung, die es hatte. Ein `PATCH` nennt nur, was sich ändert, `null` nimmt
+  eine Stufe zurück. `stance` wird über die Schnittstelle weiter angenommen und als `stances`
+  geschrieben.
+
+  *Was Stellung nehmen kann.* Nur eine Proposition mit eigener Aussage. Eine Studie, die neben der
+  Auffangposition eine eigene Überschrift für das aus dem Erkenntnisinteresse Abgeleitete führt,
+  markiert sie mit `claim: false` (im Kodieren-Reiter unter der Proposition, „Trägt eine eigene
+  Aussage"). Verweigert wird das, solange Kriterien oder Stufen an ihr hängen, und eine
+  Proposition, zu der Einheiten Stellung nehmen, lässt sich nicht auflösen.
+
+  *Im Kodieren-Reiter.* Die Einheit einer späteren Runde zeigt je Proposition eine Zeile mit
+  *stützt*, *kein Bezug* und *widerspricht*. `p` und `c` wirken wie bisher auf die Proposition der
+  eigenen Kategorie, eine Ziffer wählt eine andere, dieselbe Taste nimmt die Stufe zurück. Hängt die
+  Kategorie an keiner Proposition, wartet `p` auf die Ziffer, statt eine zu raten. Am Rand steht je
+  Proposition ein Zeichen, `+` oder `−`, mit einem Punkt in der Farbe der Proposition. Die Stufe
+  selbst hat keine Farbe mehr: Farbe sagt im Werkzeug nur, welche Proposition gemeint ist.
+
+### Added
+
+- **Wer bei einer Proposition nicht prüfbar ist, wird mit Begründung ausgenommen.** Eine Person,
+  die das System in der Nutzungsphase nicht benutzt hat, kann zu einer Mehrbelastung durch das
+  Dokumentieren nichts sagen, und sie als nicht stützend zu zählen, hieße eine Lücke als Befund zu
+  zählen. Je Runde, Proposition und Bereich, mit kurzer Begründung, in `study.json` und auf dem
+  Propositionsboard der Auswertung, mit der Tastatur gesetzt und zurückgenommen
+  (`PATCH /api/rounds/{id}/untestable`).
+
+- **Kriterien zählen Personen nach ihrer Stufe zur Proposition, aus jeder Kategorie.** Ein
+  Kategoriefilter bleibt möglich. Dazu kommen, was eine vorab festgelegte Operationalisierung
+  braucht:
+  - die *Bezugsgröße*, alle Befragten der Runde oder nur die, bei denen die Proposition prüfbar ist;
+  - die Schwelle *niemand* (`{ "none": true }`) neben „mindestens" und „Anteil, aufgerundet";
+  - Kriterien *von Hand* (`kind: "manual"`) für das, was das Werkzeug nicht rechnen kann, etwa
+    Kriterien aus der Commit-Historie oder „die am häufigsten genannte Ursache". Sie zeigen ihren
+    Wortlaut und die Belege, die ihre Stufe auswählt, und setzen keinen Status. Ein Urteil, das an
+    ihnen hängt, sagt das, statt es zu entscheiden;
+  - je Urteil, ob *alle* Kriterien erfüllt sein müssen oder *eines* genügt (`combine`).
+
+  Eine Person mit stützenden und widersprechenden Einheiten zählt für beide Stufen. Weil ein
+  Widerspruch schwerer wiegt, steht sie bei den abweichenden Fällen, gleich was der Status sagt.
+  Das Propositionsboard und `evaluation-propositions.md` zeigen je Runde die Stufen in Personen,
+  wer beides sagt, wer nicht prüfbar ist und warum, und je Kriterium Bezugsgröße und Entscheidung.
+  Eine Proposition erscheint dort auch ohne Kriterien, mit ihren Stufen. Kriterien aus 0.12 werden
+  gelesen und geschrieben wie zuvor.
+
+- **Stufen aus Memos übernehmen.** `tools/migrate-stances.mjs` liest Sätze der Form „Stufe je
+  Proposition: Konversationsprinzip stützt." aus den Memos und schreibt sie über die
+  HTTP-Schnittstelle nach `stances`. Memo und Prüfstatus bleiben, wie sie sind. `--dry-run` zeigt
+  zuerst, was geschrieben würde; ein Name, der keine oder mehrere Propositionen meint, ein Satz,
+  der sich nicht lesen lässt, oder eine Einheit, die schon anders steht, hält den ganzen Lauf vor
+  dem ersten Schreiben an. „(Grenzfall)" wird gemeldet, die Stufe gilt.
+
 ## 0.12.0 — 2026-10-06
 
 ### Added

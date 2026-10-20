@@ -83,8 +83,8 @@ test("once a second round is imported, the first round's numbers stay exactly as
   }
   await study.post("/api/rounds", { name: "Evaluation", id: "evaluation" });
   await study.post("/api/rounds/evaluation/assign", { interviews: Object.keys(SECOND_ROUND) });
-  await code(study, "r2-vertrieb", 2, "routine", { stance: "supports" });
-  await code(study, "r2-marketing", 2, "routine", { stance: "supports" });
+  await code(study, "r2-vertrieb", 2, "routine", { stances: { practice: "supports" } });
+  await code(study, "r2-marketing", 2, "routine", { stances: { practice: "supports" } });
   await code(study, "r2-marketing", 4, "agreement");
   const requirementId = (await study.get("/api/requirements")).json.requirements[0].id;
   const later = (await study.get("/api/interviews/r2-vertrieb")).json.codings;

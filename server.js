@@ -35,7 +35,12 @@ import {
   shiftedSession,
   timelineOf,
 } from "./lib/import-sections.js";
-import { checkCriteriaFor, checkQuestionFor, evaluationRoutes } from "./lib/evaluation-routes.js";
+import {
+  checkCriteriaFor,
+  checkQuestionFor,
+  evaluationRoutes,
+  stancesOn,
+} from "./lib/evaluation-routes.js";
 import { guideRoutes } from "./lib/guide-routes.js";
 import { evaluationExportRoutes } from "./lib/evaluation-export-routes.js";
 import {
@@ -880,20 +885,28 @@ const server = createServer(async (request, response) => {
     }
     const proposition = path.match(/^\/api\/propositions\/([^/]+)$/);
     if (proposition && request.method === "PATCH") {
+      const id = decodeURIComponent(proposition[1]);
       const fields = await body(request);
       /* Criteria name rounds and categories, which this file does not hold;
          they are checked against the study before the store writes them. */
       if ("criteria" in fields && fields.criteria !== null) {
         fields.criteria = await checkCriteriaFor(fields.criteria, { study, store, seedLanguage });
       }
-      return send(
-        response,
-        200,
-        await store.updateProposition(decodeURIComponent(proposition[1]), fields),
-      );
+      /* A heading that units still stand towards cannot be declared one that
+         claims nothing; how many do is in the coding files. */
+      const counted = fields.claim === false
+        ? await stancesOn(id, { store, allInterviews, seedLanguage })
+        : 0;
+      return send(response, 200, await store.updateProposition(id, fields, { stancesOn: counted }));
     }
     if (proposition && request.method === "DELETE") {
-      await store.removeProposition(decodeURIComponent(proposition[1]));
+      const id = decodeURIComponent(proposition[1]);
+      /* Dissolving moves categories to the fallback; a stance towards the
+         dissolved heading would have nowhere to go, so it is refused while
+         units carry one. */
+      const counted = await stancesOn(id, { store, allInterviews, seedLanguage });
+      if (counted) throw Object.assign(fail("errorPropositionInUse", { count: counted }), { status: 409 });
+      await store.removeProposition(id);
       return send(response, 204, "");
     }
 
