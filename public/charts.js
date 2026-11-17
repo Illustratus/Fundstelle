@@ -608,6 +608,15 @@ export function stackedBars({
       const centre = x + width / 2;
       x += full;
 
+      /* Wider than its own part: after the total. A badge allowed to lie across
+         its neighbour covered short bars whole — two badges side by side on a
+         bar of sixteen hid every colour they were meant to name, and a row was
+         half badges and half tail with no telling why. On its own part or not
+         on the bar at all is a rule a reader can see. */
+      if (badge > width) {
+        tail.push({ value, at: k });
+        return;
+      }
       // Wider than the whole bar: it cannot lie on it at all.
       if (badge > barEnd - LABEL) {
         tail.push({ value, at: k });
@@ -2428,12 +2437,16 @@ export function blockedVenn(rows, operations, departments, t) {
 
   const EDGE = 10;
   const PAD = 18; // between a cell's writing and the cell's own bounds
-  const SIZE = 9.5;
+  /* Twelve, because this figure is printed across a hundred and sixty
+     millimetres of text, two thirds of the width it is drawn at: at nine and a
+     half the titles came out at six points, under what a reader holds a page
+     for. The cards grow downward, which is where a figure on a page has room. */
+  const SIZE = 12;
   const LINE = Math.round(SIZE * 1.32 * 10) / 10;
   const CARD = 5; // between a card's edge and the title written on it
   const GAP = 5; // between two cards
-  const NAME = 11;
-  const PLATE = 16; // the sheet a set's name is written on
+  const NAME = 13;
+  const PLATE = 18; // the sheet a set's name is written on
   /* How far the pie beside a requirement reaches. Eleven, because this figure
      is printed across a hundred and sixty-two millimetres of text and eight came
      out as three and a half of them for five pieces — under what a printer can
@@ -2447,7 +2460,7 @@ export function blockedVenn(rows, operations, departments, t) {
      the next title. A card also gives the writing the sheet to stand on, which
      is the one ground in this figure that is the same everywhere — the washes
      under it are one, two or three deep. */
-  const MIN = 190;
+  const MIN = 210;
   /* And what a card may grow to. One title in the band across the foot took the
      whole width of the sheet, which put its pie a hand's breadth from the words
      it belongs to. A card is a line of reading, not a measure of the room. */
@@ -3006,28 +3019,24 @@ export function stylesheet(theme = "light") {
     `.reach{stroke:${c.sheet};stroke-width:1}` +
     `.reach-sole{fill:none;stroke:${c.inkSoft};stroke-width:1}` +
     `.floor{stroke:${c.line}}` +
-    /* The two set diagrams of the blocked operations. One circle per operation,
-       each washed in its own hue at a weight that lets two and three of them lie
+    /* The set diagram of the blocked operations. One frame per operation, each
+       washed in the same grey at a weight that lets two and three of them lie
        over one another and still be written on: the overlaps darken by
        themselves, which is what makes a Venn diagram legible without a key, and
        the deepest of them — the requirement that stops all three — comes out
        the darkest thing on the page, which is the reading this catalog most
-       needs. Blue, green and amber, the three of the series that stay apart
-       from one another when they are laid over each other. */
-    `.op-wash{fill-opacity:${theme === "dark" ? ".3" : ".22"};stroke:none}` +
-    `.op-edge{fill:none;stroke-width:1.4}` +
-    /* Named on both classes rather than on the set alone. A set's colour is a
-       fill on its wash and a stroke on its rim, and written as one rule for the
-       set it also filled the rim: the same weight as `.op-edge{fill:none}` and
-       later in the sheet, so three hairline circles came out as three solid
-       discs, each hiding the one drawn before it. */
-    [0, 2, 3]
-      .flatMap((series, at) => [
-        `.op-wash.op-set-${at + 1}{fill:${c.series[series]}}`,
-        `.op-edge.op-set-${at + 1}{stroke:${c.series[series]}}`,
-      ])
-      .join("") +
-    `.op-name{fill:${c.ink};font-size:11px;font-weight:600;font-family:${FONTS.sans};` +
+       needs. */
+    /* Neutral since the department colours came into this figure. The pies on
+       the cards are painted in them, and three sets in blue, green and amber
+       were three departments a second time: „Ablage" in the colour of the first
+       department and „Abruf" in the colour of the third. And where two and
+       three hues lay over one another they mixed to olive and grey that no key
+       explained. One grey, laid once, twice or three times, still darkens with
+       every set a zone belongs to, which is all the blend was ever for; the
+       sets are told apart by the name on their own frame. */
+    `.op-wash{fill:${c.ink};fill-opacity:${theme === "dark" ? ".12" : ".06"};stroke:none}` +
+    `.op-edge{fill:none;stroke:${c.inkSoft};stroke-width:1.4}` +
+    `.op-name{fill:${c.ink};font-size:13px;font-weight:600;font-family:${FONTS.sans};` +
       `letter-spacing:.02em}` +
     /* The count of a region, in figures, because it is a number and the reader
        is about to write it down. Full ink: it stands on three washes laid over
@@ -3042,14 +3051,15 @@ export function stylesheet(theme = "light") {
        ink this tool keeps for „nothing is here". */
     `.op-slice{stroke:${c.sheet};stroke-width:.6}` +
     /* A piece nobody filled still has to be counted, because the pieces
-       together are how many departments the study has. A hairline alone came to
-       a tenth of a millimetre where this figure is printed, which no press
-       holds, so it is a fill with an outline over it: the grey carries the
-       piece at any size and the line only sharpens its edge. The ink kept for „nothing is here“ rather than in a rule colour,
-       which came to 1.7 against the card and could not be made out. */
-    `.op-slice.none{fill:${c.line};stroke:${c.inkFaint};stroke-width:.6}` +
-    `.op-empty{fill:${c.ink};font-size:9.5px;font-style:italic;font-family:${FONTS.sans}}` +
-    `.op-whole{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
+       together are how many departments the study has. So it is a fill, and a
+       fill deep enough to stand off the card on its own: the rule grey did not,
+       and the dark outline it was given to make up for that drew a ring round
+       every empty piece that the coloured ones do not have. The quiet ink at a
+       third of its weight carries the piece by itself, and it is cut from its
+       neighbours by the same white seam as every other piece. */
+    `.op-slice.none{fill:${c.inkFaint};fill-opacity:.35;stroke:${c.sheet};stroke-width:.6}` +
+    `.op-empty{fill:${c.ink};font-size:12px;font-style:italic;font-family:${FONTS.sans}}` +
+    `.op-whole{fill:${c.inkSoft};font-size:11.5px;font-family:${FONTS.sans};letter-spacing:.04em}` +
     c.series.map((colour, index) => `.op-slice.series-s${index + 1}{fill:${colour}}`).join("") +
     /* One card per requirement. Set as running text, four titles in a zone were
        four sentences with nothing between them but a gap, and a title that
@@ -3059,13 +3069,13 @@ export function stylesheet(theme = "light") {
     `.op-card{fill:${c.sheet};stroke:${c.line};stroke-width:1}` +
     /* The sheet a set's name is written on, so its frame breaks for the word
        rather than running under it. */
-    `.op-plate{fill:${c.sheet};stroke-width:1.4}` +
+    `.op-plate{fill:${c.sheet};stroke:${c.inkSoft};stroke-width:1.4}` +
     /* The frame every Venn diagram implicitly stands in, drawn because what
        lies in none of the three has to lie somewhere. Dashed and quiet: it is
        the edge of what was looked at, not a set of its own. */
     `.op-universe{fill:none;stroke:${c.line};stroke-width:1;stroke-dasharray:3 4}` +
-    `.op-item{fill:${c.ink};font-size:9.5px;font-family:${FONTS.sans}}` +
-    `.op-outside{fill:${c.inkSoft};font-size:10.5px;font-weight:600;font-family:${FONTS.sans}}` +
+    `.op-item{fill:${c.ink};font-size:12px;font-family:${FONTS.sans}}` +
+    `.op-outside{fill:${c.inkSoft};font-size:12.5px;font-weight:600;font-family:${FONTS.sans}}` +
     `.face{stroke:${c.sheet};stroke-width:.6}` +
     `.face.left{opacity:.88}.face.right{opacity:.74}` +
     /* The roof of the one building that answers its category alone. Out of the
@@ -3074,7 +3084,7 @@ export function stylesheet(theme = "light") {
        the walls under the roof are still saying. */
     `.face.sole-roof{fill:${c.series[1]}}` +
     `.key-sole-roof{fill:${c.series[1]}}` +
-    `.key-unnamed{fill:${c.line}}` +
+    `.key-unnamed{fill:${c.inkFaint};fill-opacity:.35}` +
     `.axis-title{fill:${c.inkSoft};font-size:10px;font-family:${FONTS.sans};letter-spacing:.04em}` +
     `.row-label{fill:${c.ink};font-size:11.5px;font-family:${FONTS.sans}}` +
     `.row-label.child{fill:${c.inkSoft}}` +

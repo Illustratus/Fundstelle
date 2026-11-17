@@ -180,8 +180,8 @@ test("the figure is painted on the page as well", async ({ page }) => {
   expect(paint.card.fill).not.toBe("none");
   expect(paint.card.stroke).not.toBe("none");
   // And a title is set at the figure's size rather than at the document's.
-  expect(paint.item.size).toBe("9.5px");
-  expect(paint.name.size).toBe("11px");
+  expect(paint.item.size).toBe("12px");
+  expect(paint.name.size).toBe("13px");
   /* A piece nobody filled is still a piece: it carries the total, so it has to
      be drawn even when it holds nothing. These requirements rest on no citation
      yet, so every piece here is a hollow one — which is exactly the state that

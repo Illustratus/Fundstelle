@@ -10,6 +10,15 @@ where it lies.
 
 ### Changed
 
+- **Das Venn-Diagramm der beeinträchtigten Operationen ist für den Druck gesetzt.** Die drei
+  Mengen tragen kein Blau, Grün und Ocker mehr, sondern ein gemeinsames Grau, das mit jeder
+  weiteren Menge dunkler wird. Die Farben waren dieselben wie die der Bereiche in den
+  Tortenstücken und mischten sich in den Schnittflächen zu Oliv. Die Titel auf den Karten stehen in
+  12 statt 9,5 px, die Mengennamen in 13 px. Ein Tortenstück, das kein Bereich füllt, ist ein
+  tieferes Grau mit derselben weißen Fuge wie die übrigen, ohne dunklen Ring.
+- **Eine Zahl steht im gestapelten Balken nur noch auf ihrem eigenen Teil.** Passt sie dort nicht
+  hin, steht sie hinter der Summe. Vorher durfte sie über den Nachbarteil reichen und verdeckte
+  kurze Balken ganz.
 - **Eine Kodiereinheit nimmt zu jeder Proposition einzeln Stellung, unabhängig von ihrer
   Kategorie.** Bisher trug eine Einheit eine einzige Haltung, gemeint als Haltung zur Proposition
   ihrer eigenen Kategorie, und ein Kriterium zählte Kategorie und Haltung zusammen. Das bildet eine

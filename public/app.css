@@ -2238,7 +2238,7 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart-legend.ruled .key-note { grid-column: 1; grid-row: 1 / -1; align-self: start; }
 /* The grey a piece nobody filled is drawn in, so the key can name it: five
    colours were explained and the sixth thing in the pie was left to be guessed. */
-.chart-legend i.unnamed { background: var(--line); }
+.chart-legend i.unnamed { background: color-mix(in srgb, var(--ink-faint) 35%, transparent); }
 .chart-legend i {
   display: inline-block;
   width: .7rem;
@@ -2378,35 +2378,24 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 .chart .reach-sole { fill: none; stroke: var(--ink-soft); stroke-width: 1; }
 
 /* Blockierte Operationen, as a Venn diagram and as an Euler diagram of the same
-   three sets. One circle per operation, each washed in its own hue at a weight
+   three sets. One frame per operation, each washed in the same grey at a weight
    that lets two and three of them lie over one another and still be written on:
    the overlaps darken by themselves, which is what makes a set diagram legible
    without a key, and the deepest of them — the requirement that stops all three
-   — comes out the darkest thing on the page. Blue, green and amber: the three
-   of the series that stay apart when they are laid over each other. */
+   — comes out the darkest thing on the page. */
 /* One wash per set and per zone, so that leaving a zone out is leaving it out:
    a wash that belonged to a whole circle could not be told to stop being a
    colour in one place, and the Euler's whole business is not drawing a zone
    that holds nothing. */
-.chart .op-wash { fill-opacity: .22; stroke: none; }
-@media (prefers-color-scheme: dark) { .chart .op-wash { fill-opacity: .3; } }
-:root[data-theme="light"] .chart .op-wash { fill-opacity: .22; }
-:root[data-theme="dark"] .chart .op-wash { fill-opacity: .3; }
-.chart .op-edge { fill: none; stroke-width: 1.4; }
-/* Named on both classes rather than on the set alone. A set's colour is a fill
-   on its wash and a stroke on its rim, and written as one rule for the set it
-   also filled the rim: the same weight as `.op-edge { fill: none }` and later
-   in the sheet, so three hairline circles came out as three solid discs, each
-   hiding the one drawn before it. */
-.chart .op-wash.op-set-1 { fill: var(--series-1); }
-.chart .op-edge.op-set-1 { stroke: var(--series-1); }
-.chart .op-wash.op-set-2 { fill: var(--series-3); }
-.chart .op-edge.op-set-2 { stroke: var(--series-3); }
-.chart .op-wash.op-set-3 { fill: var(--series-4); }
-.chart .op-edge.op-set-3 { stroke: var(--series-4); }
+.chart .op-wash { fill: var(--ink); fill-opacity: .06; stroke: none; }
+@media (prefers-color-scheme: dark) { .chart .op-wash { fill-opacity: .12; } }
+:root[data-theme="light"] .chart .op-wash { fill-opacity: .06; }
+:root[data-theme="dark"] .chart .op-wash { fill-opacity: .12; }
+/* Neutral since the department colours came into this figure, see charts.js. */
+.chart .op-edge { fill: none; stroke: var(--ink-soft); stroke-width: 1.4; }
 .chart .op-name {
   fill: var(--ink);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: .02em;
 }
@@ -2419,23 +2408,18 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
    to a hairline and the figure to the quiet ink kept for „nothing here". */
 .chart .op-slice { fill: var(--series); stroke: var(--sheet); stroke-width: .6; }
 /* A piece nobody filled still has to be counted, because the pieces together are
-   how many departments the study has — so it takes the ink this tool keeps for
-   „nothing is here“ rather than a rule colour, which came to 1.7 against the
-   card and could not be made out. */
-/* A piece nobody filled still has to be counted, because the pieces together are
-   how many departments the study has. A hairline alone came to a tenth of a
-   millimetre in print, which no press holds, so it is a fill with an outline
-   over it: the grey carries it at any size, the line only sharpens the edge. */
-.chart .op-slice.none { fill: var(--line); stroke: var(--ink-faint); stroke-width: .6; }
+   how many departments the study has. A fill deep enough to stand off the card
+   on its own, cut by the same white seam as every other piece; see charts.js. */
+.chart .op-slice.none { fill: var(--ink-faint); fill-opacity: .35; stroke: var(--sheet); stroke-width: .6; }
 /* An area with nothing in it has to say so, or the finding this figure exists
    for reads as a slip of the pen. The reading ink, because an area may lie under
    three washes at once where a grey does not reach the threshold; the italic is
    what keeps the word from looking like a requirement. */
-.chart .op-empty { fill: var(--ink); font-size: 9.5px; font-style: italic; }
+.chart .op-empty { fill: var(--ink); font-size: 12px; font-style: italic; }
 /* And the outer frame's own word. Drawn and unnamed it was a visible difference
    carrying no information — and it encloses the requirements that hold nothing
    up as well, so it has to say that it means the whole catalog. */
-.chart .op-whole { fill: var(--ink-soft); font-size: 10px; letter-spacing: .04em; }
+.chart .op-whole { fill: var(--ink-soft); font-size: 11.5px; letter-spacing: .04em; }
 /* One card per requirement. Set as running text, four titles in a zone were
    four sentences with nothing between them but a gap, and a title that wrapped
    could not be told from the next one. The card also gives the writing the one
@@ -2445,13 +2429,13 @@ body.anchoring .edition-sheet { outline: 2px dashed var(--warning); outline-offs
 /* The sheet a set's name is written on, so its frame breaks for the word rather
    than running under it: written beside a frame the name could belong to either
    of the two lines nearest it, written on one it can belong to nothing else. */
-.chart .op-plate { fill: var(--sheet); stroke-width: 1.4; }
+.chart .op-plate { fill: var(--sheet); stroke: var(--ink-soft); stroke-width: 1.4; }
 /* The frame every Venn diagram implicitly stands in, drawn because what lies in
    none of the three has to lie somewhere. Dashed and quiet: it is the edge of
    what was looked at, not a set of its own. */
 .chart .op-universe { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
-.chart .op-item { fill: var(--ink); font-size: 9.5px; }
-.chart .op-outside { fill: var(--ink-soft); font-size: 10.5px; font-weight: 600; }
+.chart .op-item { fill: var(--ink); font-size: 12px; }
+.chart .op-outside { fill: var(--ink-soft); font-size: 12.5px; font-weight: 600; }
 
 /* The city: the lattice a tower stands on, and the names along its two near
    edges. Set at thirty degrees across the run of the edge — flat, a name has
